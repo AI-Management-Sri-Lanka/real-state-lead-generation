@@ -1,16 +1,13 @@
-import { useState } from 'react'
-import { Link }     from 'react-router-dom'
-import { Logo }     from '@/components/ui/Logo'
-import { Button }   from '@/components/ui/Button'
+// src/pages/home/components/Navbar.tsx
+import { Link } from 'react-router-dom'
+import { Logo } from '@/components/ui/Logo'
 
 const LINKS: { label: string; to: string }[] = [
   { label: 'Dashboard',    to: '/dashboard' },
-  { label: 'AI Assistant', to: '/ai-assistant' },
+  { label: 'AI Assistant', to: '/dashboard/ai-assistant' },
 ]
 
 export function Navbar() {
-  const [open, setOpen] = useState(false)
-
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:'rgba(255,255,255,0.92)', backdropFilter:'blur(12px)', borderBottom:'1px solid var(--color-border)', fontFamily:'var(--font-sans)' }}>
       <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 32px', height:68, display:'flex', alignItems:'center', gap:32 }}>
@@ -29,10 +26,6 @@ export function Navbar() {
             </Link>
           ))}
         </nav>
-
-        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-          {/* Authentication removed — app navigates directly to AI Assistant */}
-        </div>
       </div>
     </header>
   )
