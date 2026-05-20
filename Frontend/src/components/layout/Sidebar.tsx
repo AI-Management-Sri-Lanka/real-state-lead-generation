@@ -7,10 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 
 const MAIN_NAV = [
   { to:'/dashboard',              icon:LayoutDashboard, label:'Dashboard' },
-  { to:'/dashboard/leads',        icon:Users,           label:'Leads' },
   { to:'/dashboard/ai-assistant', icon:MessageSquare,   label:'AI Chat' },
-  { to:'/dashboard/discover',     icon:Search,          label:'Discover' },
-  { to:'/dashboard/analytics',    icon:BarChart2,       label:'Analytics' },
 ]
 const ACCOUNT_NAV = [
   { to:'/dashboard/settings', icon:Settings, label:'Settings' },

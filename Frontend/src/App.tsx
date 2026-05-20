@@ -2,8 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import AIAssistantPage from '@/pages/dashboard/AIAssistantPage'
 import { useAuth }     from '@/hooks/useAuth'
 import HomePage        from './pages/home/HomePage'
-import SignInPage from './pages/auth/SignInPage'
-import SignUpPage from './pages/auth/SignUpPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -15,8 +14,7 @@ export default function App() {
     <Routes>
       <Route path="/"               element={<HomePage />} />
       <Route path="/dashboard/ai-assistant" element={<AIAssistantPage />} />
-      <Route path="/signup"          element={<SignUpPage />} />
-      <Route path="/signin"          element={<SignInPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="*"               element={<Navigate to="/" replace />} />
     </Routes>
   )
