@@ -70,7 +70,7 @@ export function SignUpForm() {
       <GoogleButton label="Sign up with Google" />
       <p style={{ textAlign:'center', marginTop:20, fontSize:14, color:'var(--color-text-secondary)' }}>
         Already have an account?{' '}
-        <Link to="/signin" style={{ color:'var(--color-brand)', fontWeight:600, textDecoration:'none' }}>Sign in</Link>
+        <Link to="/auth/signin" style={{ color:'var(--color-brand)', fontWeight:600, textDecoration:'none' }}>Sign in</Link>
       </p>
     </>
   )

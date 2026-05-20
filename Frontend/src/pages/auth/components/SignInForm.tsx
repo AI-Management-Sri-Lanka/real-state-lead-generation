@@ -70,7 +70,7 @@ export function SignInForm() {
 
       <p style={{ textAlign:'center', marginTop:24, fontSize:14, color:'var(--color-text-secondary)' }}>
         Don't have an account?{' '}
-        <Link to="/signup" style={{ color:'var(--color-brand)', fontWeight:600, textDecoration:'none' }}>Create one</Link>
+        <Link to="/auth/signup" style={{ color:'var(--color-brand)', fontWeight:600, textDecoration:'none' }}>Create one</Link>
       </p>
     </>
   )
