@@ -13,7 +13,7 @@ export function Navbar() {
       <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 32px', height:68, display:'flex', alignItems:'center', gap:32 }}>
         <Logo size="md" />
 
-        <nav style={{ display:'flex', gap:4, flex:1 }}>
+        <nav style={{ display:'flex', gap:4, flex:1, alignItems:'center' }}>
           {LINKS.map(({ label, to }) => (
             <Link
               key={label}
@@ -25,6 +25,15 @@ export function Navbar() {
               {label}
             </Link>
           ))}
+
+          <Link
+            to="/signin"
+            style={{ marginLeft:'auto', padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
+          >
+            Sign in
+          </Link>
         </nav>
       </div>
     </header>

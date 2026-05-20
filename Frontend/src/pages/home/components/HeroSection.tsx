@@ -29,16 +29,12 @@ export function HeroSection() {
         </p>
 
         <div style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap' }}>
-          <Link to="/signup">
             <Button size="lg" iconRight={<ArrowRight size={18}/>} style={{ height:54, fontSize:16, fontWeight:700, borderRadius:14, padding:'0 28px' }}>
               Start free trial
             </Button>
-          </Link>
-          <Link to="/signin">
             <Button variant="secondary" size="lg" style={{ height:54, fontSize:16, fontWeight:600, borderRadius:14, padding:'0 28px' }}>
               View demo
             </Button>
-          </Link>
         </div>
 
         <p style={{ marginTop:18, fontSize:13, color:'var(--color-text-placeholder)', fontFamily:'var(--font-sans)' }}>
