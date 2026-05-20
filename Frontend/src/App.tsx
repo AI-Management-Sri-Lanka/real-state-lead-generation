@@ -3,6 +3,8 @@ import AIAssistantPage from '@/pages/dashboard/AIAssistantPage'
 import { useAuth }     from '@/hooks/useAuth'
 import HomePage        from './pages/home/HomePage'
 import DashboardPage from './pages/dashboard/DashboardPage'
+import SignInPage     from './pages/auth/SignInPage'
+import SignUpPage     from './pages/auth/SignUpPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -15,6 +17,8 @@ export default function App() {
       <Route path="/"               element={<HomePage />} />
       <Route path="/dashboard/ai-assistant" element={<AIAssistantPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/auth/signin" element={<SignInPage />} />
+      <Route path="/auth/signup" element={<SignUpPage />} />
       <Route path="*"               element={<Navigate to="/" replace />} />
     </Routes>
   )
