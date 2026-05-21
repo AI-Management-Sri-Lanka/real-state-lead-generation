@@ -42,8 +42,7 @@ export function SignUpForm() {
   return (
     <>
       <div style={{ marginBottom:32 }}>
-        <p style={{ fontSize:12, fontWeight:600, color:'var(--color-brand)', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>Get started free</p>
-        <h2 style={{ fontSize:30, fontWeight:800, color:'var(--color-text-heading)', letterSpacing:'-0.03em', marginBottom:8 }}>Create your account</h2>
+        {/* <h2 style={{ fontSize:30, fontWeight:800, color:'var(--color-text-heading)', letterSpacing:'-0.03em', marginBottom:8 }}>Create your account</h2> */}
         <p style={{ fontSize:14, color:'var(--color-text-secondary)' }}>Start finding real estate buyers with AI today.</p>
       </div>
 
