@@ -1,7 +1,6 @@
 // src/components/layout/Sidebar.tsx  — matches LeadAI screenshot (white, left nav)
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Users, MessageSquare, Search, BarChart2, Settings, LogOut } from 'lucide-react'
-import { Logo }    from '@/components/ui/Logo'
 import { Avatar }  from '@/components/ui/Avatar'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -19,11 +18,6 @@ export function Sidebar() {
 
   return (
     <aside style={{ width:220, minWidth:220, height:'100vh', background:'var(--color-surface)', borderRight:'1px solid var(--color-border)', display:'flex', flexDirection:'column', padding:'0 0 20px', position:'sticky', top:0, fontFamily:'var(--font-sans)' }}>
-      {/* Logo */}
-      <div style={{ padding:'20px 20px 12px' }}>
-        <Logo size="md" />
-      </div>
-
       {/* MAIN section */}
       <div style={{ padding:'12px 12px 0' }}>
         <div style={{ fontSize:11, fontWeight:600, color:'var(--color-text-placeholder)', letterSpacing:'0.08em', padding:'0 8px 8px', textTransform:'uppercase' }}>Main</div>

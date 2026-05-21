@@ -25,7 +25,7 @@ export default function AIAssistantPage() {
 
   return (
     <DashboardLayout activeNav="AI Chat">
-      <div style={{ display:'flex', flex:1, overflow:'hidden', height:'100%' }}>
+      <div style={{ display:'flex', flex:1, minHeight:0, height:'100%', overflow:'hidden' }}>
 
         {/* Session sidebar */}
         <ChatSessionList
@@ -35,7 +35,7 @@ export default function AIAssistantPage() {
         />
 
         {/* Main chat column */}
-        <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:'var(--color-bg-subtle)' }}>
+        <div style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column', overflow:'hidden', background:'var(--color-bg-subtle)' }}>
           <ChatHeader />
 
           {/* Messages area */}

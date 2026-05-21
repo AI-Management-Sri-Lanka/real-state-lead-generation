@@ -11,17 +11,17 @@ interface Props {
 
 export function ChatSessionList({ sessions, onNew, onLoad }: Props) {
   return (
-    <div style={{ width:220, borderRight:'1px solid var(--color-border)', display:'flex', flexDirection:'column', background:'var(--color-surface)' }}>
-      {/* Sessions header */}
+    <div style={{ width:220, minHeight:0, height:'100%', boxSizing:'border-box', borderRight:'1px solid var(--color-border)', display:'flex', flexDirection:'column', background:'var(--color-surface)' }}>
+      {/* Recent chats header */}
       <div style={{ padding:'16px 16px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <span style={{ fontSize:13, fontWeight:700, color:'var(--color-text-heading)' }}>Sessions</span>
-        <button onClick={onNew} style={{ width:28, height:28, borderRadius:8, border:'1px solid var(--color-border)', background:'var(--color-surface)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--color-text-secondary)' }}>
+        <span style={{ fontSize:13, fontWeight:700, color:'var(--color-text-heading)' }}>Recent chats</span>
+        <button onClick={onNew} aria-label="New chat" style={{ width:28, height:28, borderRadius:8, border:'1px solid var(--color-border)', background:'var(--color-surface)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--color-text-secondary)' }}>
           <Plus size={15} />
         </button>
       </div>
 
       {/* Session items */}
-      <div style={{ flex:1, overflowY:'auto', padding:'0 8px' }}>
+      <div style={{ flex:1, minHeight:0, overflowY:'auto', padding:'0 8px', boxSizing:'border-box' }}>
         {sessions.length === 0 ? (
           <div style={{ padding:'8px 10px' }}>
             {/* Default sessions matching screenshot */}
@@ -51,7 +51,7 @@ export function ChatSessionList({ sessions, onNew, onLoad }: Props) {
       </div>
 
       {/* Footer hint */}
-      <div style={{ padding:'12px 16px', borderTop:'1px solid var(--color-border)' }}>
+      <div style={{ marginTop:'auto', padding:'12px 16px', borderTop:'1px solid var(--color-border)' }}>
         <p style={{ fontSize:11, color:'var(--color-text-placeholder)', lineHeight:1.5 }}>
           AI chat saves your search sessions automatically.
         </p>

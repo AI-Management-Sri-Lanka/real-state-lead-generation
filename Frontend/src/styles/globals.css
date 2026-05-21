@@ -63,6 +63,60 @@
   --shadow-md:  0 4px 16px rgba(61,59,243,0.10), 0 2px 4px rgba(0,0,0,0.04);
   --shadow-lg:  0 8px 32px rgba(61,59,243,0.12), 0 4px 8px rgba(0,0,0,0.06);
   --shadow-brand: 0 4px 20px rgba(61,59,243,0.35);
+
+  --color-hero-bg: linear-gradient(160deg,#FAFAFF 0%,#F0F0FF 50%,#E6FAF5 100%);
+  --color-hero-circle: radial-gradient(ellipse,rgba(61,59,243,0.06) 0%,transparent 70%);
+  --color-hero-badge-bg: var(--color-brand-light);
+  --color-hero-badge-border: rgba(61,59,243,0.2);
+}
+
+[data-theme='dark'] {
+  --color-brand:           #7dd3fc;
+  --color-brand-hover:     #38bdf8;
+  --color-brand-light:     #11253f;
+  --color-accent:          #34d399;
+  --color-accent-light:    #0f172a;
+
+  --color-bg:              #0f172a;
+  --color-bg-subtle:       #111827;
+  --color-bg-muted:        #111827;
+  --color-surface:         #111827;
+  --color-surface-raised:  #172137;
+
+  --color-border:          #23303f;
+  --color-border-strong:   #334155;
+
+  --color-text-heading:    #f8fafc;
+  --color-text-primary:    #e2e8f0;
+  --color-text-secondary:  #94a3b8;
+  --color-text-placeholder:#64748b;
+  --color-text-disabled:   #334155;
+  --color-text-link:       #7dd3fc;
+
+  --color-input-bg:        #111827;
+  --color-input-border:    #334155;
+  --color-input-focus:     #7dd3fc;
+
+  --color-sidebar:         #0f172a;
+  --color-sidebar-hover:   #111827;
+  --color-nav-active-bg:   #111827;
+  --color-nav-active-text: #7dd3fc;
+
+  --color-success:         #22c55e;
+  --color-success-light:   #0f172a;
+  --color-warning:         #f59e0b;
+  --color-error:           #f87171;
+  --color-error-light:     #431b0b;
+  --color-info:            #38bdf8;
+
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.18);
+  --color-card-bg: #1f2937;
+  --color-hero-bg: linear-gradient(160deg,#020617 0%,#0a1322 50%,#0f172a 100%);
+  --color-hero-circle: radial-gradient(ellipse,rgba(56,189,248,0.18) 0%,transparent 70%);
+  --color-hero-badge-bg: rgba(56,189,248,0.12);
+  --color-hero-badge-border: rgba(56,189,248,0.24);
+
+  color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

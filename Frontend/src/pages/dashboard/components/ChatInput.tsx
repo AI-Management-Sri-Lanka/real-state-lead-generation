@@ -18,7 +18,7 @@ export function ChatInput({ value, onChange, onSend, onStop, isLoading }: Props)
   }
 
   return (
-    <div style={{ padding:'16px 24px 20px', borderTop:'1px solid var(--color-border)', background:'var(--color-surface)', display:'flex', alignItems:'center', gap:12 }}>
+    <div style={{ padding:'12px 24px', borderTop:'1px solid var(--color-border)', background:'var(--color-surface)', display:'flex', alignItems:'center', gap:12, boxSizing:'border-box', flexShrink:0 }}>
       {/* Mic button */}
       <button style={{ width:40, height:40, borderRadius:10, border:'1px solid var(--color-border)', background:'var(--color-surface)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--color-text-secondary)', flexShrink:0 }}>
         <Mic size={18} />

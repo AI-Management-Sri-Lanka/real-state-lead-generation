@@ -5,13 +5,13 @@ import { Button }   from '@/components/ui/Button'
 
 export function HeroSection() {
   return (
-    <section style={{ background:'linear-gradient(160deg,#FAFAFF 0%,#F0F0FF 50%,#E6FAF5 100%)', padding:'96px 32px 80px', textAlign:'center', position:'relative', overflow:'hidden' }}>
+    <section style={{ background:'var(--color-hero-bg)', padding:'96px 32px 80px', textAlign:'center', position:'relative', overflow:'hidden' }}>
       {/* Background circles */}
-      <div style={{ position:'absolute', width:600, height:600, borderRadius:'50%', background:'radial-gradient(ellipse,rgba(61,59,243,0.06) 0%,transparent 70%)', top:-200, left:'50%', transform:'translateX(-50%)', pointerEvents:'none' }} />
+      <div style={{ position:'absolute', width:600, height:600, borderRadius:'50%', background:'var(--color-hero-circle)', top:-200, left:'50%', transform:'translateX(-50%)', pointerEvents:'none' }} />
 
       <div style={{ maxWidth:760, margin:'0 auto', position:'relative', zIndex:1 }}>
         {/* Badge */}
-        <div style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:40, background:'var(--color-brand-light)', border:'1px solid rgba(61,59,243,0.2)', marginBottom:28 }}>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:40, background:'var(--color-hero-badge-bg)', border:'1px solid var(--color-hero-badge-border)', marginBottom:28 }}>
           <Sparkles size={14} style={{ color:'var(--color-brand)' }} />
           <span style={{ fontSize:13, fontWeight:600, color:'var(--color-brand)', fontFamily:'var(--font-sans)' }}>AI-Powered Real Estate Platform</span>
         </div>
@@ -28,11 +28,8 @@ export function HeroSection() {
           Automatically discover qualified leads from Facebook and Instagram using conversational AI — no manual searching required.
         </p>
 
-        <div style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap' }}>
-            <Button variant="secondary" size="lg" style={{ height:54, fontSize:16, fontWeight:600, borderRadius:14, padding:'0 28px' }}>
-              View demo
-            </Button>
-        </div>
+        {/* Button removed per design update */}
+        <div style={{ height: 1, marginTop: 10 }} />
 
       </div>
     </section>

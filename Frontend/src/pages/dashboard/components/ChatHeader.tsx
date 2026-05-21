@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react'
 
 export function ChatHeader() {
   return (
-    <div style={{ padding:'16px 24px', borderBottom:'1px solid var(--color-border)', display:'flex', alignItems:'center', gap:12, background:'var(--color-surface)' }}>
+    <div style={{ padding:'12px 24px', borderBottom:'1px solid var(--color-border)', display:'flex', alignItems:'center', gap:12, background:'var(--color-surface)' }}>
       <div style={{ width:40, height:40, borderRadius:12, background:'linear-gradient(135deg,#3D3BF3,#00C896)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 12px rgba(61,59,243,0.3)' }}>
         <Sparkles size={20} style={{ color:'white' }} />
       </div>
