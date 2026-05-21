@@ -5,3 +5,13 @@ langchain-openai
 
 fastapi
 uvicorn
+
+# Database & Migrations
+sqlalchemy>=2.0.0
+asyncpg    
+psycopg2-binary
+alembic
+pgvector
+
+# Configuration
+pydantic-settings
