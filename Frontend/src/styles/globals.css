@@ -140,3 +140,18 @@ body {
 @keyframes pulse-dot    { 0%,100% { opacity:.3; transform:scale(.8) } 50% { opacity:1; transform:scale(1.2) } }
 @keyframes spin         { to { transform: rotate(360deg) } }
 @keyframes float        { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-10px) } }
+
+/* Responsive sidebar for mobile/tablet */
+@media (max-width: 1024px) {
+  .dashboard-sidebar-toggle { display: flex !important; }
+  .navbar-sidebar-toggle { display: flex !important; }
+  .dashboard-sidebar-desktop { display: none !important; }
+  .dashboard-sidebar-mobile { display: block !important; }
+}
+
+@media (min-width: 1025px) {
+  .dashboard-sidebar-toggle { display: none !important; }
+  .navbar-sidebar-toggle { display: none !important; }
+  .dashboard-sidebar-desktop { display: block !important; }
+  .dashboard-sidebar-mobile { display: none !important; }
+}

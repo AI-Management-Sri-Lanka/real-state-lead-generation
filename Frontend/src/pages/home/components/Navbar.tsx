@@ -1,7 +1,9 @@
 // src/pages/home/components/Navbar.tsx
 import { Link, useLocation } from 'react-router-dom'
+import { Menu } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { useSidebar } from '@/contexts/SidebarContext'
 
 const LINKS: { label: string; to: string }[] = [
   { label: 'Dashboard',    to: '/dashboard' },
@@ -11,6 +13,8 @@ const LINKS: { label: string; to: string }[] = [
 export function Navbar() {
   const location = useLocation()
   const showSignIn = !location.pathname.startsWith('/dashboard')
+  const isDashboard = location.pathname.startsWith('/dashboard')
+  const { toggle: toggleSidebar } = useSidebar()
 
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:'var(--color-surface)', backdropFilter:'blur(12px)', borderBottom:'1px solid var(--color-border)', fontFamily:'var(--font-sans)' }}>
@@ -32,6 +36,17 @@ export function Navbar() {
 
           <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:12 }}>
             <ThemeToggle />
+            {isDashboard && (
+              <button
+                className="navbar-sidebar-toggle"
+                onClick={toggleSidebar}
+                style={{ background:'var(--color-bg-muted)', border:'1px solid var(--color-border)', borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg-subtle)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-bg-muted)')}
+              >
+                <Menu size={20} color="var(--color-text-secondary)" />
+              </button>
+            )}
             {showSignIn && (
               <Link
                 to="/auth/signin"
