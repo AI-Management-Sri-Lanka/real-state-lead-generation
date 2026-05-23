@@ -10,3 +10,16 @@ __pycache__/
 *.egg-info/
 .idea/
 .vscode/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
+*.log
+.mypy_cache/
+.dmypy.json
+dmypy.json
