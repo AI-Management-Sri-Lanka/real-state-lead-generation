@@ -1,62 +1,99 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useState, useEffect, useCallback } from "react";
+import { authApi } from "@/api/authApi";
 
 export interface User {
-  id: string
-  name: string
-  email: string
-  avatar?: string
+  id: number;
+  full_name: string;
+  email: string;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface AuthContextType {
-  user: User | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (name: string, email: string, password: string) => Promise<void>
-  signOut: () => void
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (full_name: string, email: string, password: string) => Promise<void>;
+  signOut: () => void;
+  error: string | null;
 }
 
-export const AuthContext = createContext<AuthContextType | null>(null)
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser]         = useState<User | null>(null)
-  const [isLoading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Restore session on mount
   useEffect(() => {
-    const stored = localStorage.getItem('aimsl_user')
+    const stored = localStorage.getItem("aimsl_user");
     if (stored) {
-      try { setUser(JSON.parse(stored)) } catch { /* ignore */ }
+      try {
+        setUser(JSON.parse(stored));
+      } catch {
+        /* ignore */
+      }
     }
-    setLoading(false)
-  }, [])
+    setLoading(false);
+  }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    // TODO: replace with real API call — api.auth.signIn(email, password)
-    await new Promise(r => setTimeout(r, 800)) // simulate network
-    if (password.length < 6) throw new Error('Invalid credentials')
-    const u: User = { id: '1', name: email.split('@')[0], email }
-    setUser(u)
-    localStorage.setItem('aimsl_user', JSON.stringify(u))
-  }, [])
+    setLoading(true);
+    setError(null);
+    try {
+      const userData = await authApi.signIn({ email, password });
+      setUser(userData);
+      localStorage.setItem("aimsl_user", JSON.stringify(userData));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign in failed";
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const signUp = useCallback(async (name: string, email: string, _password: string) => {
-    // TODO: replace with real API call — api.auth.signUp(name, email, password)
-    await new Promise(r => setTimeout(r, 800))
-    const u: User = { id: Date.now().toString(), name, email }
-    setUser(u)
-    localStorage.setItem('aimsl_user', JSON.stringify(u))
-  }, [])
+  const signUp = useCallback(
+    async (full_name: string, email: string, password: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const userData = await authApi.signUp({ full_name, email, password });
+        setUser(userData);
+        localStorage.setItem("aimsl_user", JSON.stringify(userData));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Sign up failed";
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   const signOut = useCallback(() => {
-    setUser(null)
-    localStorage.removeItem('aimsl_user')
-  }, [])
+    setUser(null);
+    setError(null);
+    localStorage.removeItem("aimsl_user");
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        signIn,
+        signUp,
+        signOut,
+        error,
+      }}
+    >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
