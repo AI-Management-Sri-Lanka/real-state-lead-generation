@@ -1,55 +1,44 @@
 // src/components/layout/DashboardLayout.tsx
-import { Sidebar }  from './Sidebar'
-import { Navbar }   from '@/pages/home/components/Navbar'
-import { useAuth }  from '@/hooks/useAuth'
+import PropTypes from 'prop-types'
+import { Sidebar } from './Sidebar'
+import { Navbar } from '@/pages/home/components/Navbar'
 import { useSidebar } from '@/contexts/SidebarContext'
 
 interface Props { children: React.ReactNode; activeNav?: string }
 
-export function DashboardLayout({ children, activeNav }: Props) {
-  const { user } = useAuth()
-  const { isOpen: sidebarOpen, toggle: toggleSidebar, close: closeSidebar } = useSidebar()
+export function DashboardLayout({ children }: Props) {
+  const { isOpen: sidebarOpen, close: closeSidebar } = useSidebar()
 
   return (
-    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--color-bg-subtle)', flexDirection:'column' }}>
+    <div className="min-h-screen flex min-w-full flex-col bg-page" style={{ color: 'var(--color-text-primary)' }}>
       <Navbar />
-      <div style={{ display:'flex', flex:1, overflow:'hidden', position:'relative' }}>
-        {/* Mobile overlay backdrop */}
+      <div className="relative flex min-h-[calc(100vh-72px)] overflow-hidden">
         {sidebarOpen && (
           <div
             onClick={closeSidebar}
-            style={{
-              position:'fixed',
-              inset:0,
-              background:'rgba(0,0,0,0.5)',
-              zIndex:40,
-            }}
-            className="dashboard-sidebar-backdrop"
+            className="dashboard-sidebar-backdrop fixed inset-0 z-40 bg-black/50"
           />
         )}
 
-        {/* Sidebar */}
-        <aside style={{
-          transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-          transition:'transform 0.3s ease',
-          position:'fixed',
-          left:0,
-          top:68,
-          height:'calc(100vh - 68px)',
-          zIndex:45,
-        }} className="dashboard-sidebar-mobile">
+        <aside
+          className="dashboard-sidebar-mobile fixed left-0 top-[72px] z-50 h-[calc(100vh-72px)] w-[260px] transition-transform duration-300 ease-out lg:hidden"
+          style={{ transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)' }}
+        >
           <Sidebar />
         </aside>
 
-        {/* Desktop sidebar */}
-        <aside className="dashboard-sidebar-desktop">
+        <aside className="dashboard-sidebar-desktop hidden w-[260px] flex-shrink-0 lg:block">
           <Sidebar />
         </aside>
 
-        <main style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column' }}>
+        <main className="flex min-h-[calc(100vh-72px)] flex-1 flex-col overflow-y-auto">
           {children}
         </main>
       </div>
     </div>
   )
+}
+
+DashboardLayout.propTypes = {
+  children: PropTypes.node.isRequired,
 }
