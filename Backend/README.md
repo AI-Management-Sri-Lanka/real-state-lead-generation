@@ -148,3 +148,40 @@ uvicorn app.main:app --reload
 The API will be available at http://localhost:8000.
 
 You can access the interactive API documentation (Swagger UI) at http://localhost:8000/docs.
+
+---
+
+## 🏗️ Project Architecture & Design Patterns
+
+The backend follows a highly modular, decoupled architecture (`API -> Service -> CRUD -> DB`) to maintain separation of concerns.
+
+### 1. The CRUD Layer (`app/crud/`)
+* **Responsibility:** Strictly handles all raw database interactions (SQLAlchemy selects, commits, rollbacks, etc.).
+* **Error Handling:** Catches underlying database exceptions (e.g., `IntegrityError` or connection failures) and cleanly maps them into standardized `AppException` objects (like `SYS_DATABASE_UNAVAILABLE`). The rest of the application never deals with raw database errors.
+
+### 2. The Service Layer (`app/services/`)
+* **Responsibility:** Contains purely business logic (e.g., `auth_service.py` handles password hashing, verifying credentials, coordinating workflows).
+* **Decoupling:** Services do not execute raw database queries. Instead, they call functions from the `crud/` package. They also act as the orchestrator for cross-cutting external services (like a future `email_service` or AI calls).
+
+### 3. The API / Route Controllers (`app/api/`)
+* **Responsibility:** Exposes REST endpoints (e.g., FastAPI routers) and handles HTTP requests/responses via Pydantic schemas. 
+
+### 4. Global Error Handling & Exception Management (`app/core/errors.py` & `main.py`)
+We use a centralized error handling strategy:
+* **`app/core/errors.py`**: Defines all `ErrorDefinition`s for the app (e.g., `SYS-002: Database Unavailable` or `AUTH-001: User Not Found`), complete with severity levels, log levels, HTTP status codes, and user-facing messages.
+* **Global Handlers (`app/main.py`)**: Intercepts `AppException`, `RequestValidationError` (Pydantic payload errors), and standard `HTTPException`.
+* **Standardized JSON Responses**: Regardless of the error, the client always receives a structured and uniform JSON response:
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "SYS-002",
+      "message": "Service temporarily unavailable.",
+      "request_id": "REQ-12345"
+    }
+  }
+  ```
+
+### 5. Centralized Logging (`app/core/logger.py`)
+* We use a unified Python `logging` instance to prevent duplicate logs across the app.
+* The global exception handler automatically scales log severity based on the error definition (`logger.info`, `logger.warn`, `logger.error`, or `logger.critical` for high-severity alerts).
