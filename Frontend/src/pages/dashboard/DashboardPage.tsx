@@ -132,9 +132,9 @@ const scoreBadgeStyle = (score: Lead["score"]): React.CSSProperties => {
 export default function DashboardPage() {
   return (
     <DashboardLayout activeNav="Dashboard">
-      <div className="dashboard-content" style={{ padding: 32, paddingBottom: 48, minHeight: '100%', boxSizing: 'border-box' }}>
+      <div style={{ padding: 24, paddingBottom: 36, minHeight: '100%', boxSizing: 'border-box' }}>
         {/* Greeting */}
-          <div style={{ marginBottom: 28 }}>
+          <div style={{ marginBottom: 20 }}>
             <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text-heading)', margin: 0, letterSpacing: '-0.01em' }}>
               Good morning, Asanka 👋
             </h1>
@@ -144,24 +144,24 @@ export default function DashboardPage() {
           </div>
 
           {/* Stat Cards */}
-          <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18, marginBottom: 28 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, marginBottom: 28 }}>
             {statCards.map((card) => (
               <StatCardItem key={card.label} card={card} />
             ))}
           </div>
 
           {/* Bottom Two Columns */}
-          <div className="dashboard-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
 
             {/* Leads by Source + Match Score */}
             <div style={{
               background: "var(--color-card-bg)",
-              borderRadius: 16,
-              padding: "24px 28px",
+              borderRadius: 20,
+              padding: "28px 28px",
               boxShadow: "var(--shadow-sm)",
               display: "flex",
               flexDirection: "column",
-              gap: 28,
+              gap: 26,
             }}>
               {/* Leads by Source */}
               <div>
@@ -215,8 +215,8 @@ export default function DashboardPage() {
             {/* Recent Leads */}
             <div style={{
               background: "var(--color-card-bg)",
-              borderRadius: 16,
-              padding: "24px 28px",
+              borderRadius: 20,
+              padding: "28px 28px",
               boxShadow: "var(--shadow-sm)",
             }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Recent leads</h3>
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              <div style={{ marginTop: 22, textAlign: "right" }}>
+              {/* <div style={{ marginTop: 22, textAlign: "right" }}>
                 <a href="/leads" style={{
                   fontSize: 13,
                   fontWeight: 600,
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                 }}>
                   View all leads →
                 </a>
-              </div>
+              </div> */}
             </div>
           </div>
       </div>
@@ -279,12 +279,12 @@ function StatCardItem({ card }: { card: StatCard }) {
   return (
     <div style={{
       background: "var(--color-card-bg)",
-      borderRadius: 16,
-      padding: "22px 24px",
+      borderRadius: 20,
+      padding: "28px 28px",
       boxShadow: "var(--shadow-sm)",
       display: "flex",
       flexDirection: "column",
-      gap: 10,
+      gap: 12,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
