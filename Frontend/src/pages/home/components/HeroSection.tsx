@@ -5,7 +5,7 @@ import { Button }   from '@/components/ui/Button'
 
 export function HeroSection() {
   return (
-    <section style={{ background:'var(--color-hero-bg)', padding:'96px 32px 80px', textAlign:'center', position:'relative', overflow:'hidden' }}>
+    <section className="hero-section" style={{ background:'var(--color-hero-bg)', padding:'96px 32px 80px', textAlign:'center', position:'relative', overflow:'hidden' }}>
       {/* Background circles */}
       <div style={{ position:'absolute', width:600, height:600, borderRadius:'50%', background:'var(--color-hero-circle)', top:-200, left:'50%', transform:'translateX(-50%)', pointerEvents:'none' }} />
 

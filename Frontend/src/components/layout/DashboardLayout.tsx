@@ -8,7 +8,7 @@ interface Props { children: React.ReactNode; activeNav?: string }
 export function DashboardLayout({ children, activeNav }: Props) {
   const { user } = useAuth()
   return (
-    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--color-bg-subtle)', flexDirection:'column' }}>
+    <div className="dashboard-root" style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--color-bg-subtle)', flexDirection:'column' }}>
       <Navbar />
       <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
       <Sidebar />

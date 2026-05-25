@@ -11,7 +11,7 @@ interface Props {
 
 export function ChatSessionList({ sessions, onNew, onLoad }: Props) {
   return (
-    <div style={{ width:220, minHeight:0, height:'100%', boxSizing:'border-box', borderRight:'1px solid var(--color-border)', display:'flex', flexDirection:'column', background:'var(--color-surface)' }}>
+    <div className="chat-session-list" style={{ width:220, minHeight:0, height:'100%', boxSizing:'border-box', borderRight:'1px solid var(--color-border)', display:'flex', flexDirection:'column', background:'var(--color-surface)' }}>
       {/* Recent chats header */}
       <div style={{ padding:'16px 16px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <span style={{ fontSize:13, fontWeight:700, color:'var(--color-text-heading)' }}>Recent chats</span>

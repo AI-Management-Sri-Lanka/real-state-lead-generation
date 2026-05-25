@@ -7,7 +7,7 @@ const HEADING = (<>Start finding <span style={{ color:'#00C896', fontStyle:'ital
 
 export default function SignUpPage() {
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:'var(--font-sans)' }}>
+    <div className="auth-root">
       <AuthBrandPanel
         heading={HEADING}
         subheading="Join real estate agents using AI to discover qualified buyers from social media — automatically."

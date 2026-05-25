@@ -132,7 +132,7 @@ const scoreBadgeStyle = (score: Lead["score"]): React.CSSProperties => {
 export default function DashboardPage() {
   return (
     <DashboardLayout activeNav="Dashboard">
-      <div style={{ padding: 32, paddingBottom: 48, minHeight: '100%', boxSizing: 'border-box' }}>
+      <div className="dashboard-content" style={{ padding: 32, paddingBottom: 48, minHeight: '100%', boxSizing: 'border-box' }}>
         {/* Greeting */}
           <div style={{ marginBottom: 28 }}>
             <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text-heading)', margin: 0, letterSpacing: '-0.01em' }}>
@@ -144,14 +144,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Stat Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18, marginBottom: 28 }}>
+          <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18, marginBottom: 28 }}>
             {statCards.map((card) => (
               <StatCardItem key={card.label} card={card} />
             ))}
           </div>
 
           {/* Bottom Two Columns */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div className="dashboard-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
 
             {/* Leads by Source + Match Score */}
             <div style={{

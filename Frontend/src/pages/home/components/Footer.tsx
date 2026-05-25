@@ -12,7 +12,7 @@ const LINKS = {
 
 export function Footer() {
   return (
-    <footer style={{ background:'var(--color-text-heading)', color:'rgba(255,255,255,0.7)', fontFamily:'var(--font-sans)', padding:'64px 32px 32px' }}>
+    <footer className="site-footer" style={{ background:'var(--color-text-heading)', color:'rgba(255,255,255,0.7)', fontFamily:'var(--font-sans)', padding:'64px 32px 32px' }}>
       <div style={{ maxWidth:1100, margin:'0 auto' }}>
         <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr', gap:40, marginBottom:56 }}>
           {/* Brand column */}

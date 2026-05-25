@@ -17,7 +17,7 @@ export function Sidebar() {
   const navigate = useNavigate()
 
   return (
-    <aside style={{ width:220, minWidth:220, height:'100vh', background:'var(--color-surface)', borderRight:'1px solid var(--color-border)', display:'flex', flexDirection:'column', padding:'0 0 20px', position:'sticky', top:0, fontFamily:'var(--font-sans)' }}>
+    <aside className="sidebar" style={{ width:220, minWidth:220, height:'100vh', background:'var(--color-surface)', borderRight:'1px solid var(--color-border)', display:'flex', flexDirection:'column', padding:'0 0 20px', position:'sticky', top:0, fontFamily:'var(--font-sans)' }}>
       {/* MAIN section */}
       <div style={{ padding:'12px 12px 0' }}>
         <div style={{ fontSize:11, fontWeight:600, color:'var(--color-text-placeholder)', letterSpacing:'0.08em', padding:'0 8px 8px', textTransform:'uppercase' }}>Main</div>
