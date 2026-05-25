@@ -1,0 +1,158 @@
+# Real Estate Lead Generator — v4.0
+
+## Full System Flow
+
+```
+Customer Chat (Chatbot)
+        │
+        │  "I'm looking for a 3 bedroom house in Colombo to rent"
+        │
+        ▼
+  Extract Keywords
+  tag_list = ["3bedroomhouse", "colombo", "houseforrent", "propertysrilanka"]
+        │
+        ▼
+POST /scrape
+{
+  "tag_list": ["3bedroomhouse", "colombo", "houseforrent"],
+  "social_media": { "facebook": true, "instagram": true, "tiktok": true }
+}
+        │
+        ├──► TikTok Hashtag Scraper  ─┐
+        │    clockworks/tiktok-hashtag │  hashtags = tag_list
+        │                             │
+        ├──► TikTok Main Scraper  ────┤  hashtags = tag_list
+        │    clockworks/tiktok-scraper│
+        │                             │
+        ├──► Instagram Scraper  ──────┤  directUrls = /explore/tags/<tag>/
+        │    apify/instagram-scraper  │  resultsType = "details"
+        │                             │
+        ├──► Instagram Hashtag  ──────┤  hashtags = tag_list
+        │    apify/instagram-hashtag  │  resultsType = "details"
+        │                             │
+        ├──► Facebook Posts  ─────────┤  fixed real-estate pages
+        │    apify/facebook-posts     │  includeAbout = true
+        │                             │
+        └──► Facebook Hashtag  ───────┘  keywordList = tag_list
+             apify/facebook-hashtag
+                    │
+                    ▼
+          Normalize + Save to DB
+                    │
+                    ▼
+Response:
+{
+  "post_links": {
+    "facebook":  ["https://facebook.com/...", ...],
+    "instagram": ["https://instagram.com/p/...", ...],
+    "tiktok":    ["https://tiktok.com/@.../video/...", ...]
+  },
+  "leads_saved":   { "facebook": 12, "instagram": 8, "tiktok": 15 },
+  "total_saved":   35,
+  "tags_used":     ["3bedroomhouse", "colombo", "houseforrent"],
+  "duration_seconds": 142.5
+}
+        │
+        ▼
+ Real Estate Team follows up with the people at those URLs
+```
+
+---
+
+## Project Files
+
+| File | Purpose |
+|------|---------|
+| `api.py` | FastAPI — POST /scrape is the main chatbot endpoint |
+| `config.py` | API token, actor IDs, default hashtags, seed URLs |
+| `db.py` | SQLite helpers — save/query leads |
+| `normalize_lead.py` | Convert raw Apify items → standard lead dict |
+| `fetch_tiktok.py` | TikTok actors — receives tag_list, returns URLs |
+| `fetch_instagram.py` | Instagram actors — receives tag_list, returns URLs |
+| `fetch_facebook.py` | Facebook actors — receives tag_list, returns URLs |
+| `main.py` | CLI runner (uses default hashtags from config.py) |
+| `export_leads.py` | Export DB → CSV |
+| `actor_configs.json` | Reference JSON configs for all 6 Apify actors |
+
+---
+
+## Setup
+
+```bash
+pip install -r requirements.txt
+```
+
+## Start API
+
+```bash
+uvicorn api:app --reload --port 8000
+```
+
+Interactive docs → http://127.0.0.1:8000/docs
+
+---
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| **POST** | **/scrape** | **Main endpoint — called by chatbot** |
+| GET | /leads | List collected leads |
+| GET | /leads/export | Download as CSV |
+| GET | /leads/{id} | Single lead |
+| DELETE | /leads/{id} | Remove lead |
+| GET | /stats | Platform breakdown + coverage |
+| GET | /scrape/status | Last scrape result |
+
+---
+
+## POST /scrape — Request & Response
+
+**Request:**
+```json
+{
+  "tag_list": ["houseforrent", "colombo", "3bedroom"],
+  "social_media": {
+    "facebook":  true,
+    "instagram": true,
+    "tiktok":    true
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "post_links": {
+    "facebook":  ["https://www.facebook.com/someone/posts/123", "..."],
+    "instagram": ["https://www.instagram.com/p/abc123/", "https://www.instagram.com/realtorname/"],
+    "tiktok":    ["https://www.tiktok.com/@user/video/456", "https://www.tiktok.com/@user"]
+  },
+  "leads_saved":      { "facebook": 8, "instagram": 12, "tiktok": 10 },
+  "total_saved":      30,
+  "tags_used":        ["houseforrent", "colombo", "3bedroom"],
+  "duration_seconds": 138.4
+}
+```
+
+---
+
+## How tag_list flows into each actor
+
+| Actor | How tag_list is used |
+|-------|---------------------|
+| TikTok Hashtag Scraper | `hashtags = tag_list` |
+| TikTok Main Scraper | `hashtags = tag_list` |
+| Instagram Scraper | `directUrls = [instagram.com/explore/tags/<tag>/ for tag in tag_list]` |
+| Instagram Hashtag Scraper | `hashtags = tag_list` |
+| Facebook Posts Scraper | Fixed page URLs (tag_list not used — gets about/email/website from pages) |
+| Facebook Hashtag Scraper | `keywordList = tag_list` |
+
+---
+
+## Customising seed pages / default tags
+
+Edit `config.py`:
+- `HASHTAGS` — default list used when running `main.py` directly
+- `FACEBOOK_SEED_URLS` — pages the Facebook posts scraper targets
+- `RESULTS_LIMIT` — max results per actor run
