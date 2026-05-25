@@ -7,6 +7,7 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=255)
 
     model_config = {
+        "extra": "forbid",
         "json_schema_extra": {
             "examples": [
                 {

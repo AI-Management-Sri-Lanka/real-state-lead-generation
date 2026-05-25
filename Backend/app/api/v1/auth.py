@@ -16,7 +16,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
     """Create a new user account."""
     db_user = await create_user(db, user)
-    return ok(message="User created successfully", item=db_user, status_code=status.HTTP_201_CREATED)
+    return ok(message="User created successfully", item=db_user)
 
 
 @router.post("/login", response_model=ResponseSchema[UserResponse])
