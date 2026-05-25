@@ -3,12 +3,9 @@ from fastapi.encoders import jsonable_encoder
 from typing import Any, Optional
 from app.core.errors import ErrorDefinition
 
-def ok(message: str = "Success", item: Any = None, status_code: int = 200) -> JSONResponse:
-    """Returns a standardized successful JSON response."""
-    return JSONResponse(
-        status_code=status_code,
-        content=jsonable_encoder({"success": True, "message": message, "data": item or {}})
-    )
+def ok(message: str = "Success", item: Any = None) -> dict:
+    """Returns a standardized successful dict response (to be filtered by response_model)."""
+    return {"success": True, "message": message, "data": item}
 
 def build_error_dict(
     error_def: ErrorDefinition, 
