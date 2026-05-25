@@ -1,6 +1,6 @@
 // src/pages/dashboard/components/ChatInput.tsx
 import { KeyboardEvent, useRef, useEffect } from 'react'
-import { Send, Mic, Square } from 'lucide-react'
+import { Send, Square } from 'lucide-react'
 
 interface Props {
   value:     string
@@ -52,25 +52,7 @@ export function ChatInput({ value, onChange, onSend, onStop, isLoading }: Props)
       }}
       className="sm:px-5 sm:py-3"
     >
-      {/* Mic — hidden on xs, shown sm+ */}
-      <button
-        aria-label="Record voice message"
-        className="hidden sm:flex"
-        style={{
-          width: 42, height: 42,
-          borderRadius: 12,
-          border: '1px solid var(--color-border)',
-          background: 'var(--color-surface)',
-          cursor: 'pointer',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--color-text-secondary)',
-          flexShrink: 0,
-          marginBottom: 1,
-        }}
-      >
-        <Mic size={17} />
-      </button>
+      {/* (voice recording removed) */}
 
       {/* Textarea wrapper */}
       <div

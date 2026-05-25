@@ -18,7 +18,7 @@ export function Sidebar() {
   const navigate = useNavigate()
 
   return (
-    <aside className="flex h-screen min-h-screen w-[260px] flex-col overflow-y-auto border-r border-slate-800/80 bg-slate-950 px-4 py-6 text-slate-100">
+    <aside className="flex h-full min-h-full w-[260px] flex-col overflow-y-auto border-r border-slate-800/80 bg-slate-950 px-4 py-6 text-slate-100">
       <div className="mb-8 px-2">
         <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Main</p>
         <div className="mt-4 space-y-2">

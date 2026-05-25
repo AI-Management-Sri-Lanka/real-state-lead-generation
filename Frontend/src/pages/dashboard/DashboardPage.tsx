@@ -91,8 +91,9 @@ const statCards: StatCard[] = [
 ];
 
 const sourceBars: SourceBar[] = [
-  { source: "Facebook", percentage: 68, color: "#4f7df3" },
-  { source: "Instagram", percentage: 32, color: "#f5a623" },
+  { source: "Facebook", percentage: 60, color: "#4f7df3" },
+  { source: "Instagram", percentage: 30, color: "#f5a623" },
+  { source: "TikTok", percentage: 10, color: "#a78bfa" },
 ];
 
 const scoreBreakdown: ScoreBreakdown[] = [
