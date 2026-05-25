@@ -9,6 +9,7 @@ from app.core.logger import get_logger
 import uuid
 from app.db.base_class import Base
 from app.db.session import engine
+from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="Real Estate Lead Generation API",
@@ -38,6 +39,9 @@ async def app_error_handler(request: Request, exc: AppException):
         logger.warning(log_msg)
     else:
         logger.info(log_msg)
+        
+    if getattr(error_def, "alert_required", False) and getattr(error_def, "severity", "") == "critical":
+        logger.critical(f"ALERT REQUIRED: {error_def.code} occurred. Request ID: {request_id}")
         
     error_dict = build_error_dict(error_def, request_id)
     return fail(error_dict=error_dict, status_code=error_def.http_status)
@@ -74,6 +78,33 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     
     return fail(error_dict=error_dict, status_code=exc.status_code)
 
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    request_id = getattr(request.state, "request_id", None)
+    logger.error(f"[{request_id}] Database error at {request.url.path}: {str(exc)}")
+    
+    error_def = AppError.DB_INTEGRITY_ERROR
+    error_dict = build_error_dict(error_def, request_id)
+    error_dict["message"] = "A database error occurred. Please try again later."
+    
+    return fail(error_dict=error_dict, status_code=500)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    request_id = getattr(request.state, "request_id", None)
+    logger.exception(f"[{request_id}] Unhandled server error at {request.url.path}: {str(exc)}")
+    
+    error_dict = {
+        "code": "SYS-500",
+        "message": "An internal server error occurred.",
+        "category": "system_error",
+        "severity": "critical",
+        "module": "system",
+        "recommended_action": "Contact support if the issue persists.",
+        "request_id": request_id
+    }
+    return fail(error_dict=error_dict, status_code=500)
+
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
@@ -94,8 +125,13 @@ app.include_router(auth.router)
 @app.on_event("startup")
 async def startup():
     """Create database tables on startup."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables verified successfully.")
+    except Exception as e:
+        logger.error(f"Failed to connect to the database or create tables on startup: {e}")
+        logger.warning("The application has started, but database-dependent endpoints will fail.")
 
 
 @app.get("/health")

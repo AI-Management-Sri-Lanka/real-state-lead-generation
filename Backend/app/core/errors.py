@@ -76,6 +76,20 @@ class AppError:
         alert_required=True,
         http_status=400
     )
+
+    SYS_DATABASE_UNAVAILABLE = ErrorDefinition(
+        code="SYS-002",
+        name="Database Unavailable",
+        category="system_error",
+        severity="critical",
+        module="database",
+        user_message="Service temporarily unavailable.",
+        internal_message="Database connection failed or timed out.",
+        recommended_action="Contact support if the issue persists.",
+        log_level="error",
+        alert_required=True,
+        http_status=503
+    )
     
     VALIDATION_ERROR = ErrorDefinition(
         code="VAL-001",
