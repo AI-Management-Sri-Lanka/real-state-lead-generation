@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import auth
 from app.db.base_class import Base
 from app.db.session import engine
+from app.api.v1.session_router import router as session_router
 
 app = FastAPI(
     title="Real Estate Lead Generation API",
@@ -25,7 +26,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router)
-
+app.include_router(session_router) 
 
 @app.on_event("startup")
 async def startup():
