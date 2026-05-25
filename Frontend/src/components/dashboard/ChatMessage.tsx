@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { ClipboardCopy, Check } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
 
 type ChatMessageType = {
   id: string
@@ -16,7 +17,9 @@ type ChatMessageProps = {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
+  const [theme] = useTheme()
   const isAssistant = message.role === 'assistant'
+  const isLightTheme = theme === 'light'
 
   async function handleCopy() {
     try {
@@ -31,8 +34,12 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <article
       aria-label={isAssistant ? 'AI response' : 'Your message'}
-      className={`group max-w-[85%] ${isAssistant ? 'self-start' : 'self-end'} rounded-[28px] border p-5 shadow-xl transition ${
-        isAssistant ? 'border-slate-800 bg-slate-950 text-slate-100' : 'border-transparent bg-gradient-to-br from-brand to-violet-500 text-white'
+      className={`group max-w-[85%] ${isAssistant ? 'self-start' : 'self-end'} rounded-[28px] border p-5 transition ${
+        isAssistant
+          ? 'border-slate-800 bg-slate-950 text-slate-100 shadow-xl'
+          : isLightTheme
+          ? 'border-slate-200 bg-white text-slate-950 shadow-sm'
+          : 'border-slate-800 bg-blue-950 text-white shadow-xl'
       }`}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -52,7 +59,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
         )}
       </div>
 
-      <div className={`whitespace-pre-wrap text-sm leading-7 ${message.isTyping ? 'text-slate-400' : 'text-slate-100'}`}>
+      <div
+        className={`whitespace-pre-wrap text-sm leading-7 ${message.isTyping
+          ? isLightTheme
+            ? 'text-slate-500'
+            : 'text-slate-400'
+          : isLightTheme
+            ? 'text-slate-950'
+            : 'text-white'}`}
+      >
         {message.isTyping ? 'AI is thinking...' : message.content}
       </div>
 

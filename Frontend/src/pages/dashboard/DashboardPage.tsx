@@ -253,7 +253,7 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              <div style={{ marginTop: 22, textAlign: "right" }}>
+              {/* <div style={{ marginTop: 22, textAlign: "right" }}>
                 <a href="/leads" style={{
                   fontSize: 13,
                   fontWeight: 600,
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                 }}>
                   View all leads →
                 </a>
-              </div>
+              </div> */}
             </div>
           </div>
       </div>

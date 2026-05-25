@@ -111,7 +111,7 @@ export default function Dashboard() {
               <div className="min-w-0">
                 {/* Friendly greeting — readable size, not all-caps tiny text */}
                 <p className="text-sm font-medium text-slate-400">
-                  Good morning, <span className="text-white">{user?.name ?? 'Agent'}</span> 👋
+                  Good morning,  👋
                 </p>
                 <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
                   Welcome back to LeadAI.
@@ -124,9 +124,9 @@ export default function Dashboard() {
                   {today}
                 </p>
               </div>
-              <button className="flex-shrink-0 self-start rounded-2xl bg-brand px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:opacity-90 sm:self-auto">
+              {/* <button className="flex-shrink-0 self-start rounded-2xl bg-brand px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:opacity-90 sm:self-auto">
                 Dashboard overview
-              </button>
+              </button> */}
             </div>
           </section>
 
@@ -266,11 +266,11 @@ export default function Dashboard() {
             </div>
 
             {/* CTA */}
-            <div className="mt-5 flex justify-end">
+            {/* <div className="mt-5 flex justify-end">
               <button className="inline-flex items-center gap-2 rounded-2xl bg-brand px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:opacity-90">
                 View all leads <ArrowRight size={16} />
               </button>
-            </div>
+            </div> */}
           </section>
 
         </div>
