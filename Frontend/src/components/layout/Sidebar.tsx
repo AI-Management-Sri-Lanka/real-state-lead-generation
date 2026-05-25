@@ -1,16 +1,16 @@
-// src/components/layout/Sidebar.tsx  — matches LeadAI screenshot (white, left nav)
+// src/components/layout/Sidebar.tsx
+import PropTypes from 'prop-types'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, MessageSquare, Search, BarChart2, Settings, LogOut } from 'lucide-react'
-import { Logo }    from '@/components/ui/Logo'
-import { Avatar }  from '@/components/ui/Avatar'
+import { LayoutDashboard, MessageSquare, Settings, LogOut } from 'lucide-react'
+import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/hooks/useAuth'
 
 const MAIN_NAV = [
-  { to:'/dashboard',              icon:LayoutDashboard, label:'Dashboard' },
-  { to:'/dashboard/ai-assistant', icon:MessageSquare,   label:'AI Chat' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard/ai-assistant', icon: MessageSquare, label: 'AI Chat' },
 ]
 const ACCOUNT_NAV = [
-  { to:'/dashboard/settings', icon:Settings, label:'Settings' },
+  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ]
 
 export function Sidebar() {
@@ -18,70 +18,74 @@ export function Sidebar() {
   const navigate = useNavigate()
 
   return (
-    <aside style={{ width:220, minWidth:220, height:'100vh', background:'var(--color-surface)', borderRight:'1px solid var(--color-border)', display:'flex', flexDirection:'column', padding:'0 0 20px', position:'sticky', top:0, fontFamily:'var(--font-sans)' }}>
-      {/* Logo */}
-      <div style={{ padding:'20px 20px 12px' }}>
-        <Logo size="md" />
+    <aside className="flex h-screen min-h-screen w-[260px] flex-col overflow-y-auto border-r border-slate-800/80 bg-slate-950 px-4 py-6 text-slate-100">
+      <div className="mb-8 px-2">
+        <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Main</p>
+        <div className="mt-4 space-y-2">
+          {MAIN_NAV.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/dashboard'}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium transition ${
+                  isActive
+                    ? 'border-l-4 border-brand bg-slate-900 text-brand'
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                }`
+              }
+            >
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          ))}
+        </div>
       </div>
 
-      {/* MAIN section */}
-      <div style={{ padding:'12px 12px 0' }}>
-        <div style={{ fontSize:11, fontWeight:600, color:'var(--color-text-placeholder)', letterSpacing:'0.08em', padding:'0 8px 8px', textTransform:'uppercase' }}>Main</div>
-        {MAIN_NAV.map(({ to, icon:Icon, label }) => (
-          <NavLink key={to} to={to} end={to==='/dashboard'}
-            style={({ isActive }) => ({
-              display:'flex', alignItems:'center', gap:10,
-              padding:'9px 12px', borderRadius:10, marginBottom:2,
-              textDecoration:'none', fontSize:14, fontWeight:500,
-              color: isActive ? 'var(--color-brand)' : 'var(--color-text-secondary)',
-              background: isActive ? 'var(--color-nav-active-bg)' : 'transparent',
-              transition:'all 0.12s',
-            })}
-            onMouseEnter={e => { const a = e.currentTarget as HTMLElement; if (!a.style.background.includes('EEEEFF')) { a.style.background='var(--color-sidebar-hover)'; a.style.color='var(--color-text-primary)' } }}
-            onMouseLeave={e => { const a = e.currentTarget as HTMLElement; if (!a.style.background.includes('EEEEFF')) { a.style.background='transparent'; a.style.color='var(--color-text-secondary)' } }}
+      <div className="mb-6 px-2">
+        <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Account</p>
+        <div className="mt-4 space-y-2">
+          {ACCOUNT_NAV.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium transition ${
+                  isActive
+                    ? 'border-l-4 border-brand bg-slate-900 text-brand'
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                }`
+              }
+            >
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+                signOut()
+                navigate('/auth/signin')
+              }}
+            className="flex w-full items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-slate-200"
           >
-            <Icon size={17} />
-            {label}
-          </NavLink>
-        ))}
+            <LogOut size={18} />
+            Sign out
+          </button>
+        </div>
       </div>
 
-      {/* ACCOUNT section */}
-      <div style={{ padding:'16px 12px 0' }}>
-        <div style={{ fontSize:11, fontWeight:600, color:'var(--color-text-placeholder)', letterSpacing:'0.08em', padding:'0 8px 8px', textTransform:'uppercase' }}>Account</div>
-        {ACCOUNT_NAV.map(({ to, icon:Icon, label }) => (
-          <NavLink key={to} to={to}
-            style={({ isActive }) => ({
-              display:'flex', alignItems:'center', gap:10,
-              padding:'9px 12px', borderRadius:10, marginBottom:2,
-              textDecoration:'none', fontSize:14, fontWeight:500,
-              color: isActive ? 'var(--color-brand)' : 'var(--color-text-secondary)',
-              background: isActive ? 'var(--color-nav-active-bg)' : 'transparent',
-              transition:'all 0.12s',
-            })}
-          >
-            <Icon size={17} /> {label}
-          </NavLink>
-        ))}
-        <button onClick={() => { signOut(); navigate('/signin') }}
-          style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'9px 12px', borderRadius:10, background:'none', border:'none', cursor:'pointer', color:'var(--color-text-secondary)', fontSize:14, fontWeight:500, fontFamily:'var(--font-sans)', transition:'all 0.12s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background='var(--color-sidebar-hover)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background='none' }}
-        >
-          <LogOut size={17} /> Sign out
-        </button>
-      </div>
-
-      <div style={{ flex:1 }} />
-
-      {/* User card */}
-      <div style={{ margin:'0 12px', padding:'12px', borderRadius:12, background:'var(--color-bg-muted)', border:'1px solid var(--color-border)', display:'flex', alignItems:'center', gap:10 }}>
-        <Avatar name={user?.name ?? 'User'} size={32} />
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:13, fontWeight:600, color:'var(--color-text-heading)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.name ?? 'User'}</div>
-          <div style={{ fontSize:11, color:'var(--color-text-placeholder)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.email}</div>
+      <div className="mt-auto rounded-[28px] border border-slate-800/90 bg-slate-900/95 p-4">
+        <div className="flex items-center gap-3">
+          <Avatar name={user?.name ?? 'User'} size={44} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-white">{user?.name ?? 'User'}</p>
+            <p className="truncate text-xs text-slate-500">{user?.email ?? 'hello@leadai.com'}</p>
+          </div>
         </div>
       </div>
     </aside>
   )
 }
+
+Sidebar.propTypes = {}

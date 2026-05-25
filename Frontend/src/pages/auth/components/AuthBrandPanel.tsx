@@ -6,11 +6,12 @@ interface AuthBrandPanelProps {
   heading:    React.ReactNode
   subheading: string
   bullets:    string[]
+  className?: string
 }
 
-export function AuthBrandPanel({ heading, subheading, bullets }: AuthBrandPanelProps) {
+export function AuthBrandPanel({ heading, subheading, bullets, className }: AuthBrandPanelProps) {
   return (
-    <div style={{
+    <div className={["auth-brand-panel", className ?? ""].join(' ')} style={{
       flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end',
       padding:'48px 56px',
       background:'linear-gradient(160deg,#1E1B8B 0%,#3D3BF3 45%,#00C896 100%)',

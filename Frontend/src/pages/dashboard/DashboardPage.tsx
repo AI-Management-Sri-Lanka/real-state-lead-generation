@@ -132,47 +132,48 @@ const scoreBadgeStyle = (score: Lead["score"]): React.CSSProperties => {
 export default function DashboardPage() {
   return (
     <DashboardLayout activeNav="Dashboard">
-      {/* Greeting */}
-          <div style={{ marginBottom: 28 }}>
-            <h1 style={{ fontSize: 26, fontWeight: 700, color: "#1a1d27", margin: 0, letterSpacing: "-0.01em" }}>
+      <div style={{ padding: 24, paddingBottom: 36, minHeight: '100%', boxSizing: 'border-box' }}>
+        {/* Greeting */}
+          <div style={{ marginBottom: 20 }}>
+            <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text-heading)', margin: 0, letterSpacing: '-0.01em' }}>
               Good morning, Asanka 👋
             </h1>
-            <p style={{ marginTop: 6, color: "#8a90a2", fontSize: 14 }}>
+            <p style={{ marginTop: 6, color: 'var(--color-text-secondary)', fontSize: 14 }}>
               Here's what's happening with your leads today.
             </p>
           </div>
 
           {/* Stat Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18, marginBottom: 28 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, marginBottom: 28 }}>
             {statCards.map((card) => (
               <StatCardItem key={card.label} card={card} />
             ))}
           </div>
 
           {/* Bottom Two Columns */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
 
             {/* Leads by Source + Match Score */}
             <div style={{
-              background: "#fff",
-              borderRadius: 16,
-              padding: "24px 28px",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+              background: "var(--color-card-bg)",
+              borderRadius: 20,
+              padding: "28px 28px",
+              boxShadow: "var(--shadow-sm)",
               display: "flex",
               flexDirection: "column",
-              gap: 28,
+              gap: 26,
             }}>
               {/* Leads by Source */}
               <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1d27", marginBottom: 18 }}>Leads by source</h3>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Leads by source</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {sourceBars.map((bar) => (
                     <div key={bar.source}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, color: "#5a5f72" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, color: 'var(--color-text-secondary)' }}>
                         <span>{bar.source}</span>
                         <span style={{ fontWeight: 600 }}>{bar.percentage}%</span>
                       </div>
-                      <div style={{ height: 8, background: "#f0f1f5", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: 8, background: 'var(--color-bg-muted)', borderRadius: 999, overflow: "hidden" }}>
                         <div style={{
                           height: "100%",
                           width: `${bar.percentage}%`,
@@ -188,15 +189,15 @@ export default function DashboardPage() {
 
               {/* Match Score Breakdown */}
               <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1d27", marginBottom: 18 }}>Match score breakdown</h3>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Match score breakdown</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {scoreBreakdown.map((row) => (
                     <div key={row.label}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, color: "#5a5f72" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, color: 'var(--color-text-secondary)' }}>
                         <span>{row.label}</span>
                         <span style={{ fontWeight: 600 }}>{row.percentage}%</span>
                       </div>
-                      <div style={{ height: 8, background: "#f0f1f5", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: 8, background: 'var(--color-bg-muted)', borderRadius: 999, overflow: "hidden" }}>
                         <div style={{
                           height: "100%",
                           width: `${row.percentage}%`,
@@ -213,12 +214,12 @@ export default function DashboardPage() {
 
             {/* Recent Leads */}
             <div style={{
-              background: "#fff",
-              borderRadius: 16,
-              padding: "24px 28px",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+              background: "var(--color-card-bg)",
+              borderRadius: 20,
+              padding: "28px 28px",
+              boxShadow: "var(--shadow-sm)",
             }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1d27", marginBottom: 18 }}>Recent leads</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Recent leads</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {recentLeads.map((lead) => (
                   <div key={lead.id} style={{
@@ -243,8 +244,8 @@ export default function DashboardPage() {
                         {lead.initials}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: "#1a1d27" }}>{lead.name}</div>
-                        <div style={{ fontSize: 12, color: "#8a90a2" }}>{lead.location} · {lead.amount}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--color-text-heading)' }}>{lead.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{lead.location} · {lead.amount}</div>
                       </div>
                     </div>
                     <span style={scoreBadgeStyle(lead.score)}>{lead.score}</span>
@@ -252,11 +253,11 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              <div style={{ marginTop: 22, textAlign: "right" }}>
+              {/* <div style={{ marginTop: 22, textAlign: "right" }}>
                 <a href="/leads" style={{
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#4f7df3",
+                  color: 'var(--color-brand)',
                   textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
@@ -264,10 +265,10 @@ export default function DashboardPage() {
                 }}>
                   View all leads →
                 </a>
-              </div>
+              </div> */}
             </div>
-
           </div>
+      </div>
     </DashboardLayout>
   )
 }
@@ -277,20 +278,20 @@ export default function DashboardPage() {
 function StatCardItem({ card }: { card: StatCard }) {
   return (
     <div style={{
-      background: "#fff",
-      borderRadius: 16,
-      padding: "22px 24px",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+      background: "var(--color-card-bg)",
+      borderRadius: 20,
+      padding: "28px 28px",
+      boxShadow: "var(--shadow-sm)",
       display: "flex",
       flexDirection: "column",
-      gap: 10,
+      gap: 12,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "#1a1d27", letterSpacing: "-0.02em", lineHeight: 1 }}>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--color-text-heading)', letterSpacing: "-0.02em", lineHeight: 1 }}>
             {card.value}
           </div>
-          <div style={{ fontSize: 13, color: "#8a90a2", marginTop: 4 }}>{card.label}</div>
+          <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 4 }}>{card.label}</div>
         </div>
         <div style={{
           width: 40,
