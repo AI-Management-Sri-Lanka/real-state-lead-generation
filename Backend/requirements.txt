@@ -3,6 +3,8 @@ langchain-core
 langchain-community
 langchain-openai
 
+qdrant-client
+
 fastapi
 uvicorn
 
