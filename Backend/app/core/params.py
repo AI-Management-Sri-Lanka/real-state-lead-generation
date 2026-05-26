@@ -30,5 +30,6 @@ SCRAPING_TIMEOUT = _get_nested(_PARAMS, "scraping", "timeout", default=30)
 
 VECTOR_SEARCH_TOP_K = _get_nested(_PARAMS, "vector_search", "top_k", default=10)
 VECTOR_SEARCH_SIMILARITY_THRESHOLD = _get_nested(_PARAMS, "vector_search", "similarity_threshold", default=0.7)
+VECTOR_SIZE = _get_nested(_PARAMS, "vector_search", "vector_size", default=1536)
 
 
