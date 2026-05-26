@@ -9,7 +9,12 @@ from app.db.base_class import Base
 class Session(Base):
     __tablename__ = "sessions"
 
-    id = Column(Integer, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    @property
+    def session_id(self):
+        return self.id
+        
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # optional: link to auth user
 
     # Social platform info
