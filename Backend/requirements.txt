@@ -22,3 +22,4 @@ python-multipart
 
 # Configuration
 pydantic-settings
+email-validator

@@ -6,6 +6,19 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=255)
 
+    model_config = {
+        "extra": "forbid",
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "full_name": "John Doe",
+                    "email": "user@example.com",
+                    "password": "stringst"
+                }
+            ]
+        }
+    }
+
 class UserResponse(BaseModel):
     id: int
     full_name: str
@@ -13,9 +26,32 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "id": 1,
+                    "full_name": "John Doe",
+                    "email": "user@example.com",
+                    "is_active": True,
+                    "created_at": "2024-05-24T12:00:00Z"
+                }
+            ]
+        }
+    }
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "email": "user@example.com",
+                    "password": "stringst"
+                }
+            ]
+        }
+    }
