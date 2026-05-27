@@ -48,6 +48,7 @@ export function SignUpForm() {
 
   return (
     <>
+
       <div style={{ marginBottom: 32 }}>
         <p
           style={{

@@ -29,7 +29,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Restore session on mount
   useEffect(() => {
-    const stored = localStorage.getItem("aimsl_user");
+    // Development helper: auto-sign-in when running locally
+    // This makes it faster to test protected routes during development only.
+    // It will not run in production builds.
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (import.meta?.env?.DEV) {
+      const devUser = localStorage.getItem('aimsl_user')
+      if (devUser) {
+        try { setUser(JSON.parse(devUser)) } catch { /* ignore */ }
+      } else {
+        const u: User = { id: 'dev', name: 'Developer', email: 'dev@example.com' }
+        setUser(u)
+        localStorage.setItem('aimsl_user', JSON.stringify(u))
+      }
+      setLoading(false)
+      return
+    }
+
+    const stored = localStorage.getItem('aimsl_user')
+
     if (stored) {
       try {
         setUser(JSON.parse(stored));

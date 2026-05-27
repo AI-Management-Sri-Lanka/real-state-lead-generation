@@ -9,7 +9,7 @@ import { Footer }              from './components/Footer'
 
 export default function HomePage() {
   return (
-    <div style={{ minHeight:'100vh', fontFamily:'var(--font-sans)' }}>
+    <div className="home-root" style={{ minHeight:'100vh', fontFamily:'var(--font-sans)' }}>
       <Navbar />
       <HeroSection />
       <Footer />

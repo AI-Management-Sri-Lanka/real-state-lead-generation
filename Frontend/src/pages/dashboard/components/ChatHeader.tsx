@@ -1,17 +1,63 @@
 // src/pages/dashboard/components/ChatHeader.tsx
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Menu } from 'lucide-react'
 
-export function ChatHeader() {
+interface Props {
+  /** Called when the mobile hamburger is tapped to open the session sidebar */
+  onMenuToggle?: () => void
+}
+
+export function ChatHeader({ onMenuToggle }: Props) {
   return (
-    <div style={{ padding:'16px 24px', borderBottom:'1px solid var(--color-border)', display:'flex', alignItems:'center', gap:12, background:'var(--color-surface)' }}>
-      <div style={{ width:40, height:40, borderRadius:12, background:'linear-gradient(135deg,#3D3BF3,#00C896)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 12px rgba(61,59,243,0.3)' }}>
-        <Sparkles size={20} style={{ color:'white' }} />
+    <div
+      style={{
+        padding: '10px 16px',
+        borderBottom: '1px solid var(--color-border)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        background: 'var(--color-surface)',
+        flexShrink: 0,
+      }}
+    >
+      {/*
+       * RESPONSIVE FIX:
+       * Mobile hamburger button — hidden on md+ because the sidebar
+       * is always visible there.  Uses a simple inline media-query via
+       * className (Tailwind).  We rely on `onMenuToggle` being provided
+       * by the parent (AIAssistantPage).
+       */}
+      {onMenuToggle && (
+        <button
+          onClick={onMenuToggle}
+          aria-label="Open chat history"
+          className="mr-1 flex items-center justify-center rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white md:hidden"
+        >
+          <Menu size={18} />
+        </button>
+      )}
+
+      {/* AI brand mark */}
+      <div style={{
+        width: 36, height: 36, borderRadius: 10,
+        background: 'linear-gradient(135deg,#3D3BF3,#00C896)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 2px 10px rgba(61,59,243,0.28)',
+        flexShrink: 0,
+      }}>
+        <Sparkles size={17} style={{ color: 'white' }} />
       </div>
+
+      {/* Title */}
       <div>
-        <div style={{ fontSize:15, fontWeight:700, color:'var(--color-text-heading)' }}>AI Lead Assistant</div>
-        <div style={{ fontSize:12, color:'var(--color-success)', display:'flex', alignItems:'center', gap:5, fontWeight:500 }}>
-          <span style={{ width:7, height:7, borderRadius:'50%', background:'var(--color-success)', display:'inline-block' }} />
-          Online
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-heading)', lineHeight: 1.2 }}>
+          AI Lead Assistant
+        </div>
+        <div style={{
+          fontSize: 11, color: 'var(--color-success)',
+          display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500, marginTop: 2,
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-success)', display: 'inline-block' }} />
+          Online · Sri Lanka market
         </div>
       </div>
     </div>

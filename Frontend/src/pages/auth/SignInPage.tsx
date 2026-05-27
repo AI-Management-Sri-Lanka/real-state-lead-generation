@@ -7,7 +7,7 @@ const HEADING = (<>Find your next <span style={{ color:'#00C896', fontStyle:'ita
 
 export default function SignInPage() {
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:'var(--font-sans)' }}>
+    <div className="auth-root">
       <AuthBrandPanel
         heading={HEADING}
         subheading="Automatically discover qualified leads from Facebook and Instagram using conversational AI."

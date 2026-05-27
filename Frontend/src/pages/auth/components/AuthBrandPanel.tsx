@@ -6,21 +6,19 @@ interface AuthBrandPanelProps {
   heading:    React.ReactNode
   subheading: string
   bullets:    string[]
+  className?: string
 }
 
-export function AuthBrandPanel({ heading, subheading, bullets }: AuthBrandPanelProps) {
+export function AuthBrandPanel({ heading, subheading, bullets, className }: AuthBrandPanelProps) {
   return (
-    <div style={{
-      flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end',
-      padding:'48px 56px',
-      background:'linear-gradient(160deg,#1E1B8B 0%,#3D3BF3 45%,#00C896 100%)',
+    <div className={`auth-brand-panel ${className ?? ""}`} style={{
       position:'relative', overflow:'hidden',
     }}>
       {/* Grid overlay */}
       <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.05) 1px,transparent 1px)', backgroundSize:'40px 40px', pointerEvents:'none' }} />
 
       {/* Logo top-left */}
-      <div style={{ position:'absolute', top:36, left:48 }}>
+      <div style={{ position:'absolute', top:36, left:48, zIndex:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <div style={{ width:36, height:36, borderRadius:10, background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
@@ -33,7 +31,7 @@ export function AuthBrandPanel({ heading, subheading, bullets }: AuthBrandPanelP
       </div>
 
       {/* Main content — bottom aligned */}
-      <div style={{ position:'relative', zIndex:1 }}>
+      <div style={{ position:'relative', zIndex:1, padding:'48px 56px' }}>
         <h1 style={{ fontSize:42, fontWeight:800, lineHeight:1.15, color:'white', letterSpacing:'-0.03em', marginBottom:16 }}>
           {heading}
         </h1>

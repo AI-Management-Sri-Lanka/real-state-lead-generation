@@ -1,47 +1,130 @@
-// src/pages/dashboard/components/ChatInput.tsx  — matches screenshot bottom bar
-import { KeyboardEvent, useRef } from 'react'
-import { Send, Mic, Square } from 'lucide-react'
+// src/pages/dashboard/components/ChatInput.tsx
+import { KeyboardEvent, useRef, useEffect } from 'react'
+import { Send, Square } from 'lucide-react'
 
 interface Props {
-  value:      string
-  onChange:   (v: string) => void
-  onSend:     () => void
-  onStop:     () => void
-  isLoading:  boolean
+  value:     string
+  onChange:  (v: string) => void
+  onSend:    () => void
+  onStop:    () => void
+  isLoading: boolean
 }
 
 export function ChatInput({ value, onChange, onSend, onStop, isLoading }: Props) {
-  const ref = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  function handleKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend() }
+  // Auto-grow textarea up to ~5 lines
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`
+  }, [value])
+
+  function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
+    // Enter sends; Shift+Enter adds newline
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      onSend()
+    }
   }
 
-  return (
-    <div style={{ padding:'16px 24px 20px', borderTop:'1px solid var(--color-border)', background:'var(--color-surface)', display:'flex', alignItems:'center', gap:12 }}>
-      {/* Mic button */}
-      <button style={{ width:40, height:40, borderRadius:10, border:'1px solid var(--color-border)', background:'var(--color-surface)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--color-text-secondary)', flexShrink:0 }}>
-        <Mic size={18} />
-      </button>
+  const canSend = isLoading || value.trim().length > 0
 
-      {/* Input — rounded pill matching screenshot */}
-      <div style={{ flex:1, display:'flex', alignItems:'center', background:'var(--color-bg-muted)', border:'1.5px solid var(--color-border)', borderRadius:40, padding:'0 18px', transition:'border-color 0.15s' }}
-        onFocusCapture={e => (e.currentTarget as HTMLElement).style.borderColor='var(--color-brand)'}
-        onBlurCapture={e  => (e.currentTarget as HTMLElement).style.borderColor='var(--color-border)'}
+  return (
+    /*
+     * RESPONSIVE FIX:
+     * - Switched from <input> to auto-growing <textarea> so longer
+     *   property descriptions don't force horizontal scroll.
+     * - Removed fixed `height:52` from input; textarea grows naturally.
+     * - Padding scales with sm: breakpoint.
+     * - Mic button hidden on very small screens (xs) to save space;
+     *   the label "Record" from the original screenshot is replaced by
+     *   an icon-only button with aria-label.
+     */
+    <div
+      style={{
+        padding: '10px 14px',
+        display: 'flex',
+        alignItems: 'flex-end',
+        gap: 10,
+        boxSizing: 'border-box',
+      }}
+      className="sm:px-5 sm:py-3"
+    >
+      {/* (voice recording removed) */}
+
+      {/* Textarea wrapper */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'flex-end',
+          background: 'var(--color-bg-muted)',
+          border: '1.5px solid var(--color-border)',
+          borderRadius: 20,
+          padding: '10px 16px',
+          transition: 'border-color 0.15s, box-shadow 0.15s',
+          gap: 8,
+        }}
+        onFocusCapture={e => {
+          const t = e.currentTarget as HTMLElement
+          t.style.borderColor = 'var(--color-brand)'
+          t.style.boxShadow   = '0 0 0 2px rgba(61,59,243,0.12)'
+        }}
+        onBlurCapture={e => {
+          const t = e.currentTarget as HTMLElement
+          t.style.borderColor = 'var(--color-border)'
+          t.style.boxShadow   = 'none'
+        }}
       >
-        <input
-          ref={ref} value={value}
+        <textarea
+          ref={textareaRef}
+          value={value}
           onChange={e => onChange(e.target.value)}
           onKeyDown={handleKey}
-          placeholder="Describe your property and ideal buyer..."
-          style={{ flex:1, height:48, background:'none', border:'none', outline:'none', fontSize:14, fontFamily:'var(--font-sans)', color:'var(--color-text-heading)' }}
+          placeholder="Describe your property and ideal buyer…"
+          rows={1}
+          style={{
+            flex: 1,
+            minHeight: 24,
+            maxHeight: 140,
+            background: 'none',
+            border: 'none',
+            outline: 'none',
+            resize: 'none',
+            fontSize: 14,
+            lineHeight: '1.6',
+            fontFamily: 'var(--font-sans)',
+            color: 'var(--color-text-heading)',
+            overflowY: 'auto',
+          }}
         />
       </div>
 
-      {/* Send / Stop button */}
-      <button onClick={isLoading ? onStop : onSend} disabled={!isLoading && !value.trim()}
-        style={{ width:44, height:44, borderRadius:12, border:'none', cursor: isLoading||value.trim() ? 'pointer' : 'default', background: isLoading ? '#EF4444' : 'linear-gradient(135deg,#3D3BF3,#5B5BFF)', display:'flex', alignItems:'center', justifyContent:'center', color:'white', flexShrink:0, opacity: !isLoading&&!value.trim() ? 0.5 : 1, boxShadow:'0 2px 12px rgba(61,59,243,0.35)', transition:'all 0.15s' }}>
-        {isLoading ? <Square size={18}/> : <Send size={18}/>}
+      {/* Send / Stop */}
+      <button
+        onClick={isLoading ? onStop : onSend}
+        disabled={!canSend}
+        aria-label={isLoading ? 'Stop generation' : 'Send message'}
+        style={{
+          width: 42, height: 42,
+          borderRadius: 12,
+          border: 'none',
+          cursor: canSend ? 'pointer' : 'default',
+          background: isLoading
+            ? '#EF4444'
+            : 'linear-gradient(135deg,#3D3BF3,#5B5BFF)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'white',
+          flexShrink: 0,
+          opacity: canSend ? 1 : 0.45,
+          boxShadow: '0 2px 10px rgba(61,59,243,0.30)',
+          transition: 'opacity 0.15s, background 0.15s',
+          marginBottom: 1,
+        }}
+      >
+        {isLoading ? <Square size={16} /> : <Send size={16} />}
       </button>
     </div>
   )

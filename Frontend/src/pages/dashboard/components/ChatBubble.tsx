@@ -18,7 +18,7 @@ interface Props { msg: Message; userName: string }
 export function ChatBubble({ msg, userName }: Props) {
   const isUser = msg.role === 'user'
   return (
-    <div style={{ display:'flex', gap:12, flexDirection: isUser ? 'row-reverse' : 'row', alignItems:'flex-start', animation:'fadeIn 0.2s ease-out' }}>
+    <div style={{ display:'flex', gap:14, flexDirection: isUser ? 'row-reverse' : 'row', alignItems:'flex-start', animation:'fadeIn 0.2s ease-out' }}>
       {/* Avatar */}
       {isUser
         ? <Avatar name={userName} size={32} />
@@ -39,12 +39,12 @@ export function ChatBubble({ msg, userName }: Props) {
           </div>
         )}
         <div style={{
-          padding:'12px 16px', borderRadius: isUser ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+          padding:'16px 20px', borderRadius: isUser ? '20px 6px 20px 20px' : '6px 20px 20px 20px',
           background: isUser ? 'linear-gradient(135deg,#3D3BF3,#5B5BFF)' : 'var(--color-surface)',
           border: isUser ? 'none' : '1px solid var(--color-border)',
           color: isUser ? 'white' : 'var(--color-text-primary)',
-          fontSize:14, lineHeight:1.65, fontFamily:'var(--font-sans)',
-          boxShadow: isUser ? '0 2px 12px rgba(61,59,243,0.25)' : 'var(--shadow-sm)',
+          fontSize:14, lineHeight:1.7, fontFamily:'var(--font-sans)',
+          boxShadow: isUser ? '0 12px 30px rgba(61,59,243,0.18)' : '0 12px 30px rgba(3,13,33,0.07)',
         }}>
           {msg.isStreaming ? <TypingIndicator /> : <div>{renderContent(msg.content)}</div>}
           <div style={{ fontSize:11, marginTop:6, color: isUser ? 'rgba(255,255,255,0.6)' : 'var(--color-text-placeholder)', textAlign:'right' }}>

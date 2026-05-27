@@ -60,8 +60,8 @@ export function SignInForm() {
             error={form.touched.password ? form.errors.password : undefined} />
         </div>
 
-        <Button type="submit" fullWidth size="lg" loading={loading} iconRight={!loading ? <ArrowRight size={17}/> : undefined} style={{ marginTop:4, height:54, fontSize:16, fontWeight:700, borderRadius:12 }}>
-          <Link to="/dashboard/ai-assistant">{loading ? 'Signing in…' : 'Sign in'}</Link>
+        <Button type="submit" fullWidth size="lg" loading={loading} iconRight={!loading ? <ArrowRight size={17}/> : undefined} style={{ marginTop:4, height:54, fontSize:16, fontWeight:700, borderRadius:12, color:'#fff' }}>
+          {loading ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
 
