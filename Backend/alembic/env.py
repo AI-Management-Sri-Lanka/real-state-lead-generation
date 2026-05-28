@@ -11,6 +11,7 @@ from sqlalchemy import pool, create_engine
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 
 from alembic import context
+from app.models import session
 
 # --- IMPORTANT: Import your Base and ALL your models here ---
 # This is how Alembic discovers your database tables (e.g., User, Lead)
