@@ -40,16 +40,15 @@ class MessageOut(BaseModel):
 
 # ── Session ───────────────────────────────────────────────────────────────────
 class SessionCreate(BaseModel):
-    lead: LeadProfile
+    user_id: int
+    title: Optional[str] = "New Chat"
 
 
 class SessionOut(BaseModel):
     session_id: str
-    platform: str
-    platform_user_id: str
-    lead_name: Optional[str]
-    lead_profile: dict
-    messages: List[Any]
+    user_id: Optional[int] = None
+    title: str
+    messages: List[MessageOut]
     created_at: datetime
     updated_at: datetime
     expires_at: datetime
@@ -60,9 +59,8 @@ class SessionOut(BaseModel):
 
 class SessionSummary(BaseModel):
     session_id: str
-    platform: str
-    platform_user_id: str
-    lead_name: Optional[str]
+    user_id: Optional[int] = None
+    title: str
     message_count: int
     updated_at: datetime
-    expires_at: datetime
+    expires_at: datetime
