@@ -38,7 +38,7 @@ class ChatResponse(BaseModel):
 
 
 # Routes 
-@router.post("/", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
 async def post_chat(
     request: ChatRequest,
     db: AsyncSession = Depends(get_db)
