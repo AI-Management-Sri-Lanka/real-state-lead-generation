@@ -1,7 +1,5 @@
 from typing import List
-
 from qdrant_client.models import Distance, VectorParams, PointStruct
-
 from app.core.params import VECTOR_SEARCH_TOP_K, VECTOR_SIZE
 from app.core.qdrant_db_client import get_qdrant_client
 from app.core.embedder import get_embedder
@@ -14,10 +12,15 @@ class RankLeads:
         self.collection_name = "leads"
 
     def _prepare_collection(self):
-        self.qdrant_client.create_collection(
-            collection_name=self.collection_name,
-            vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
-        )
+        # Check if collection already exists before creating
+        try:
+            self.qdrant_client.get_collection(collection_name=self.collection_name)
+        except Exception:
+            # Collection doesn't exist, create it
+            self.qdrant_client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
+            )
 
     def _index_leads(self, leads: List):
         texts = [lead["post"] for lead in leads]
@@ -38,7 +41,16 @@ class RankLeads:
             points=points
         )
 
+    def _get_dummy_leads(self) -> List:
+      """Return dummy leads for testing (web scraping not yet implemented)."""
+      return dummy_scraped_posts
+
+
     def rank_leads(self, query: str, leads: List) -> List:
+        # Use dummy data if no leads provided (web scraping not yet implemented)
+        if not leads:
+            leads = self._get_dummy_leads()
+        
         self._prepare_collection()
         self._index_leads(leads)
 
@@ -61,10 +73,12 @@ class RankLeads:
         
         return ranked_leads
     
-
+ 
+    
 # Testing feat: rank-leads
 if __name__ == "__main__":
     
+# --- Dummy data for testing (to be replaced with actual web scraping later) ---
     dummy_scraped_posts = [
         {
           "username": "colombo_property_hunter",
