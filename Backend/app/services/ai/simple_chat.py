@@ -1,8 +1,8 @@
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from prompts import simple_chat_user_prompt,simple_chat_system_prompt
-from Backend.app.core.llm_provider import get_llm
+from app.services.ai.prompts import simple_chat_user_prompt, simple_chat_system_prompt
+from app.core.llm_provider import get_llm
 
 
 class DirectChatTool:
