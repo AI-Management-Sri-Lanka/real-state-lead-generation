@@ -19,108 +19,226 @@ type Session = {
   messages: ChatMessageType[]
 }
 
-const initialSessions: Session[] = [
-  {
-    id: 'session-1',
-    title: 'Colombo 3BR search',
-    createdAt: 'Today',
-    messages: [
-      { id: 'm-1', role: 'assistant', content: 'Welcome back! Describe your next buyer profile to start a new search.', timestamp: new Date(), isTyping: false },
-    ],
-  },
-  {
-    id: 'session-2',
-    title: 'Nugegoda investor list',
-    createdAt: 'Yesterday',
-    messages: [],
-  },
-]
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 export default function AIChat() {
   const { user } = useAuth()
-  const [sessions, setSessions] = useState<Session[]>(initialSessions)
-  const [activeSessionId, setActiveSessionId] = useState(initialSessions[0].id)
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [activeSessionId, setActiveSessionId] = useState<string>('')
   const [messageText, setMessageText] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
+
+  const userIdInt = typeof user?.id === 'number' ? user.id : 1
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? sessions[0],
     [sessions, activeSessionId],
   )
 
+  // Load sessions from backend on mount/user change
   useEffect(() => {
-    if (!activeSessionId && sessions[0]) {
-      setActiveSessionId(sessions[0].id)
-    }
-  }, [activeSessionId, sessions])
+    async function loadSessions() {
+      try {
+        const res = await fetch(`${BASE_URL}/sessions?user_id=${userIdInt}`)
+        if (!res.ok) throw new Error('Failed to fetch sessions')
+        const data = await res.json()
 
-  function handleNewChat() {
-    const nextId = `session-${Date.now()}`
-    const newSession = {
-      id: nextId,
-      title: 'New chat',
-      createdAt: 'Just now',
-      messages: [],
+        const mappedSessions: Session[] = data.map((s: any) => ({
+          id: s.session_id,
+          title: s.title,
+          createdAt: new Date(s.updated_at).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          messages: []
+        }))
+        setSessions(mappedSessions)
+
+        if (mappedSessions.length > 0) {
+          setActiveSessionId(mappedSessions[0].id)
+        }
+      } catch (err) {
+        console.error('Error loading sessions:', err)
+      }
     }
-    setSessions((current) => [newSession, ...current])
-    setActiveSessionId(nextId)
-    setMessageText('')
-    setActiveMenu(null)
+    if (user) {
+      loadSessions()
+    }
+  }, [user, userIdInt])
+
+  // Load messages for active session
+  useEffect(() => {
+    if (!activeSessionId) return
+
+    async function loadSessionMessages() {
+      try {
+        const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}`)
+        if (!res.ok) throw new Error('Failed to fetch session details')
+        const data = await res.json()
+
+        setSessions(current =>
+          current.map(s =>
+            s.id === activeSessionId
+              ? {
+                ...s,
+                title: data.title,
+                messages: data.messages.map((m: any) => ({
+                  id: m.id || `${Date.now()}-${Math.random()}`,
+                  role: m.role,
+                  content: m.content,
+                  timestamp: new Date(m.timestamp)
+                }))
+              }
+              : s
+          )
+        )
+      } catch (err) {
+        console.error('Error loading session messages:', err)
+      }
+    }
+    loadSessionMessages()
+  }, [activeSessionId])
+
+  async function handleNewChat() {
+    try {
+      const res = await fetch(`${BASE_URL}/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userIdInt,
+          title: 'New chat'
+        })
+      })
+      if (!res.ok) throw new Error('Failed to create session')
+      const data = await res.json()
+
+      const newSession: Session = {
+        id: data.session_id,
+        title: data.title,
+        createdAt: 'Just now',
+        messages: []
+      }
+
+      setSessions((current) => [newSession, ...current])
+      setActiveSessionId(newSession.id)
+      setMessageText('')
+      setActiveMenu(null)
+    } catch (err) {
+      console.error('Error creating new chat:', err)
+    }
   }
 
-  function handleSend() {
+  async function handleSend() {
     const trimmed = messageText.trim()
-    if (!trimmed) return
+    if (!trimmed || !activeSessionId) return
 
-    const userMessage: ChatMessageType = { id: `msg-${Date.now()}`, role: 'user', content: trimmed, timestamp: new Date(), isTyping: false }
+    const userMessage: ChatMessageType = {
+      id: `msg-${Date.now()}`,
+      role: 'user',
+      content: trimmed,
+      timestamp: new Date()
+    }
 
     setSessions((current) =>
       current.map((session) =>
-        session.id === activeSession.id ? { ...session, messages: [...session.messages, userMessage] } : session,
+        session.id === activeSessionId
+          ? { ...session, messages: [...session.messages, userMessage] }
+          : session,
       ),
     )
     setMessageText('')
     setIsTyping(true)
 
-    window.setTimeout(() => {
+    try {
+      const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: 'user',
+          content: trimmed
+        })
+      })
+
+      if (!res.ok) throw new Error('Failed to send message')
+      const data = await res.json()
+
       const aiMessage: ChatMessageType = {
-        id: `msg-ai-${Date.now()}`,
+        id: data.id || `msg-ai-${Date.now()}`,
         role: 'assistant',
-        content: 'I’m processing the search and matching the best leads for your Sri Lanka property request.',
-        timestamp: new Date(),
-        isTyping: false,
+        content: data.content,
+        timestamp: new Date(data.timestamp)
       }
 
       setSessions((current) =>
         current.map((session) =>
-          session.id === activeSession.id
+          session.id === activeSessionId
             ? { ...session, messages: [...session.messages, aiMessage] }
             : session,
         ),
       )
+    } catch (err) {
+      console.error('Error sending message:', err)
+      const errorMessage: ChatMessageType = {
+        id: `msg-error-${Date.now()}`,
+        role: 'assistant',
+        content: `Error: Could not connect to the assistant server. Please try again.`,
+        timestamp: new Date()
+      }
+      setSessions((current) =>
+        current.map((session) =>
+          session.id === activeSessionId
+            ? { ...session, messages: [...session.messages, errorMessage] }
+            : session,
+        ),
+      )
+    } finally {
       setIsTyping(false)
-    }, 1400)
-  }
-
-
-
-  function handleRename(sessionId: string) {
-    const title = window.prompt('Rename chat session', sessions.find((session) => session.id === sessionId)?.title || '')
-    if (!title) return
-    setSessions((current) =>
-      current.map((session) => (session.id === sessionId ? { ...session, title } : session)),
-    )
-    setActiveMenu(null)
-  }
-
-  function handleDelete(sessionId: string) {
-    setSessions((current) => current.filter((session) => session.id !== sessionId))
-    if (activeSessionId === sessionId && sessions.length > 1) {
-      const next = sessions.find((session) => session.id !== sessionId)
-      setActiveSessionId(next?.id || '')
     }
-    setActiveMenu(null)
+  }
+
+  async function handleRename(sessionId: string) {
+    const sessionToRename = sessions.find((s) => s.id === sessionId)
+    const title = window.prompt('Rename chat session', sessionToRename?.title || '')
+    if (!title || !title.trim()) return
+
+    try {
+      const res = await fetch(`${BASE_URL}/sessions/${sessionId}?title=${encodeURIComponent(title.trim())}`, {
+        method: 'PATCH'
+      })
+      if (!res.ok) throw new Error('Failed to rename session')
+
+      setSessions((current) =>
+        current.map((session) =>
+          session.id === sessionId ? { ...session, title: title.trim() } : session
+        ),
+      )
+      setActiveMenu(null)
+    } catch (err) {
+      console.error('Error renaming session:', err)
+    }
+  }
+
+  async function handleDelete(sessionId: string) {
+    try {
+      const res = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) throw new Error('Failed to delete session')
+
+      setSessions((current) => current.filter((session) => session.id !== sessionId))
+      if (activeSessionId === sessionId && sessions.length > 1) {
+        const next = sessions.find((session) => session.id !== sessionId)
+        setActiveSessionId(next?.id || '')
+      } else if (sessions.length <= 1) {
+        setActiveSessionId('')
+      }
+      setActiveMenu(null)
+    } catch (err) {
+      console.error('Error deleting session:', err)
+    }
   }
 
   function openMenu(event: MouseEvent<HTMLButtonElement>, sessionId: string) {
@@ -161,11 +279,10 @@ export default function AIChat() {
                             event.preventDefault()
                             setActiveMenu(session.id)
                           }}
-                          className={`flex w-full items-start justify-between gap-3 rounded-3xl border px-4 py-4 text-left transition ${
-                            active
+                          className={`flex w-full items-start justify-between gap-3 rounded-3xl border px-4 py-4 text-left transition ${active
                               ? 'border-brand bg-slate-900 ring-2 ring-brand/20'
                               : 'border-slate-800/80 bg-slate-950/90 hover:border-slate-600 hover:bg-slate-900'
-                          }`}
+                            }`}
                         >
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-white">{session.title}</p>

@@ -121,6 +121,7 @@ Ensure you are in the `/Backend` directory with your `venv` activated.
 # This command compares your Python models with the empty database
 # and generates the SQL statements needed to create your tables.
 alembic revision --autogenerate -m "Create initial user and lead tables"
+alembic revision --autogenerate -m "create sessions table"
 ```
 
 A new Python file will be created in `alembic/versions/` (e.g., `xxxxxxxxxxxx_create_initial_user_and_lead_tables.py`).
