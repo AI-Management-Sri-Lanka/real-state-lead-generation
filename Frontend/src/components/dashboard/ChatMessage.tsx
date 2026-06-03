@@ -34,7 +34,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <article
       aria-label={isAssistant ? 'AI response' : 'Your message'}
-      className={`group max-w-[85%] ${isAssistant ? 'self-start' : 'self-end'} rounded-[28px] border p-5 transition ${
+      className={`group max-w-[85%] ${isAssistant ? 'self-start' : 'self-end'} rounded-[28px] border p-3 transition ${
         isAssistant
           ? 'border-slate-800 bg-slate-950 text-slate-100 shadow-xl'
           : isLightTheme
@@ -42,11 +42,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
           : 'border-slate-800 bg-blue-950 text-white shadow-xl'
       }`}
     >
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-          {isAssistant ? 'AI assistant' : 'You'}
-        </span>
-        {isAssistant && !message.isTyping && (
+      {isAssistant && !message.isTyping && (
+        <div className="mb-2 flex justify-end">
           <button
             type="button"
             onClick={handleCopy}
@@ -56,8 +53,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
             {copied ? <Check size={12} /> : <ClipboardCopy size={12} />}
             {copied ? 'Copied' : 'Copy'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div
         className={`whitespace-pre-wrap text-sm leading-7 ${message.isTyping
@@ -70,8 +67,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
       >
         {message.isTyping ? 'AI is thinking...' : message.content}
       </div>
-
-      <p className="mt-4 text-right text-[11px] font-medium text-slate-500">{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
     </article>
   )
 }

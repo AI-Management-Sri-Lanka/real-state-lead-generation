@@ -44,10 +44,10 @@ export function ChatInput({ value, onChange, onSend, onStop, isLoading }: Props)
      */
     <div
       style={{
-        padding: '10px 14px',
+        padding: '8px 12px',
         display: 'flex',
         alignItems: 'flex-end',
-        gap: 10,
+        gap: 8,
         boxSizing: 'border-box',
       }}
       className="sm:px-5 sm:py-3"
@@ -63,19 +63,9 @@ export function ChatInput({ value, onChange, onSend, onStop, isLoading }: Props)
           background: 'var(--color-bg-muted)',
           border: '1.5px solid var(--color-border)',
           borderRadius: 20,
-          padding: '10px 16px',
+          padding: '8px 12px',
           transition: 'border-color 0.15s, box-shadow 0.15s',
-          gap: 8,
-        }}
-        onFocusCapture={e => {
-          const t = e.currentTarget as HTMLElement
-          t.style.borderColor = 'var(--color-brand)'
-          t.style.boxShadow   = '0 0 0 2px rgba(61,59,243,0.12)'
-        }}
-        onBlurCapture={e => {
-          const t = e.currentTarget as HTMLElement
-          t.style.borderColor = 'var(--color-border)'
-          t.style.boxShadow   = 'none'
+          gap: 6,
         }}
       >
         <textarea
@@ -83,6 +73,14 @@ export function ChatInput({ value, onChange, onSend, onStop, isLoading }: Props)
           value={value}
           onChange={e => onChange(e.target.value)}
           onKeyDown={handleKey}
+          onFocus={e => {
+            e.currentTarget.style.outline = 'none'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
+          onBlur={e => {
+            e.currentTarget.style.outline = 'none'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
           placeholder="Describe your property and ideal buyer…"
           rows={1}
           style={{
@@ -92,12 +90,14 @@ export function ChatInput({ value, onChange, onSend, onStop, isLoading }: Props)
             background: 'none',
             border: 'none',
             outline: 'none',
+            boxShadow: 'none',
             resize: 'none',
             fontSize: 14,
             lineHeight: '1.6',
             fontFamily: 'var(--font-sans)',
             color: 'var(--color-text-heading)',
             overflowY: 'auto',
+            WebkitTapHighlightColor: 'transparent',
           }}
         />
       </div>

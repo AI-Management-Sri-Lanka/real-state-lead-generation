@@ -1,403 +1,3 @@
-// import { useEffect, useMemo, useState, type MouseEvent } from 'react'
-// import { Loader2, Plus, Search, Send, MoreVertical, Trash2, Edit2 } from 'lucide-react'
-// import { DashboardLayout } from '@/components/layout/DashboardLayout'
-// import { ChatMessage } from '@/components/dashboard/ChatMessage'
-// import { useAuth } from '@/hooks/useAuth'
-
-// type ChatMessageType = {
-//   id: string
-//   role: 'assistant' | 'user'
-//   content: string
-//   timestamp: Date
-//   isTyping?: boolean
-// }
-
-// type Session = {
-//   id: string
-//   title: string
-//   createdAt: string
-//   messages: ChatMessageType[]
-// }
-
-// const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-
-// export default function AIChat() {
-//   const { user } = useAuth()
-//   const [sessions, setSessions] = useState<Session[]>([])
-//   const [activeSessionId, setActiveSessionId] = useState<string>('')
-//   const [messageText, setMessageText] = useState('')
-//   const [isTyping, setIsTyping] = useState(false)
-//   const [activeMenu, setActiveMenu] = useState<string | null>(null)
-
-//   const userIdInt = typeof user?.id === 'number' ? user.id : 1
-
-//   const activeSession = useMemo(
-//     () => sessions.find((session) => session.id === activeSessionId) ?? sessions[0],
-//     [sessions, activeSessionId],
-//   )
-
-//   // Load sessions from backend on mount/user change
-//   useEffect(() => {
-//     async function loadSessions() {
-//       try {
-//         const res = await fetch(`${BASE_URL}/sessions?user_id=${userIdInt}`)
-//         if (!res.ok) throw new Error('Failed to fetch sessions')
-//         const data = await res.json()
-
-//         const mappedSessions: Session[] = data.map((s: any) => ({
-//           id: s.session_id,
-//           title: s.title,
-//           createdAt: new Date(s.updated_at).toLocaleDateString(undefined, {
-//             month: 'short',
-//             day: 'numeric',
-//             hour: '2-digit',
-//             minute: '2-digit'
-//           }),
-//           messages: []
-//         }))
-//         setSessions(mappedSessions)
-
-//         if (mappedSessions.length > 0) {
-//           setActiveSessionId(mappedSessions[0].id)
-//         }
-//       } catch (err) {
-//         console.error('Error loading sessions:', err)
-//       }
-//     }
-//     if (user) {
-//       loadSessions()
-//     }
-//   }, [user, userIdInt])
-
-//   // Load messages for active session
-//   useEffect(() => {
-//     if (!activeSessionId) return
-
-//     async function loadSessionMessages() {
-//       try {
-//         const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}`)
-//         if (!res.ok) throw new Error('Failed to fetch session details')
-//         const data = await res.json()
-
-//         setSessions(current =>
-//           current.map(s =>
-//             s.id === activeSessionId
-//               ? {
-//                 ...s,
-//                 title: data.title,
-//                 messages: data.messages.map((m: any) => ({
-//                   id: m.id || `${Date.now()}-${Math.random()}`,
-//                   role: m.role,
-//                   content: m.content,
-//                   timestamp: new Date(m.timestamp)
-//                 }))
-//               }
-//               : s
-//           )
-//         )
-//       } catch (err) {
-//         console.error('Error loading session messages:', err)
-//       }
-//     }
-//     loadSessionMessages()
-//   }, [activeSessionId])
-
-//   async function handleNewChat() {
-//     try {
-//       const res = await fetch(`${BASE_URL}/sessions`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({
-//           user_id: userIdInt,
-//           title: 'New chat'
-//         })
-//       })
-//       if (!res.ok) throw new Error('Failed to create session')
-//       const data = await res.json()
-
-//       const newSession: Session = {
-//         id: data.session_id,
-//         title: data.title,
-//         createdAt: 'Just now',
-//         messages: []
-//       }
-
-//       setSessions((current) => [newSession, ...current])
-//       setActiveSessionId(newSession.id)
-//       setMessageText('')
-//       setActiveMenu(null)
-//     } catch (err) {
-//       console.error('Error creating new chat:', err)
-//     }
-//   }
-
-//   async function handleSend() {
-//     const trimmed = messageText.trim()
-//     if (!trimmed || !activeSessionId) return
-
-//     const userMessage: ChatMessageType = {
-//       id: `msg-${Date.now()}`,
-//       role: 'user',
-//       content: trimmed,
-//       timestamp: new Date()
-//     }
-
-//     setSessions((current) =>
-//       current.map((session) =>
-//         session.id === activeSessionId
-//           ? { ...session, messages: [...session.messages, userMessage] }
-//           : session,
-//       ),
-//     )
-//     setMessageText('')
-//     setIsTyping(true)
-
-//     try {
-//       const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}/chat`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({
-//           role: 'user',
-//           content: trimmed
-//         })
-//       })
-
-//       if (!res.ok) throw new Error('Failed to send message')
-//       const data = await res.json()
-
-//       const aiMessage: ChatMessageType = {
-//         id: data.id || `msg-ai-${Date.now()}`,
-//         role: 'assistant',
-//         content: data.content,
-//         timestamp: new Date(data.timestamp)
-//       }
-
-//       setSessions((current) =>
-//         current.map((session) =>
-//           session.id === activeSessionId
-//             ? { ...session, messages: [...session.messages, aiMessage] }
-//             : session,
-//         ),
-//       )
-//     } catch (err) {
-//       console.error('Error sending message:', err)
-//       const errorMessage: ChatMessageType = {
-//         id: `msg-error-${Date.now()}`,
-//         role: 'assistant',
-//         content: `Error: Could not connect to the assistant server. Please try again.`,
-//         timestamp: new Date()
-//       }
-//       setSessions((current) =>
-//         current.map((session) =>
-//           session.id === activeSessionId
-//             ? { ...session, messages: [...session.messages, errorMessage] }
-//             : session,
-//         ),
-//       )
-//     } finally {
-//       setIsTyping(false)
-//     }
-//   }
-
-//   async function handleRename(sessionId: string) {
-//     const sessionToRename = sessions.find((s) => s.id === sessionId)
-//     const title = window.prompt('Rename chat session', sessionToRename?.title || '')
-//     if (!title || !title.trim()) return
-
-//     try {
-//       const res = await fetch(`${BASE_URL}/sessions/${sessionId}?title=${encodeURIComponent(title.trim())}`, {
-//         method: 'PATCH'
-//       })
-//       if (!res.ok) throw new Error('Failed to rename session')
-
-//       setSessions((current) =>
-//         current.map((session) =>
-//           session.id === sessionId ? { ...session, title: title.trim() } : session
-//         ),
-//       )
-//       setActiveMenu(null)
-//     } catch (err) {
-//       console.error('Error renaming session:', err)
-//     }
-//   }
-
-//   async function handleDelete(sessionId: string) {
-//     try {
-//       const res = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
-//         method: 'DELETE'
-//       })
-//       if (!res.ok) throw new Error('Failed to delete session')
-
-//       setSessions((current) => current.filter((session) => session.id !== sessionId))
-//       if (activeSessionId === sessionId && sessions.length > 1) {
-//         const next = sessions.find((session) => session.id !== sessionId)
-//         setActiveSessionId(next?.id || '')
-//       } else if (sessions.length <= 1) {
-//         setActiveSessionId('')
-//       }
-//       setActiveMenu(null)
-//     } catch (err) {
-//       console.error('Error deleting session:', err)
-//     }
-//   }
-
-//   function openMenu(event: MouseEvent<HTMLButtonElement>, sessionId: string) {
-//     event.stopPropagation()
-//     setActiveMenu(activeMenu === sessionId ? null : sessionId)
-//   }
-
-//   return (
-//     <DashboardLayout activeNav="AI Chat">
-//       <div className="min-h-screen bg-page text-slate-100 px-4 pt-8 pb-0 sm:px-6 lg:px-10 xl:px-12">
-//         <div className="mx-auto w-full">
-//           <div className="rounded-[32px] border border-slate-800/80 bg-slate-950/90 shadow-panel overflow-hidden">
-//             <div className="flex flex-col lg:flex-row">
-//               <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-5">
-//                 <div className="flex items-center justify-between gap-3">
-//                   <div>
-//                     <p className="text-xs uppercase tracking-[0.28em] text-slate-500">AI Assistant</p>
-//                     <h2 className="mt-3 text-lg font-semibold text-white">Chat history</h2>
-//                   </div>
-//                   <button
-//                     type="button"
-//                     onClick={handleNewChat}
-//                     className="inline-flex items-center gap-2 rounded-3xl bg-brand px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-indigo-500"
-//                   >
-//                     <Plus size={16} /> New chat
-//                   </button>
-//                 </div>
-
-//                 <div className="mt-6 space-y-3">
-//                   {sessions.map((session) => {
-//                     const active = session.id === activeSession.id
-//                     return (
-//                       <div key={session.id} className="relative">
-//                         <button
-//                           type="button"
-//                           onClick={() => setActiveSessionId(session.id)}
-//                           onContextMenu={(event) => {
-//                             event.preventDefault()
-//                             setActiveMenu(session.id)
-//                           }}
-//                           className={`flex w-full items-start justify-between gap-3 rounded-3xl border px-4 py-4 text-left transition ${active
-//                               ? 'border-brand bg-slate-900 ring-2 ring-brand/20'
-//                               : 'border-slate-800/80 bg-slate-950/90 hover:border-slate-600 hover:bg-slate-900'
-//                             }`}
-//                         >
-//                           <div className="min-w-0">
-//                             <p className="truncate text-sm font-semibold text-white">{session.title}</p>
-//                             <p className="mt-1 text-xs text-slate-500">{session.createdAt}</p>
-//                           </div>
-//                           <button
-//                             type="button"
-//                             onClick={(event) => openMenu(event, session.id)}
-//                             aria-label="Open session options"
-//                             className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-800/80 bg-slate-900 text-slate-400 transition hover:border-slate-600 hover:text-white"
-//                           >
-//                             <MoreVertical size={16} />
-//                           </button>
-//                         </button>
-
-//                         {activeMenu === session.id && (
-//                           <div className="absolute right-4 top-full z-20 mt-2 w-44 rounded-3xl border border-slate-800/80 bg-slate-950 p-2 shadow-panel">
-//                             <button
-//                               type="button"
-//                               onClick={() => handleRename(session.id)}
-//                               className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-900"
-//                             >
-//                               <Edit2 size={16} /> Rename
-//                             </button>
-//                             <button
-//                               type="button"
-//                               onClick={() => handleDelete(session.id)}
-//                               className="mt-1 flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-900"
-//                             >
-//                               <Trash2 size={16} /> Delete
-//                             </button>
-//                           </div>
-//                         )}
-//                       </div>
-//                     )
-//                   })}
-//                 </div>
-//               </div>
-
-//               <div className="flex-1 flex flex-col min-h-0">
-//                 <div className="flex flex-col gap-3 border-b border-slate-800/90 p-6 sm:flex-row sm:items-center sm:justify-between">
-//                   <div>
-//                     <p className="text-xs uppercase tracking-[0.32em] text-slate-500">AI Lead Assistant</p>
-//                     <h1 className="mt-3 text-2xl font-semibold text-white">Ask, refine and qualify leads in Sri Lanka.</h1>
-//                   </div>
-//                 </div>
-
-//                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-//                   <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
-//                     <div className="flex flex-col gap-5">
-//                       {activeSession?.messages.length ? (
-//                         activeSession.messages.map((message) => <ChatMessage key={message.id} message={message} />)
-//                       ) : (
-//                         <div className="grid min-h-[320px] place-items-center rounded-[28px] border border-dashed border-slate-800/90 bg-slate-900/70 p-10 text-center text-slate-400">
-//                           <div className="mx-auto max-w-xl space-y-4">
-//                             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-800 text-brand">
-//                               <Search size={32} />
-//                             </div>
-//                             <p className="text-lg font-semibold text-white">No messages yet</p>
-//                             <p className="text-sm text-slate-500">
-//                               Start a conversation about property leads, buyer profiles, or neighbourhood search criteria.
-//                             </p>
-//                           </div>
-//                         </div>
-//                       )}
-
-//                       {isTyping && (
-//                         <div className="rounded-[28px] border border-slate-800/90 bg-slate-900/90 p-5 text-sm text-slate-400">
-//                           <div className="flex items-center gap-3">
-//                             <Loader2 className="h-4 w-4 animate-spin text-brand" />
-//                             AI is thinking...
-//                           </div>
-//                         </div>
-//                       )}
-//                     </div>
-//                   </div>
-
-//                   <div className="border-t border-slate-800/90 bg-slate-950/95 px-5 py-4 sm:px-6">
-//                     <div className="flex items-center gap-3">
-//                       <div className="flex-1 rounded-full bg-slate-900/95 p-2 shadow-panel">
-//                         <div className="flex items-center gap-3 rounded-full border border-slate-800/80 bg-slate-950 px-4 py-3 shadow-inner">
-//                           <input
-//                             value={messageText}
-//                             onChange={(event) => setMessageText(event.target.value)}
-//                             onKeyDown={(event) => {
-//                               if (event.key === 'Enter' && !event.shiftKey) {
-//                                 event.preventDefault()
-//                                 handleSend()
-//                               }
-//                             }}
-//                             placeholder="Type your request for the AI assistant…"
-//                             className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none"
-//                             aria-label="Type chat message"
-//                           />
-//                           <button
-//                             type="button"
-//                             onClick={handleSend}
-//                             className="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-brand text-slate-950 transition hover:bg-indigo-500"
-//                             aria-label="Send message"
-//                           >
-//                             <Send size={18} />
-//                           </button>
-//                         </div>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </DashboardLayout>
-//   )
-// }
 
 import { useEffect, useMemo, useState, type MouseEvent } from 'react'
 import { Loader2, Plus, Search, Send, MoreVertical, Trash2, Edit2 } from 'lucide-react'
@@ -437,6 +37,16 @@ export default function AIChat() {
     () => sessions.find((s) => s.id === activeSessionId) ?? sessions[0],
     [sessions, activeSessionId],
   )
+
+  function sessionTitleFromMessages(session: Session): string {
+    if (session.title && session.title !== 'New chat') return session.title
+
+    const firstUserMessage = session.messages.find((m) => m.role === 'user' && m.content.trim())
+    if (!firstUserMessage) return session.title || 'New chat'
+
+    const snippet = firstUserMessage.content.trim().replace(/\s+/g, ' ')
+    return snippet.length > 30 ? `${snippet.slice(0, 30)}...` : snippet
+  }
 
   // ── Load sessions on mount ────────────────────────────────────────────────
   // GET /sessions?user_id=<id>
@@ -482,20 +92,20 @@ export default function AIChat() {
 
         // MessageOut: { id, session_id, role, content, timestamp }
         setSessions((prev) =>
-          prev.map((s) =>
-            s.id === activeSessionId
-              ? {
-                  ...s,
-                  title: data.title,
-                  messages: (data.messages ?? []).map((m: any) => ({
-                    id: m.id ?? `${Date.now()}-${Math.random()}`,
-                    role: m.role,
-                    content: m.content,
-                    timestamp: new Date(m.timestamp),
-                  })),
-                }
-              : s,
-          ),
+          prev.map((s) => {
+            if (s.id !== activeSessionId) return s
+            const messages = (data.messages ?? []).map((m: any) => ({
+              id: m.id ?? `${Date.now()}-${Math.random()}`,
+              role: m.role,
+              content: m.content,
+              timestamp: new Date(m.timestamp),
+            }))
+            return {
+              ...s,
+              title: sessionTitleFromMessages({ ...s, title: data.title, messages }),
+              messages,
+            }
+          }),
         )
       } catch (err) {
         console.error('Error loading messages:', err)
@@ -529,8 +139,10 @@ export default function AIChat() {
       setActiveSessionId(newSession.id)
       setMessageText('')
       setActiveMenu(null)
+      return newSession.id
     } catch (err) {
       console.error('Error creating session:', err)
+      return undefined
     }
   }
 
@@ -539,7 +151,15 @@ export default function AIChat() {
   // Returns MessageOut (the AI assistant reply)
   async function handleSend() {
     const trimmed = messageText.trim()
-    if (!trimmed || !activeSessionId) return
+    if (!trimmed) return
+
+    // Ensure there's an active session. If not, create one synchronously
+    // and use the returned id to update messages.
+    let sessionId: string | undefined = activeSessionId || undefined
+    if (!sessionId) {
+      sessionId = await handleNewChat()
+      if (!sessionId) return
+    }
 
     // Optimistically add user message to UI
     const userMsg: ChatMessageType = {
@@ -550,8 +170,12 @@ export default function AIChat() {
     }
     setSessions((prev) =>
       prev.map((s) =>
-        s.id === activeSessionId
-          ? { ...s, messages: [...s.messages, userMsg] }
+        s.id === sessionId
+          ? {
+              ...s,
+              title: sessionTitleFromMessages({ ...s, messages: [...s.messages, userMsg] }),
+              messages: [...s.messages, userMsg],
+            }
           : s,
       ),
     )
@@ -559,7 +183,7 @@ export default function AIChat() {
     setIsTyping(true)
 
     try {
-      const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}/chat`, {
+      const res = await fetch(`${BASE_URL}/sessions/${sessionId}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // MessageIn: { role, content }
@@ -654,10 +278,10 @@ export default function AIChat() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <DashboardLayout activeNav="AI Chat">
-      <div className="min-h-screen bg-page text-slate-100 px-4 pt-8 pb-0 sm:px-6 lg:px-10 xl:px-12">
-        <div className="mx-auto w-full">
-          <div className="rounded-[32px] border border-slate-800/80 bg-slate-950/90 shadow-panel overflow-hidden">
-            <div className="flex flex-col lg:flex-row">
+      <div className="h-full bg-page text-slate-100 px-4 pt-8 pb-0 sm:px-6 lg:px-10 xl:px-12">
+        <div className="mx-auto w-full h-full">
+          <div className="h-full rounded-[32px] border border-slate-800/80 bg-slate-950/90 shadow-panel overflow-hidden flex flex-col">
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
 
               {/* ── Sidebar ── */}
               <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-5">
@@ -691,7 +315,6 @@ export default function AIChat() {
                         >
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-white">{session.title}</p>
-                            <p className="mt-1 text-xs text-slate-500">{session.createdAt}</p>
                           </div>
                           <button
                             type="button"
@@ -737,7 +360,7 @@ export default function AIChat() {
                 </div>
 
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                  <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
+                  <div className="flex-1 overflow-y-auto px-6 pt-0 pb-6 sm:px-8">
                     <div className="flex flex-col gap-5">
                       {activeSession?.messages.length ? (
                         activeSession.messages.map((message) => (
@@ -782,8 +405,17 @@ export default function AIChat() {
                                 handleSend()
                               }
                             }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.outline = 'none'
+                              e.currentTarget.style.boxShadow = 'none'
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.outline = 'none'
+                              e.currentTarget.style.boxShadow = 'none'
+                            }}
                             placeholder="Type your request for the AI assistant…"
-                            className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none"
+                            className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                            style={{ outline: 'none', boxShadow: 'none', WebkitTapHighlightColor: 'transparent' }}
                             aria-label="Type chat message"
                           />
                           <button
