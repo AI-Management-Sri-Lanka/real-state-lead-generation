@@ -1,10 +1,11 @@
 // src/pages/home/components/Navbar.tsx
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
+import { useState } from 'react'
 
 const LINKS: { label: string; to: string }[] = [
   { label: 'Dashboard',    to: '/dashboard' },
@@ -32,6 +33,9 @@ const NAVBAR_STYLES = {
 
 export function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const isHome = location.pathname === '/'
   const showSignIn = !location.pathname.startsWith('/dashboard')
   const isDashboard = location.pathname.startsWith('/dashboard')
   const { toggle: toggleSidebar } = useSidebar()
@@ -60,11 +64,21 @@ export function Navbar() {
 
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle theme={theme} setTheme={setTheme} />
+            <button
+              type="button"
+              className="md:hidden flex items-center justify-center"
+              onClick={() => setIsMenuOpen(open => !open)}
+              style={{ background:styles.muted, border:`1px solid ${styles.border}`, borderRadius:8, width:40, height:40, cursor:'pointer', transition:'background 0.2s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = styles.subtle)}
+              onMouseLeave={e => (e.currentTarget.style.background = styles.muted)}
+            >
+              <Menu size={20} color={styles.secondary} />
+            </button>
             {isDashboard && (
               <button
-                className="navbar-sidebar-toggle"
+                className="navbar-sidebar-toggle hidden md:flex items-center justify-center"
                 onClick={toggleSidebar}
-                style={{ background:styles.muted, border:`1px solid ${styles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
+                style={{ background:styles.muted, border:`1px solid ${styles.border}`, borderRadius:8, width:40, height:40, cursor:'pointer', transition:'background 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = styles.subtle)}
                 onMouseLeave={e => (e.currentTarget.style.background = styles.muted)}
               >
@@ -84,6 +98,48 @@ export function Navbar() {
             )}
           </div>
         </nav>
+        {isMenuOpen && (
+          <div className="md:hidden" style={{ background: styles.surface, borderTop: `1px solid ${styles.border}` }}>
+            {isHome ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setIsMenuOpen(false); navigate('/auth/signin') }}
+                  style={{ width:'100%', textAlign:'left', padding:'14px 20px', borderBottom:`1px solid ${styles.border}`, background:'transparent', color:styles.text, fontSize:15, fontWeight:600, cursor:'pointer' }}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsMenuOpen(false); navigate('/auth/signup') }}
+                  style={{ width:'100%', textAlign:'left', padding:'14px 20px', background:'transparent', color:styles.text, fontSize:15, fontWeight:600, cursor:'pointer' }}
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                {LINKS.map(({ label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => { setIsMenuOpen(false); navigate('/auth/signin') }}
+                    style={{ width:'100%', textAlign:'left', padding:'14px 20px', borderBottom:`1px solid ${styles.border}`, background:'transparent', color:styles.text, fontSize:15, fontWeight:600, cursor:'pointer' }}
+                  >
+                    {label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => { setIsMenuOpen(false); navigate('/auth/signin') }}
+                  style={{ width:'100%', textAlign:'left', padding:'14px 20px', background:'transparent', color:styles.text, fontSize:15, fontWeight:700, cursor:'pointer' }}
+                >
+                  Sign in
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </header>
   )

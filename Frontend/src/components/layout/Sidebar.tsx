@@ -65,7 +65,7 @@ export function Sidebar() {
             type="button"
             onClick={() => {
                 signOut()
-                navigate('/auth/signin')
+                navigate('/')
               }}
             className="flex w-full items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-slate-200"
           >
