@@ -1,8 +1,8 @@
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from Backend.app.core.llm_provider import get_llm
-from Backend.app.services.ai.prompts import router_system_prompt, router_user_prompt
+from app.core.llm_provider import get_llm
+from app.services.ai.prompts import router_system_prompt, router_user_prompt
 
 
 class Router:
