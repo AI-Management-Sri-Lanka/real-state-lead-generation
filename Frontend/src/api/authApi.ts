@@ -12,12 +12,22 @@ export interface SignUpPayload {
   email: string;
   password: string;
 }
+export interface UpdateProfilePayload {
+  full_name: string;
+  email: string;
+  password?: string;
+}
 export interface UserResponse {
-  id: number;
+  id: number | string;
   full_name: string;
   email: string;
   is_active: boolean;
   created_at: string;
+}
+
+async function parseError(res: Response) {
+  const payload = await res.json().catch(() => ({} as { detail?: string }))
+  return payload.detail ?? res.statusText ?? 'Request failed'
 }
 
 export const authApi = {
@@ -28,8 +38,7 @@ export const authApi = {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { detail?: string };
-      throw new Error(err.detail ?? "Sign up failed");
+      throw new Error(await parseError(res));
     }
     return res.json() as Promise<UserResponse>;
   },
@@ -41,8 +50,32 @@ export const authApi = {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { detail?: string };
-      throw new Error(err.detail ?? "Sign in failed");
+      throw new Error(await parseError(res));
+    }
+    return res.json() as Promise<UserResponse>;
+  },
+
+  async getProfile(): Promise<UserResponse> {
+    const res = await fetch(`${BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new Error(await parseError(res));
+    }
+    return res.json() as Promise<UserResponse>;
+  },
+
+  async updateProfile(payload: UpdateProfilePayload): Promise<UserResponse> {
+    const res = await fetch(`${BASE_URL}/auth/me`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(await parseError(res));
     }
     return res.json() as Promise<UserResponse>;
   },

@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AIChat from '@/pages/dashboard/AIChat'
+import ProfilePage from '@/pages/dashboard/ProfilePage'
+import ProfileEditPage from '@/pages/dashboard/ProfileEditPage'
 import { useAuth } from '@/hooks/useAuth'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import HomePage from './pages/home/HomePage'
@@ -19,6 +21,8 @@ export default function App() {
       <Routes>
         <Route path="/"               element={<HomePage />} />
         <Route path="/dashboard/ai-assistant" element={<PrivateRoute><ErrorBoundary><AIChat /></ErrorBoundary></PrivateRoute>} />
+        <Route path="/dashboard/profile" element={<PrivateRoute><ErrorBoundary><ProfilePage /></ErrorBoundary></PrivateRoute>} />
+        <Route path="/dashboard/profile/edit" element={<PrivateRoute><ErrorBoundary><ProfileEditPage /></ErrorBoundary></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><ErrorBoundary><Dashboard /></ErrorBoundary></PrivateRoute>} />
         <Route path="/auth/signin" element={<SignInPage />} />
         <Route path="/auth/signup" element={<SignUpPage />} />

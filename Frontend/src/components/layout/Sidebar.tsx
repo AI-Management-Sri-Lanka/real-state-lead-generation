@@ -10,12 +10,34 @@ const MAIN_NAV = [
   { to: '/dashboard/ai-assistant', icon: MessageSquare, label: 'AI Chat' },
 ]
 const ACCOUNT_NAV = [
-  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
+  { to: '/dashboard/profile', icon: Settings, label: 'Profile' },
 ]
 
 export function Sidebar() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+
+  const displayName =
+    user?.full_name?.trim() || user?.name?.trim() || user?.email?.split('@')[0] || 'User'
+  const displayEmail =
+    user?.email ??
+    (user as any)?.username ??
+    (() => {
+      try {
+        const keys = ['aimsl_user', 'user', 'auth_user', 'currentUser']
+        for (const key of keys) {
+          const raw = localStorage.getItem(key)
+          if (!raw) continue
+          const parsed = JSON.parse(raw)
+          const found = parsed?.email ?? parsed?.username ?? null
+          if (found) return found
+        }
+      } catch {
+        return null
+      }
+      return null
+    })() ??
+    'hello@leadai.com'
 
   return (
     <aside className="flex h-full min-h-full w-[260px] flex-col overflow-y-auto border-r border-slate-800/80 bg-slate-950 px-4 py-6 text-slate-100">
@@ -75,15 +97,19 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="mt-auto rounded-[28px] border border-slate-800/90 bg-slate-900/95 p-4">
+      <button
+        type="button"
+        onClick={() => navigate('/dashboard/profile')}
+        className="mt-auto w-full rounded-[28px] border border-slate-800/90 bg-slate-900/95 p-4 text-left transition hover:border-brand"
+      >
         <div className="flex items-center gap-3">
-          <Avatar name={user?.name ?? 'User'} size={44} />
+          <Avatar name={displayName} size={44} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{user?.name ?? 'User'}</p>
-            <p className="truncate text-xs text-slate-500">{user?.email ?? 'hello@leadai.com'}</p>
+            <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+            <p className="truncate text-xs text-slate-500">{displayEmail}</p>
           </div>
         </div>
-      </div>
+      </button>
     </aside>
   )
 }

@@ -1,13 +1,20 @@
 // src/contexts/AuthContext.tsx
 import { createContext, useState, useEffect, useCallback } from "react";
-import { authApi } from "@/api/authApi";
+import { authApi, UpdateProfilePayload } from "@/api/authApi";
 
 export interface User {
-  id: number;
+  id: number | string;
+  name: string;
   full_name: string;
   email: string;
   is_active: boolean;
   created_at: string;
+}
+
+function normalizeName(value: any): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed || undefined
 }
 
 export interface AuthContextType {
@@ -17,7 +24,26 @@ export interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (full_name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
+  updateProfile: (payload: UpdateProfilePayload) => Promise<void>;
   error: string | null;
+}
+
+function normalizeUser(raw: any): User {
+  const normalizedName =
+    normalizeName(raw.full_name) ??
+    normalizeName(raw.name) ??
+    normalizeName(raw.username) ??
+    normalizeName(raw.email?.split?.('@')?.[0]) ??
+    'User'
+
+  return {
+    id: raw.id,
+    full_name: normalizedName,
+    name: normalizedName,
+    email: raw.email ?? '',
+    is_active: raw.is_active ?? true,
+    created_at: raw.created_at ?? new Date().toISOString(),
+  }
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -37,9 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (import.meta?.env?.DEV) {
       const devUser = localStorage.getItem('aimsl_user')
       if (devUser) {
-        try { setUser(JSON.parse(devUser)) } catch { /* ignore */ }
+        try {
+          setUser(normalizeUser(JSON.parse(devUser)))
+        } catch {
+          /* ignore */
+        }
       } else {
-        const u: User = { id: 'dev', name: 'Developer', email: 'dev@example.com' }
+        const u = normalizeUser({ id: 'dev', name: 'Developer', email: 'dev@example.com', is_active: true, created_at: new Date().toISOString() })
         setUser(u)
         localStorage.setItem('aimsl_user', JSON.stringify(u))
       }
@@ -51,12 +81,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (stored) {
       try {
-        setUser(JSON.parse(stored));
+        setUser(normalizeUser(JSON.parse(stored)))
       } catch {
         /* ignore */
       }
     }
-    setLoading(false);
+
+    setLoading(false)
+
+    if (stored) {
+      authApi.getProfile()
+        .then(profile => {
+          const normalized = normalizeUser(profile)
+          setUser(normalized)
+          localStorage.setItem('aimsl_user', JSON.stringify(normalized))
+        })
+        .catch(() => {
+          // keep cached user state if refresh fails
+        })
+    }
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
@@ -64,8 +107,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const userData = await authApi.signIn({ email, password });
-      setUser(userData);
-      localStorage.setItem("aimsl_user", JSON.stringify(userData));
+      const normalized = normalizeUser(userData);
+      setUser(normalized);
+      localStorage.setItem("aimsl_user", JSON.stringify(normalized));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign in failed";
       setError(message);
@@ -81,8 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       try {
         const userData = await authApi.signUp({ full_name, email, password });
-        setUser(userData);
-        localStorage.setItem("aimsl_user", JSON.stringify(userData));
+        const normalized = normalizeUser(userData);
+        setUser(normalized);
+        localStorage.setItem("aimsl_user", JSON.stringify(normalized));
       } catch (err) {
         const message = err instanceof Error ? err.message : "Sign up failed";
         setError(message);
@@ -93,6 +138,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     [],
   );
+
+  const updateProfile = useCallback(async (payload: UpdateProfilePayload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await authApi.updateProfile(payload);
+      const normalized = normalizeUser(updated);
+      setUser(normalized);
+      localStorage.setItem("aimsl_user", JSON.stringify(normalized));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Profile update failed";
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const signOut = useCallback(() => {
     setUser(null);
@@ -109,6 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signOut,
+        updateProfile,
         error,
       }}
     >
