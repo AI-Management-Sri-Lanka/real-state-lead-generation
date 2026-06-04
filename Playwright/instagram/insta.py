@@ -1,17 +1,17 @@
 import asyncio
-import csv
 import re
 import time
 import random
 import datetime
 import os
+import json
 
 from playwright.async_api import async_playwright
 
 
-OUTPUT_FILE = "insta_data.csv"
+OUTPUT_FILE = "insta_data.json"
 HEADLESS = False
-MAX_POSTS_PER_TAG = 10 #We can edit this as we want.
+MAX_POSTS_PER_TAG = 10  # You can change this
 
 SCROLL_PAUSE = (4, 7)
 
@@ -56,21 +56,13 @@ def extract_contacts(text):
     }
 
 
-def save_csv(rows):
+def save_json(rows):
     if not rows:
         print("No leads found")
         return
 
-    fields = [
-        "post_url", "username", "caption",
-        "phones", "emails", "websites",
-        "hashtag", "city", "scraped_at"
-    ]
-
-    with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=fields)
-        w.writeheader()
-        w.writerows(rows)
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(rows, f, ensure_ascii=False, indent=4)
 
     print(f"\nSaved {len(rows)} leads -> {OUTPUT_FILE}")
 
@@ -85,7 +77,6 @@ class InstaScraper:
             slow_mo=200
         )
 
-        # session reuse
         if os.path.exists("ig_session.json"):
             self.ctx = await self.browser.new_context(storage_state="ig_session.json")
         else:
@@ -106,15 +97,14 @@ class InstaScraper:
 
         sleep(5, 8)
 
-        # if captcha problem occures
         if "challenge" in self.page.url or "recaptcha" in self.page.url:
             print("\nInstagram blocked login.")
-            input("Solve manually in browser then press ENTER...")
+            input("Solve manually then press ENTER...")
 
         try:
             await self.page.wait_for_selector('input[name="username"]', timeout=60000)
         except:
-            input("Login manually in browser then press ENTER...")
+            input("Login manually then press ENTER...")
             return
 
         await self.page.fill('input[name="username"]', username)
@@ -195,13 +185,9 @@ class InstaScraper:
                 return None
 
             username = ""
-
-            try:
-                el = await page.query_selector("header a")
-                if el:
-                    username = await el.inner_text()
-            except:
-                pass
+            el = await page.query_selector("header a")
+            if el:
+                username = await el.inner_text()
 
             contacts = extract_contacts(caption)
 
@@ -209,9 +195,11 @@ class InstaScraper:
                 "post_url": url,
                 "username": username,
                 "caption": caption[:300].replace("\n", " "),
-                "phones": " | ".join(contacts["phones"]),
-                "emails": " | ".join(contacts["emails"]),
-                "websites": " | ".join(contacts["websites"]),
+                "contacts": {
+                    "phones": contacts["phones"],
+                    "emails": contacts["emails"],
+                    "websites": contacts["websites"]
+                },
                 "hashtag": tag,
                 "city": city,
                 "scraped_at": datetime.datetime.now().isoformat()
@@ -224,7 +212,7 @@ class InstaScraper:
 async def main():
 
     print("=" * 50)
-    print("Instagram Scraper (Stable Version)")
+    print("Instagram Scraper (JSON Version)")
     print("=" * 50)
 
     city = input("City: ").strip()
@@ -264,7 +252,7 @@ async def main():
 
             sleep(3, 6)
 
-        save_csv(results)
+        save_json(results)
 
     finally:
         await scraper.close()

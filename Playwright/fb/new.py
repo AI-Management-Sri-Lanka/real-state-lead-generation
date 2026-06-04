@@ -1,31 +1,19 @@
 import asyncio
-import csv
 import re
 import datetime
 import os
+import json
 from playwright.async_api import async_playwright
 
-OUTPUT_FILE = "facebook_data.csv"
+OUTPUT_FILE = "facebook_data.json"
 
 HEADLESS = False
-MAX_POSTS = 20  # We can edit this as we want.
-
+MAX_POSTS = 20
 
 LEAD_KEYWORDS = [
-    "sale",
-    "rent",
-    "buy",
-    "sell",
-    "property",
-    "house",
-    "apartment",
-    "villa",
-    "land",
-    "contact",
-    "call",
-    "whatsapp",
-    "price",
-    "agent",
+    "sale", "rent", "buy", "sell", "property", "house",
+    "apartment", "villa", "land", "contact", "call",
+    "whatsapp", "price", "agent",
 ]
 
 PATTERNS = {
@@ -37,8 +25,6 @@ PATTERNS = {
 
 def build_pages(city):
     city = city.strip().lower()
-
-    # Here we can add more
     return [
         f"https://www.facebook.com/search/pages/?q={city}%20real%20estate",
         f"https://www.facebook.com/search/pages/?q={city}%20property",
@@ -60,17 +46,19 @@ def extract_contacts(text):
     }
 
 
-def save_csv(rows):
+def save_json(rows):
     if not rows:
         print("No leads found")
         return
 
-    fields = ["post_url", "caption", "phones", "emails", "websites", "scraped_at"]
+    data = {
+        "total": len(rows),
+        "scraped_at": datetime.datetime.now().isoformat(),
+        "results": rows
+    }
 
-    with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(rows)
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
     print(f"\nSaved {len(rows)} rows -> {OUTPUT_FILE}")
 
@@ -79,13 +67,12 @@ class FacebookScraper:
     async def start(self):
         self.pw = await async_playwright().start()
 
-        self.browser = await self.pw.chromium.launch(headless=HEADLESS, slow_mo=100)
+        self.browser = await self.pw.chromium.launch(
+            headless=HEADLESS,
+            slow_mo=150
+        )
 
-        if os.path.exists("fb_session.json"):
-            self.ctx = await self.browser.new_context(storage_state="fb_session.json")
-        else:
-            self.ctx = await self.browser.new_context()
-
+        self.ctx = await self.browser.new_context()
         self.page = await self.ctx.new_page()
 
     async def close(self):
@@ -94,55 +81,65 @@ class FacebookScraper:
 
     async def login(self):
         await self.page.goto("https://www.facebook.com/login")
-        print("\n Login manually")
-        input("Press ENTER after login is complete...")
 
+        print("\n Login manually in the browser")
+
+       
+        
+        for i in range(120):
+            await asyncio.sleep(1)
+
+           
+            if "login" not in self.page.url:
+                break
+
+        
         await self.page.wait_for_timeout(5000)
 
         if "login" in self.page.url:
-            print("Login failed")
-            return
+            print("Login not completed (or CAPTCHA not solved)")
+            input("Solve CAPTCHA / login manually then press ENTER...")
 
         await self.ctx.storage_state(path="fb_session.json")
         print("Session saved")
 
     async def scrape_page_posts(self, page_url):
-
         print(f"\nScraping: {page_url}")
 
         await self.page.goto(page_url)
-        await asyncio.sleep(10)
+
+        
+        await self.page.wait_for_timeout(10000)
 
         results = []
 
         for _ in range(6):
+
             text = await self.page.locator("body").inner_text()
 
             if text and len(text) > 100 and is_lead(text):
                 contacts = extract_contacts(text)
 
-                results.append(
-                    {
-                        "post_url": page_url,
-                        "caption": text[:500].replace("\n", " "),
-                        "phones": " | ".join(contacts["phones"]),
-                        "emails": " | ".join(contacts["emails"]),
-                        "websites": " | ".join(contacts["websites"]),
-                        "scraped_at": datetime.datetime.now().isoformat(),
-                    }
-                )
+                results.append({
+                    "post_url": page_url,
+                    "caption": text[:500].replace("\n", " "),
+                    "phones": contacts["phones"],
+                    "emails": contacts["emails"],
+                    "websites": contacts["websites"],
+                    "scraped_at": datetime.datetime.now().isoformat(),
+                })
 
-            await self.page.mouse.wheel(0, 8000)
-            await asyncio.sleep(5)
+            
+            await self.page.mouse.wheel(0, 2500)
+            await asyncio.sleep(6)
 
         return results
 
 
 async def main():
-
     city = input("Enter city: ")
 
-    FACEBOOK_PAGES = build_pages(city)
+    pages = build_pages(city)
 
     scraper = FacebookScraper()
     await scraper.start()
@@ -152,13 +149,13 @@ async def main():
 
         all_results = []
 
-        for page in FACEBOOK_PAGES:
+        for page in pages:
             data = await scraper.scrape_page_posts(page)
             all_results.extend(data)
 
         print(f"\nTotal leads found: {len(all_results)}")
 
-        save_csv(all_results)
+        save_json(all_results)
 
     finally:
         await scraper.close()
