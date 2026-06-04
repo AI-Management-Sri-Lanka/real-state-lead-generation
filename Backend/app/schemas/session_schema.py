@@ -33,9 +33,13 @@ class MessageIn(BaseModel):
 
 
 class MessageOut(BaseModel):
+    id: int
     role: str
     content: str
     timestamp: datetime
+
+    class Config:
+        from_attributes = True
 
 
 # ── Session ───────────────────────────────────────────────────────────────────
@@ -63,4 +67,7 @@ class SessionSummary(BaseModel):
     title: str
     message_count: int
     updated_at: datetime
-    expires_at: datetime
+    expires_at: datetime
+
+    class Config:
+        from_attributes = True

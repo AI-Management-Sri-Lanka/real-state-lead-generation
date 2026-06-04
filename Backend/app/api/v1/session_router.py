@@ -7,12 +7,11 @@ from app.schemas.session_schema import (
     SessionCreate, SessionOut, SessionSummary,
     MessageIn, MessageOut
 )
-from app.services.session_service import SessionService
+from app.services import session_service
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
-# ── Create session ────────────────────────────────────────────────────────────
 @router.post("", response_model=SessionOut, status_code=201,
              summary="Create a new persistent user chat session")
 async def create_session(
@@ -22,41 +21,28 @@ async def create_session(
     """
     Creates a new chat history session for a given user.
     """
-    return await SessionService.create_session(db, body)
+    return await session_service.create_session(db, body)
 
 
-# ── List sessions ─────────────────────────────────────────────────────────────
 @router.get("", response_model=List[SessionSummary],
             summary="List all active chat sessions for a specific user")
 async def list_sessions(
     user_id: Optional[int] = Query(None, description="Filter sessions by user ID"),
     db: AsyncSession = Depends(get_db)
 ):
-    sessions = await SessionService.list_sessions(db, user_id)
-    return [
-        {
-            "session_id": s.id,
-            "user_id": s.user_id,
-            "title": s.title,
-            "message_count": len(s.messages or []),
-            "updated_at": s.updated_at,
-            "expires_at": s.expires_at,
-        }
-        for s in sessions
-    ]
+    sessions = await session_service.list_sessions(db, user_id)
+    return [session_service.to_summary(s) for s in sessions]
 
 
-# ── Get session ───────────────────────────────────────────────────────────────
 @router.get("/{session_id}", response_model=SessionOut,
             summary="Get a session details and its full chat message history")
 async def get_session(
     session_id: str,
     db: AsyncSession = Depends(get_db)
 ):
-    return await SessionService.get_session(db, session_id)
+    return await session_service.get_session(db, session_id)
 
 
-# ── Update session title (Rename) ─────────────────────────────────────────────
 @router.patch("/{session_id}", response_model=SessionOut,
               summary="Rename a chat session")
 async def update_session(
@@ -64,20 +50,18 @@ async def update_session(
     title: str = Query(..., description="The new title for the chat session"),
     db: AsyncSession = Depends(get_db)
 ):
-    return await SessionService.update_session(db, session_id, title)
+    return await session_service.update_session(db, session_id, title)
 
 
-# ── Delete session ────────────────────────────────────────────────────────────
 @router.delete("/{session_id}", status_code=204,
                summary="Delete a chat session and all its message history")
 async def delete_session(
     session_id: str,
     db: AsyncSession = Depends(get_db)
 ):
-    await SessionService.delete_session(db, session_id)
+    await session_service.delete_session(db, session_id)
 
 
-# ── Add message manually ──────────────────────────────────────────────────────
 @router.post("/{session_id}/messages", response_model=MessageOut, status_code=201,
              summary="Manually append a user or assistant message to history")
 async def add_message(
@@ -85,10 +69,9 @@ async def add_message(
     body: MessageIn,
     db: AsyncSession = Depends(get_db)
 ):
-    return await SessionService.add_message(db, session_id, body)
+    return await session_service.add_message(db, session_id, body)
 
 
-# ── Get messages ──────────────────────────────────────────────────────────────
 @router.get("/{session_id}/messages", response_model=List[MessageOut],
             summary="Get message history for a session")
 async def get_messages(
@@ -96,22 +79,20 @@ async def get_messages(
     limit: int = Query(50, description="Max number of recent messages to return"),
     db: AsyncSession = Depends(get_db)
 ):
-    session = await SessionService.get_session(db, session_id)
+    session = await session_service.get_session(db, session_id)
     messages = session.messages or []
     return messages[-limit:]
 
 
-# ── Clear messages ────────────────────────────────────────────────────────────
 @router.delete("/{session_id}/messages", status_code=204,
                summary="Clear chat history but keep the session metadata")
 async def clear_messages(
     session_id: str,
     db: AsyncSession = Depends(get_db)
 ):
-    await SessionService.clear_messages(db, session_id)
+    await session_service.clear_messages(db, session_id)
 
 
-# ── Interactive AI Chat Endpoint ──────────────────────────────────────────────
 @router.post("/{session_id}/chat", response_model=MessageOut, status_code=201,
              summary="Send a message to the AI assistant and get a response stored in DB")
 async def chat_with_assistant(
@@ -124,10 +105,10 @@ async def chat_with_assistant(
     generate the assistant reply, saves the assistant reply, and returns it.
     """
     # 1. Save user message to database
-    await SessionService.add_message(db, session_id, body)
+    await session_service.add_message(db, session_id, body)
 
     # 2. Retrieve history to feed into AI
-    session = await SessionService.get_session(db, session_id)
+    session = await session_service.get_session(db, session_id)
     history_str = ""
     for m in session.messages[:-1]:  # exclude the user message we just added
         history_str += f"{m.role.capitalize()}: {m.content}\n"
@@ -143,6 +124,6 @@ async def chat_with_assistant(
 
     # 4. Save AI assistant message to database
     assistant_msg = MessageIn(role="assistant", content=ai_reply)
-    saved_ai_msg = await SessionService.add_message(db, session_id, assistant_msg)
+    saved_ai_msg = await session_service.add_message(db, session_id, assistant_msg)
 
     return saved_ai_msg
