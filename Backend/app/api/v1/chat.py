@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
-from typing import Optional, Any
 
 from app.db.session import get_db
+from app.schemas.chat_schema import ChatResponse, ChatRequest, LeadResult
 from app.services.ai.router import Router
 from app.services.ai.simple_chat import DirectChatTool
 from app.services.ai.rank_leads import RankLeads
@@ -16,28 +15,6 @@ router = APIRouter(
     tags=["chat"]
 )
 
-
-# Request/Response Models
-
-class ChatRequest(BaseModel):
-    query: str
-    # sessions
-
-
-class LeadResult(BaseModel):
-    username: str
-    platform: str
-    post: str
-    score: float
-
-
-class ChatResponse(BaseModel):
-    success: bool
-    message: str
-    data: Optional[Any] = None
-
-
-# Routes 
 @router.post("", response_model=ChatResponse)
 async def post_chat(
     request: ChatRequest,
@@ -93,12 +70,12 @@ async def post_chat(
             )
             
             response_data["leads"] = [
-                {
-                    "username": lead["username"],
-                    "platform": lead["platform"],
-                    "post": lead["post"],
-                    "score": lead["score"]
-                }
+                LeadResult(
+                    username=lead["username"],
+                    platform=lead["platform"],
+                    post=lead["post"],
+                    score=lead["score"],
+                )
                 for lead in ranked_leads
             ]
             
