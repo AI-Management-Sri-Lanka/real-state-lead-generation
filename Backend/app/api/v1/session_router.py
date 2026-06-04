@@ -9,7 +9,13 @@ from app.schemas.session_schema import (
 )
 from app.services.session_service import SessionService
 
-router = APIRouter(prefix="/sessions", tags=["sessions"])
+from app.services.dependencies.deps import get_current_user
+
+router = APIRouter(
+    prefix="/sessions", 
+    tags=["sessions"],
+    dependencies=[Depends(get_current_user)]
+)
 
 
 # ── Create session ────────────────────────────────────────────────────────────

@@ -7,13 +7,16 @@ from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-async def create_user_db(db: AsyncSession, user_data: dict) -> User:
+async def create_user_db(db: AsyncSession, user_data: dict, commit: bool = True) -> User:
     """Insert a new user into the database."""
     db_user = User(**user_data)
     try:
         db.add(db_user)
-        await db.commit()
-        await db.refresh(db_user)
+        if commit:
+            await db.commit()
+            await db.refresh(db_user)
+        else:
+            await db.flush()
         return db_user
     except IntegrityError as e:
         await db.rollback()
@@ -21,6 +24,7 @@ async def create_user_db(db: AsyncSession, user_data: dict) -> User:
             raise AppException(error=AppError.AUTH_EMAIL_EXISTS)
         raise AppException(error=AppError.DB_INTEGRITY_ERROR)
     except Exception as e:
+        await db.rollback()
         logger.error("DB error occurred in create_user: %s", str(e))
         raise AppException(error=AppError.SYS_DATABASE_UNAVAILABLE) from e
 
