@@ -18,7 +18,7 @@ interface Props { msg: Message; userName: string }
 export function ChatBubble({ msg, userName }: Props) {
   const isUser = msg.role === 'user'
   return (
-    <div style={{ display:'flex', gap:14, flexDirection: isUser ? 'row-reverse' : 'row', alignItems:'flex-start', animation:'fadeIn 0.2s ease-out' }}>
+    <div style={{ display:'flex', gap:10, flexDirection: isUser ? 'row-reverse' : 'row', alignItems:'flex-start', animation:'fadeIn 0.2s ease-out' }}>
       {/* Avatar */}
       {isUser
         ? <Avatar name={userName} size={32} />
@@ -33,13 +33,13 @@ export function ChatBubble({ msg, userName }: Props) {
       <div style={{ maxWidth:'72%' }}>
         {/* AI label badge — matches screenshot */}
         {!isUser && (
-          <div style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 10px', borderRadius:20, background:'var(--color-brand-light)', border:'1px solid rgba(61,59,243,0.15)', marginBottom:6 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 8px', borderRadius:20, background:'var(--color-brand-light)', border:'1px solid rgba(61,59,243,0.15)', marginBottom:4 }}>
             <Sparkles size={12} style={{ color:'var(--color-brand)' }} />
             <span style={{ fontSize:11, fontWeight:600, color:'var(--color-brand)', fontFamily:'var(--font-sans)' }}>AI assistant</span>
           </div>
         )}
         <div style={{
-          padding:'16px 20px', borderRadius: isUser ? '20px 6px 20px 20px' : '6px 20px 20px 20px',
+          padding:'12px 16px', borderRadius: isUser ? '20px 6px 20px 20px' : '6px 20px 20px 20px',
           background: isUser ? 'linear-gradient(135deg,#3D3BF3,#5B5BFF)' : 'var(--color-surface)',
           border: isUser ? 'none' : '1px solid var(--color-border)',
           color: isUser ? 'white' : 'var(--color-text-primary)',
@@ -47,9 +47,6 @@ export function ChatBubble({ msg, userName }: Props) {
           boxShadow: isUser ? '0 12px 30px rgba(61,59,243,0.18)' : '0 12px 30px rgba(3,13,33,0.07)',
         }}>
           {msg.isStreaming ? <TypingIndicator /> : <div>{renderContent(msg.content)}</div>}
-          <div style={{ fontSize:11, marginTop:6, color: isUser ? 'rgba(255,255,255,0.6)' : 'var(--color-text-placeholder)', textAlign:'right' }}>
-            {msg.timestamp.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}
-          </div>
         </div>
       </div>
     </div>
