@@ -11,7 +11,7 @@ from playwright.async_api import async_playwright
 
 OUTPUT_FILE = "insta_data.json"
 HEADLESS = False
-MAX_POSTS_PER_TAG = 10  # You can change this
+MAX_POSTS_PER_TAG = 10  # We can change this
 
 SCROLL_PAUSE = (4, 7)
 
