@@ -1,25 +1,50 @@
+from sqlalchemy.ext.asyncio import AsyncSession
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
 from app.services.ai.prompts import simple_chat_user_prompt, simple_chat_system_prompt
 from app.core.llm_provider import get_llm
+from sqlalchemy import select
+from app.models.message import Message
 
 
 class DirectChatTool:
     def __init__(self):
         self.llm = get_llm()
 
-    def chat(self, user_query:str, session_history:str):
+    async def chat(self, user_query: str, session_history: str = "", session_id: str = None, db: AsyncSession = None):
+        print(session_id)
         user_query = user_query.strip()
-        session_history = session_history.strip()
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", simple_chat_system_prompt),
-            ("user", simple_chat_user_prompt)
-        ])
+        
+        history_array = []
+        if session_id and db:
+            
+            limit_count = 7
+            max_history = limit_count - 1
+            stmt = select(Message).where(Message.session_id == session_id).order_by(Message.timestamp.desc()).limit(limit_count)
+            result = await db.execute(stmt)
+            db_messages = result.scalars().all()
+            db_messages.reverse()
+            
+            if db_messages and db_messages[-1].content == user_query and db_messages[-1].role == "user":
+                history_messages = db_messages[:-1][-max_history:]
+            else:
+                history_messages = db_messages[-max_history:]
+                
+            history_array = [
+                {"role": m.role, "content": m.content}
+                for m in history_messages
+            ]
+
+        messages = [("system", simple_chat_system_prompt)]
+        for msg in history_array:
+            messages.append((msg["role"], msg["content"]))
+        messages.append(("user", simple_chat_user_prompt))
+
+        prompt = ChatPromptTemplate.from_messages(messages)
 
         chain = prompt | self.llm | StrOutputParser()
 
-        return chain.invoke({
+        return await chain.ainvoke({
             "user_query": user_query,
-            "session_history": session_history,
         })
