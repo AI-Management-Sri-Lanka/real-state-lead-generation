@@ -13,7 +13,6 @@ class DirectChatTool:
         self.llm = get_llm()
 
     async def chat(self, user_query: str, session_history: str = "", session_id: str = None, db: AsyncSession = None):
-        print(session_id)
         user_query = user_query.strip()
         
         history_array = []
