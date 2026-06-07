@@ -1,0 +1,8 @@
+scraping:
+  limit: 10
+  timeout: 30
+
+vector_search:
+  vector_size: 1536
+  top_k: 5
+  similarity_threshold: 0.7
