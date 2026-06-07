@@ -55,7 +55,6 @@ class SessionOut(BaseModel):
     messages: List[MessageOut]
     created_at: datetime
     updated_at: datetime
-    expires_at: datetime
 
     class Config:
         from_attributes = True
@@ -67,7 +66,6 @@ class SessionSummary(BaseModel):
     title: str
     message_count: int
     updated_at: datetime
-    expires_at: datetime
 
     class Config:
         from_attributes = True

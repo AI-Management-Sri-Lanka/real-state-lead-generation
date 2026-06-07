@@ -36,21 +36,13 @@ async def get_session(db: AsyncSession, session_id: str) -> Session:
 
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    if datetime.utcnow() > session.expires_at:
-        await db.delete(session)
-        await db.commit()
-        raise HTTPException(status_code=410, detail="Session expired")
 
     return session
 
 
 async def list_sessions(db: AsyncSession, user_id: int | None = None) -> list[Session]:
     """List non-expired sessions, newest first. Eagerly loads messages for message_count."""
-    query = (
-        select(Session)
-        .options(_with_messages())
-        .where(Session.expires_at > datetime.utcnow())
-    )
+    query = select(Session).options(_with_messages())
     if user_id is not None:
         query = query.where(Session.user_id == user_id)
     query = query.order_by(Session.updated_at.desc())
@@ -120,5 +112,4 @@ def to_summary(session: Session) -> SessionSummary:
         title=session.title,
         message_count=len(session.messages),
         updated_at=session.updated_at,
-        expires_at=session.expires_at,
     )

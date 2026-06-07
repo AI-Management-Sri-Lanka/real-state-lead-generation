@@ -1,12 +1,8 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
+from datetime import datetime
 import uuid
 
-if TYPE_CHECKING:
-    from .user import User
-    from .message import Message
 
 from app.db.base_class import Base
 
@@ -34,7 +30,6 @@ class Session(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=30))  # persist chat history for 30 days
 
     # Relationships
     user = relationship(
