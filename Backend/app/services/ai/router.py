@@ -14,9 +14,8 @@ class Router:
     async def chat(self, user_query: str, session_id: str = None, db: AsyncSession = None):
         user_query = user_query.strip()
         
-        history_array = []
-        session_history = ""
-        
+        latest_messages = []
+
         if session_id and db:
             
             limit_count = 7
@@ -27,18 +26,13 @@ class Router:
             db_messages.reverse()
 
             if db_messages and db_messages[-1].content == user_query and db_messages[-1].role == "user":
-                history_messages = db_messages[:-1][-max_history:]
+                latest_messages = db_messages[:-1]
             else:
-                history_messages = db_messages[-max_history:]
-                
-            history_array = [
-                {"role": m.role, "content": m.content}
-                for m in history_messages
-            ]
+                latest_messages = db_messages[-max_history:]
 
         messages = [("system", router_system_prompt)]
-        for msg in history_array:
-            messages.append((msg["role"], msg["content"]))
+        for msg in latest_messages:
+            messages.append((msg.role, msg.content))
         messages.append(("user", router_user_prompt))
 
         prompt = ChatPromptTemplate.from_messages(messages)
