@@ -8,7 +8,7 @@ from app.schemas.session_schema import (
     MessageIn, MessageOut
 )
 from app.services import session_service
-from app.services.ai.simple_chat import DirectChatTool
+
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -92,36 +92,3 @@ async def clear_messages(
     db: AsyncSession = Depends(get_db)
 ):
     await session_service.clear_messages(db, session_id)
-
-
-@router.post("/{session_id}/chat", response_model=MessageOut, status_code=201,
-             summary="Send a message to the AI assistant and get a response stored in DB")
-async def chat_with_assistant(
-    session_id: str,
-    body: MessageIn,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Sends a user message, saves it, queries the LangChain DirectChatTool to
-    generate the assistant reply, saves the assistant reply, and returns it.
-    """
-    # 1. Save user message to database
-    await session_service.add_message(db, session_id, body)
-
-    # 2. Call DirectChatTool
-    try:
-        chat_tool = DirectChatTool()
-        ai_reply = await chat_tool.chat(
-            user_query=body.content,
-            session_id=session_id,
-            db=db
-        )
-    except Exception as e:
-        # Fallback response when OpenAI / LangChain fails or is not configured
-        ai_reply = f"I'm processing your search request for Sri Lanka real estate. (Running in demo mode: {str(e)})"
-
-    # 4. Save AI assistant message to database
-    assistant_msg = MessageIn(role="assistant", content=ai_reply)
-    saved_ai_msg = await session_service.add_message(db, session_id, assistant_msg)
-
-    return saved_ai_msg
