@@ -35,7 +35,11 @@ async def post_chat(
         
         # Route the query
         ai_router = Router()
-        routing_result = ai_router.chat(request.query)
+        routing_result = await ai_router.chat(
+            user_query=request.query,
+            session_id=request.session_id,
+            db=db
+        )
         
         logger.debug(f"Routing result: {routing_result}")
         
@@ -86,11 +90,12 @@ async def post_chat(
             logger.info("Routing to simple_chat")
             response_data["route"] = "simple_chat"
             
-            # Get chat response (without session history for now)
+            # Get chat response using session history
             chat_tool = DirectChatTool()
-            ai_response = chat_tool.chat(
+            ai_response = await chat_tool.chat(
                 user_query=request.query,
-                session_history=""  # No history for now
+                session_id=request.session_id,
+                db=db
             )
             
             response_data["response"] = ai_response
@@ -102,9 +107,10 @@ async def post_chat(
             response_data["route"] = "simple_chat"
             
             chat_tool = DirectChatTool()
-            ai_response = chat_tool.chat(
+            ai_response = await chat_tool.chat(
                 user_query=request.query,
-                session_history=""
+                session_id=request.session_id,
+                db=db
             )
             
             response_data["response"] = ai_response
