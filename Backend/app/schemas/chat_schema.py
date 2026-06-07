@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class ChatRequest(BaseModel):
     query: str
-    # sessions
+    session_id: Optional[str] = None
 
 
 class LeadResult(BaseModel):

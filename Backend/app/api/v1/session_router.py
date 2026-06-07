@@ -8,6 +8,7 @@ from app.schemas.session_schema import (
     MessageIn, MessageOut
 )
 from app.services import session_service
+from app.services.ai.simple_chat import DirectChatTool
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -107,17 +108,14 @@ async def chat_with_assistant(
     # 1. Save user message to database
     await session_service.add_message(db, session_id, body)
 
-    # 2. Retrieve history to feed into AI
-    session = await session_service.get_session(db, session_id)
-    history_str = ""
-    for m in session.messages[:-1]:  # exclude the user message we just added
-        history_str += f"{m.role.capitalize()}: {m.content}\n"
-
-    # 3. Call DirectChatTool
+    # 2. Call DirectChatTool
     try:
-        from app.services.ai.simple_chat import DirectChatTool
         chat_tool = DirectChatTool()
-        ai_reply = chat_tool.chat(user_query=body.content, session_history=history_str)
+        ai_reply = await chat_tool.chat(
+            user_query=body.content,
+            session_id=session_id,
+            db=db
+        )
     except Exception as e:
         # Fallback response when OpenAI / LangChain fails or is not configured
         ai_reply = f"I'm processing your search request for Sri Lanka real estate. (Running in demo mode: {str(e)})"
