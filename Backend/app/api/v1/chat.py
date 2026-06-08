@@ -10,9 +10,12 @@ from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
+from app.services.dependencies.deps import get_current_user
+
 router = APIRouter(
     prefix="/chat",
-    tags=["chat"]
+    tags=["chat"],
+    dependencies=[Depends(get_current_user)]
 )
 
 @router.post("", response_model=ChatResponse)

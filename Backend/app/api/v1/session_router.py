@@ -10,7 +10,13 @@ from app.schemas.session_schema import (
 from app.services import session_service
 
 
-router = APIRouter(prefix="/sessions", tags=["sessions"])
+from app.services.dependencies.deps import get_current_user
+
+router = APIRouter(
+    prefix="/sessions", 
+    tags=["sessions"],
+    dependencies=[Depends(get_current_user)]
+)
 
 
 @router.post("", response_model=SessionOut, status_code=201,

@@ -1,4 +1,4 @@
-from passlib.context import CryptContext
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
 from app.schemas.user_schema import UserCreate
@@ -8,21 +8,10 @@ from app.crud import user_crud
 
 logger = get_logger(__name__)
 
-# Password hashing context using argon2
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+from app.core.security import hash_password, verify_password
 
 
-def hash_password(password: str) -> str:
-    """Hash a plain text password using argon2."""
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain text password against a hashed password."""
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-async def create_user(db: AsyncSession, user: UserCreate) -> User:
+async def create_user(db: AsyncSession, user: UserCreate, commit: bool = True) -> User:
     """Create a new user by delegating to the CRUD layer."""
     hashed_password = hash_password(user.password)
     
@@ -32,7 +21,7 @@ async def create_user(db: AsyncSession, user: UserCreate) -> User:
         "hashed_password": hashed_password
     }
 
-    return await user_crud.create_user_db(db, user_data)
+    return await user_crud.create_user_db(db, user_data, commit=commit)
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
