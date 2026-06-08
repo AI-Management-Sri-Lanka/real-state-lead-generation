@@ -142,8 +142,7 @@ export default function AIChat() {
   // Response: { success, message, data: { route, response, leads, preferences } }
   async function handleSend() {
     const trimmed = messageText.trim()
-    if (!trimmed) return
-
+    if (!trimmed || isTyping) return
     // Capture in local variable — avoids stale closure bug when a new
     // session is created and activeSessionId hasn't re-rendered yet
     let sessionId: string | undefined = activeSessionId || undefined
