@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState, type MouseEvent } from 'react'
 import { Loader2, Plus, Search, Send, MoreVertical, Trash2, Edit2 } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
@@ -14,7 +13,7 @@ type ChatMessageType = {
 }
 
 type Session = {
-  id: string        // maps to session_id from backend
+  id: string
   title: string
   createdAt: string
   messages: ChatMessageType[]
@@ -30,7 +29,6 @@ export default function AIChat() {
   const [isTyping, setIsTyping] = useState(false)
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
 
-  // user.id from AuthContext is always a number
   const userIdInt = typeof user?.id === 'number' ? user.id : 1
 
   const activeSession = useMemo(
@@ -40,16 +38,13 @@ export default function AIChat() {
 
   function sessionTitleFromMessages(session: Session): string {
     if (session.title && session.title !== 'New chat') return session.title
-
     const firstUserMessage = session.messages.find((m) => m.role === 'user' && m.content.trim())
     if (!firstUserMessage) return session.title || 'New chat'
-
     const snippet = firstUserMessage.content.trim().replace(/\s+/g, ' ')
     return snippet.length > 30 ? `${snippet.slice(0, 30)}...` : snippet
   }
 
   // ── Load sessions on mount ────────────────────────────────────────────────
-  // GET /sessions?user_id=<id>
   useEffect(() => {
     async function loadSessions() {
       try {
@@ -57,13 +52,14 @@ export default function AIChat() {
         if (!res.ok) throw new Error('Failed to fetch sessions')
         const data = await res.json()
 
-        // Backend returns SessionSummary[]:
-        // { session_id, user_id, title, message_count, updated_at, expires_at }
         const mapped: Session[] = data.map((s: any) => ({
           id: s.session_id,
           title: s.title,
           createdAt: new Date(s.updated_at).toLocaleDateString(undefined, {
-            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
           }),
           messages: [],
         }))
@@ -79,8 +75,6 @@ export default function AIChat() {
   }, [user, userIdInt])
 
   // ── Load messages for active session ─────────────────────────────────────
-  // GET /sessions/{session_id}
-  // Returns SessionOut: { session_id, user_id, title, messages: MessageOut[] }
   useEffect(() => {
     if (!activeSessionId) return
 
@@ -90,11 +84,10 @@ export default function AIChat() {
         if (!res.ok) throw new Error('Failed to fetch session')
         const data = await res.json()
 
-        // MessageOut: { id, session_id, role, content, timestamp }
         setSessions((prev) =>
           prev.map((s) => {
             if (s.id !== activeSessionId) return s
-            const messages = (data.messages ?? []).map((m: any) => ({
+            const messages: ChatMessageType[] = (data.messages ?? []).map((m: any) => ({
               id: m.id ?? `${Date.now()}-${Math.random()}`,
               role: m.role,
               content: m.content,
@@ -116,8 +109,7 @@ export default function AIChat() {
   }, [activeSessionId])
 
   // ── Create new session ────────────────────────────────────────────────────
-  // POST /sessions  body: SessionCreate { user_id, title }
-  async function handleNewChat() {
+  async function handleNewChat(): Promise<string | undefined> {
     try {
       const res = await fetch(`${BASE_URL}/sessions`, {
         method: 'POST',
@@ -127,7 +119,6 @@ export default function AIChat() {
       if (!res.ok) throw new Error('Failed to create session')
       const data = await res.json()
 
-      // SessionOut: { session_id, title, ... }
       const newSession: Session = {
         id: data.session_id,
         title: data.title,
@@ -147,27 +138,28 @@ export default function AIChat() {
   }
 
   // ── Send message & get AI reply ───────────────────────────────────────────
-  // POST /sessions/{session_id}/chat  body: MessageIn { role, content }
-  // Returns MessageOut (the AI assistant reply)
+  // POST /chat  body: { query: string }
+  // Response: { success, message, data: { route, response, leads, preferences } }
   async function handleSend() {
     const trimmed = messageText.trim()
     if (!trimmed) return
 
-    // Ensure there's an active session. If not, create one synchronously
-    // and use the returned id to update messages.
+    // Capture in local variable — avoids stale closure bug when a new
+    // session is created and activeSessionId hasn't re-rendered yet
     let sessionId: string | undefined = activeSessionId || undefined
     if (!sessionId) {
       sessionId = await handleNewChat()
       if (!sessionId) return
     }
 
-    // Optimistically add user message to UI
+    // Optimistically add user message
     const userMsg: ChatMessageType = {
       id: `msg-${Date.now()}`,
       role: 'user',
       content: trimmed,
       timestamp: new Date(),
     }
+
     setSessions((prev) =>
       prev.map((s) =>
         s.id === sessionId
@@ -183,26 +175,41 @@ export default function AIChat() {
     setIsTyping(true)
 
     try {
-      const res = await fetch(`${BASE_URL}/sessions/${sessionId}/chat`, {
+      // ── Call POST /chat with { query } ────────────────────────────────────
+      const res = await fetch(`${BASE_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // MessageIn: { role, content }
-        body: JSON.stringify({ role: 'user', content: trimmed }),
+        headers: { 'Content-Type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ query: trimmed }),
       })
       if (!res.ok) throw new Error('Failed to send message')
 
-      // Returns MessageOut: { id, session_id, role, content, timestamp }
-      const data = await res.json()
-      const aiMsg: ChatMessageType = {
-        id: data.id ?? `msg-ai-${Date.now()}`,
-        role: 'assistant',
-        content: data.content,
-        timestamp: new Date(data.timestamp),
+      const json = await res.json()
+      // json.data.route === 'lead_search' → show leads list
+      // json.data.route === 'general'     → show json.data.response text
+      const data = json.data
+      let content: string = json.message ?? 'Here is what I found.'
+      if (data.route !== 'lead_search' && data.response) {
+        content = data.response
+      }
+      // Append leads as readable text so existing ChatMessage component renders them
+      if (data.leads?.length) {
+        const leadLines = data.leads.map((l: any, i: number) =>
+          `${i + 1}. @${l.username} (${l.platform}) — ${Math.round(l.score * 100)}% match\n"${l.post}"`
+        )
+        content = `${content}\n\n${leadLines.join('\n\n')}`
       }
 
+      const aiMsg: ChatMessageType = {
+        id: `msg-ai-${Date.now()}`,
+        role: 'assistant',
+        content,
+        timestamp: new Date(),
+      }
+
+      // ✅ Use local sessionId, not activeSessionId
       setSessions((prev) =>
         prev.map((s) =>
-          s.id === activeSessionId
+          s.id === sessionId
             ? { ...s, messages: [...s.messages, aiMsg] }
             : s,
         ),
@@ -215,9 +222,10 @@ export default function AIChat() {
         content: 'Could not connect to the assistant. Please try again.',
         timestamp: new Date(),
       }
+      // ✅ Use local sessionId, not activeSessionId
       setSessions((prev) =>
         prev.map((s) =>
-          s.id === activeSessionId
+          s.id === sessionId
             ? { ...s, messages: [...s.messages, errMsg] }
             : s,
         ),
@@ -226,9 +234,7 @@ export default function AIChat() {
       setIsTyping(false)
     }
   }
-
   // ── Rename session ────────────────────────────────────────────────────────
-  // PATCH /sessions/{session_id}?title=<new_title>
   async function handleRename(sessionId: string) {
     const session = sessions.find((s) => s.id === sessionId)
     const title = window.prompt('Rename chat session', session?.title ?? '')
@@ -251,7 +257,6 @@ export default function AIChat() {
   }
 
   // ── Delete session ────────────────────────────────────────────────────────
-  // DELETE /sessions/{session_id}  → 204 No Content
   async function handleDelete(sessionId: string) {
     try {
       const res = await fetch(`${BASE_URL}/sessions/${sessionId}`, { method: 'DELETE' })
@@ -273,9 +278,7 @@ export default function AIChat() {
     setActiveMenu(activeMenu === sessionId ? null : sessionId)
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // UI — unchanged from original
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <DashboardLayout activeNav="AI Chat">
       <div className="h-full bg-page text-slate-100 px-4 pt-8 pb-0 sm:px-6 lg:px-10 xl:px-12">
@@ -314,7 +317,9 @@ export default function AIChat() {
                           }`}
                         >
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-white">{session.title}</p>
+                            <p className="truncate text-sm font-semibold text-white">
+                              {session.title}
+                            </p>
                           </div>
                           <button
                             type="button"
@@ -354,8 +359,12 @@ export default function AIChat() {
               <div className="flex-1 flex flex-col min-h-0">
                 <div className="flex flex-col gap-3 border-b border-slate-800/90 p-6 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.32em] text-slate-500">AI Lead Assistant</p>
-                    <h1 className="mt-3 text-2xl font-semibold text-white">Ask, refine and qualify leads in Sri Lanka.</h1>
+                    <p className="text-xs uppercase tracking-[0.32em] text-slate-500">
+                      AI Lead Assistant
+                    </p>
+                    <h1 className="mt-3 text-2xl font-semibold text-white">
+                      Ask, refine and qualify leads in Sri Lanka.
+                    </h1>
                   </div>
                 </div>
 
@@ -374,7 +383,8 @@ export default function AIChat() {
                             </div>
                             <p className="text-lg font-semibold text-white">No messages yet</p>
                             <p className="text-sm text-slate-500">
-                              Start a conversation about property leads, buyer profiles, or neighbourhood search criteria.
+                              Start a conversation about property leads, buyer profiles, or
+                              neighbourhood search criteria.
                             </p>
                           </div>
                         </div>
@@ -415,7 +425,11 @@ export default function AIChat() {
                             }}
                             placeholder="Type your request for the AI assistant…"
                             className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-                            style={{ outline: 'none', boxShadow: 'none', WebkitTapHighlightColor: 'transparent' }}
+                            style={{
+                              outline: 'none',
+                              boxShadow: 'none',
+                              WebkitTapHighlightColor: 'transparent',
+                            }}
                             aria-label="Type chat message"
                           />
                           <button
