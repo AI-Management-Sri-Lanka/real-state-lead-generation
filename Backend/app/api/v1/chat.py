@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
-from typing import Optional, Any
 
 from app.db.session import get_db
+from app.schemas.chat_schema import ChatResponse, ChatRequest, LeadResult
 from app.services.ai.router import Router
 from app.services.ai.simple_chat import DirectChatTool
 from app.services.ai.rank_leads import RankLeads
@@ -19,28 +18,6 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)]
 )
 
-
-# Request/Response Models
-
-class ChatRequest(BaseModel):
-    query: str
-    # sessions
-
-
-class LeadResult(BaseModel):
-    username: str
-    platform: str
-    post: str
-    score: float
-
-
-class ChatResponse(BaseModel):
-    success: bool
-    message: str
-    data: Optional[Any] = None
-
-
-# Routes 
 @router.post("", response_model=ChatResponse)
 async def post_chat(
     request: ChatRequest,
@@ -61,7 +38,11 @@ async def post_chat(
         
         # Route the query
         ai_router = Router()
-        routing_result = ai_router.chat(request.query)
+        routing_result = await ai_router.chat(
+            user_query=request.query,
+            session_id=request.session_id,
+            db=db
+        )
         
         logger.debug(f"Routing result: {routing_result}")
         
@@ -96,12 +77,12 @@ async def post_chat(
             )
             
             response_data["leads"] = [
-                {
-                    "username": lead["username"],
-                    "platform": lead["platform"],
-                    "post": lead["post"],
-                    "score": lead["score"]
-                }
+                LeadResult(
+                    username=lead["username"],
+                    platform=lead["platform"],
+                    post=lead["post"],
+                    score=lead["score"],
+                )
                 for lead in ranked_leads
             ]
             
@@ -112,11 +93,12 @@ async def post_chat(
             logger.info("Routing to simple_chat")
             response_data["route"] = "simple_chat"
             
-            # Get chat response (without session history for now)
+            # Get chat response using session history
             chat_tool = DirectChatTool()
-            ai_response = chat_tool.chat(
+            ai_response = await chat_tool.chat(
                 user_query=request.query,
-                session_history=""  # No history for now
+                session_id=request.session_id,
+                db=db
             )
             
             response_data["response"] = ai_response
@@ -128,9 +110,10 @@ async def post_chat(
             response_data["route"] = "simple_chat"
             
             chat_tool = DirectChatTool()
-            ai_response = chat_tool.chat(
+            ai_response = await chat_tool.chat(
                 user_query=request.query,
-                session_history=""
+                session_id=request.session_id,
+                db=db
             )
             
             response_data["response"] = ai_response

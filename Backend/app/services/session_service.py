@@ -1,81 +1,115 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
+from sqlalchemy.orm import selectinload
 from datetime import datetime
 from fastapi import HTTPException
 
-from app.models.session import Session, Message
-from app.schemas.session_schema import SessionCreate, MessageIn
+from app.models.session import Session
+from app.models.message import Message
+from app.schemas.session_schema import SessionCreate, MessageIn, SessionSummary
 
 
-class SessionService:
+def _with_messages():
+    """Reusable selectinload option for eager-loading messages in async context."""
+    return selectinload(Session.messages)
 
-    @staticmethod
-    async def create_session(db: AsyncSession, body: SessionCreate) -> Session:
-        session = Session(
-            user_id=body.user_id,
-            title=body.title or "New Chat"
-        )
-        db.add(session)
-        await db.commit()
-        await db.refresh(session)
-        return session
 
-    @staticmethod
-    async def get_session(db: AsyncSession, session_id: str) -> Session:
-        result = await db.execute(select(Session).where(Session.id == session_id))
-        session = result.scalar_one_or_none()
-        if not session:
-            raise HTTPException(status_code=404, detail="Session not found")
-        if datetime.utcnow() > session.expires_at:
-            await db.delete(session)
-            await db.commit()
-            raise HTTPException(status_code=410, detail="Session expired")
-        return session
+async def create_session(db: AsyncSession, body: SessionCreate) -> Session:
+    session = Session(
+        user_id=body.user_id,
+        title=body.title or "New Chat",
+    )
+    db.add(session)
+    await db.commit()
+    await db.refresh(session)
+    return session
 
-    @staticmethod
-    async def list_sessions(db: AsyncSession, user_id: int = None) -> list:
-        query = select(Session).where(Session.expires_at > datetime.utcnow())
-        if user_id is not None:
-            query = query.where(Session.user_id == user_id)
-        query = query.order_by(Session.updated_at.desc())
-        result = await db.execute(query)
-        return result.scalars().all()
 
-    @staticmethod
-    async def delete_session(db: AsyncSession, session_id: str):
-        session = await SessionService.get_session(db, session_id)
-        await db.delete(session)
-        await db.commit()
+async def get_session(db: AsyncSession, session_id: str) -> Session:
+    """Fetch a session with its messages eagerly loaded. Raises 404 or 410."""
+    result = await db.execute(
+        select(Session)
+        .options(_with_messages())
+        .where(Session.id == session_id)
+    )
+    session = result.scalar_one_or_none()
 
-    @staticmethod
-    async def add_message(db: AsyncSession, session_id: str, msg: MessageIn) -> Message:
-        if msg.role not in ("user", "assistant"):
-            raise HTTPException(status_code=422, detail="role must be 'user' or 'assistant'")
-        session = await SessionService.get_session(db, session_id)
-        new_msg = Message(
-            session_id=session_id,
-            role=msg.role,
-            content=msg.content,
-            timestamp=datetime.utcnow()
-        )
-        db.add(new_msg)
-        session.updated_at = datetime.utcnow()
-        await db.commit()
-        await db.refresh(new_msg)
-        return new_msg
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
 
-    @staticmethod
-    async def clear_messages(db: AsyncSession, session_id: str):
-        session = await SessionService.get_session(db, session_id)
-        session.messages = []
-        session.updated_at = datetime.utcnow()
-        await db.commit()
+    return session
 
-    @staticmethod
-    async def update_session(db: AsyncSession, session_id: str, title: str) -> Session:
-        session = await SessionService.get_session(db, session_id)
-        session.title = title
-        session.updated_at = datetime.utcnow()
-        await db.commit()
-        await db.refresh(session)
-        return session
+
+async def list_sessions(db: AsyncSession, user_id: int | None = None) -> list[Session]:
+    """List non-expired sessions, newest first. Eagerly loads messages for message_count."""
+    query = select(Session).options(_with_messages())
+    if user_id is not None:
+        query = query.where(Session.user_id == user_id)
+    query = query.order_by(Session.updated_at.desc())
+
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+async def update_session(db: AsyncSession, session_id: str, title: str) -> Session:
+    session = await get_session(db, session_id)
+    session.title = title
+    session.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(session)
+    return session
+
+
+async def delete_session(db: AsyncSession, session_id: str) -> None:
+    session = await get_session(db, session_id)
+    await db.delete(session)  # cascade deletes messages via FK ondelete=CASCADE
+    await db.commit()
+
+
+async def add_message(db: AsyncSession, session_id: str, msg: MessageIn) -> Message:
+    if msg.role not in ("user", "assistant"):
+        raise HTTPException(status_code=422, detail="role must be 'user' or 'assistant'")
+
+    await get_session(db, session_id)  # validate exists and not expired
+
+    new_msg = Message(
+        session_id=session_id,
+        role=msg.role,
+        content=msg.content,
+        timestamp=datetime.utcnow(),
+    )
+    db.add(new_msg)
+    await db.execute(
+        Session.__table__.update()
+        .where(Session.id == session_id)
+        .values(updated_at=datetime.utcnow())
+    )
+    await db.commit()
+    await db.refresh(new_msg)
+    return new_msg
+
+
+async def clear_messages(db: AsyncSession, session_id: str) -> None:
+    """Delete all messages for a session using a DELETE statement (safe in async)."""
+    await get_session(db, session_id)  # validate exists and not expired
+
+    await db.execute(
+        delete(Message).where(Message.session_id == session_id)
+    )
+    await db.execute(
+        Session.__table__.update()
+        .where(Session.id == session_id)
+        .values(updated_at=datetime.utcnow())
+    )
+    await db.commit()
+
+
+def to_summary(session: Session) -> SessionSummary:
+    """Convert a Session ORM object to a SessionSummary schema."""
+    return SessionSummary(
+        session_id=session.id,
+        user_id=session.user_id,
+        title=session.title,
+        message_count=len(session.messages),
+        updated_at=session.updated_at,
+    )
