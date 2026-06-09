@@ -1,303 +1,370 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react'
-import { Loader2, Plus, Search, Send, MoreVertical, Trash2, Edit2 } from 'lucide-react'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { ChatMessage } from '@/components/dashboard/ChatMessage'
-import { useAuth } from '@/hooks/useAuth'
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import {
+  Loader2,
+  Plus,
+  Search,
+  Send,
+  MoreVertical,
+  Trash2,
+  Edit2,
+} from "lucide-react";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ChatMessage } from "@/components/dashboard/ChatMessage";
+import { useAuth } from "@/hooks/useAuth";
 
 type ChatMessageType = {
-  id: string
-  role: 'assistant' | 'user'
-  content: string
-  timestamp: Date
-  isTyping?: boolean
-}
+  id: string;
+  role: "assistant" | "user";
+  content: string;
+  timestamp: Date;
+  isTyping?: boolean;
+};
 
 type Session = {
-  id: string
-  title: string
-  createdAt: string
-  messages: ChatMessageType[]
-}
+  id: string;
+  title: string;
+  createdAt: string;
+  messages: ChatMessageType[];
+};
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 export default function AIChat() {
-  const { user } = useAuth()
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [activeSessionId, setActiveSessionId] = useState<string>('')
-  const [messageText, setMessageText] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [activeMenu, setActiveMenu] = useState<string | null>(null)
+  const { user } = useAuth();
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>("");
+  const [messageText, setMessageText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
-  const userIdInt = typeof user?.id === 'number' ? user.id : 1
+  const userIdInt = typeof user?.id === "number" ? user.id : 1;
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? sessions[0],
     [sessions, activeSessionId],
-  )
+  );
 
   function sessionTitleFromMessages(session: Session): string {
-    if (session.title && session.title !== 'New chat') return session.title
-    const firstUserMessage = session.messages.find((m) => m.role === 'user' && m.content.trim())
-    if (!firstUserMessage) return session.title || 'New chat'
-    const snippet = firstUserMessage.content.trim().replace(/\s+/g, ' ')
-    return snippet.length > 30 ? `${snippet.slice(0, 30)}...` : snippet
+    if (session.title && session.title !== "New chat") return session.title;
+    const firstUserMessage = session.messages.find(
+      (m) => m.role === "user" && m.content.trim(),
+    );
+    if (!firstUserMessage) return session.title || "New chat";
+    const snippet = firstUserMessage.content.trim().replace(/\s+/g, " ");
+    return snippet.length > 30 ? `${snippet.slice(0, 30)}...` : snippet;
   }
 
   // ── Load sessions on mount ────────────────────────────────────────────────
   useEffect(() => {
     async function loadSessions() {
       try {
-        const token = localStorage.getItem('aimsl_token')
+        const token = localStorage.getItem("aimsl_token");
         const res = await fetch(`${BASE_URL}/sessions?user_id=${userIdInt}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (!res.ok) throw new Error('Failed to fetch sessions')
-        const data = await res.json()
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Failed to fetch sessions");
+        const data = await res.json();
 
         const mapped: Session[] = data.map((s: any) => ({
           id: s.session_id,
           title: s.title,
           createdAt: new Date(s.updated_at).toLocaleDateString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
           }),
           messages: [],
-        }))
+        }));
 
-        setSessions(mapped)
-        if (mapped.length > 0) setActiveSessionId(mapped[0].id)
+        setSessions(mapped);
+        if (mapped.length > 0) setActiveSessionId(mapped[0].id);
       } catch (err) {
-        console.error('Error loading sessions:', err)
+        console.error("Error loading sessions:", err);
       }
     }
 
-    if (user) loadSessions()
-  }, [user, userIdInt])
+    if (user) loadSessions();
+  }, [user, userIdInt]);
 
   // ── Load messages for active session ─────────────────────────────────────
   useEffect(() => {
-    if (!activeSessionId) return
+    if (!activeSessionId) return;
 
     async function loadMessages() {
       try {
-        const token = localStorage.getItem('aimsl_token')
+        const token = localStorage.getItem("aimsl_token");
         const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (!res.ok) throw new Error('Failed to fetch session')
-        const data = await res.json()
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Failed to fetch session");
+        const data = await res.json();
 
         setSessions((prev) =>
           prev.map((s) => {
-            if (s.id !== activeSessionId) return s
-            const messages: ChatMessageType[] = (data.messages ?? []).map((m: any) => ({
-              id: m.id ?? `${Date.now()}-${Math.random()}`,
-              role: m.role,
-              content: m.content,
-              timestamp: new Date(m.timestamp),
-            }))
+            if (s.id !== activeSessionId) return s;
+            const messages: ChatMessageType[] = (data.messages ?? []).map(
+              (m: any) => ({
+                id: m.id ?? `${Date.now()}-${Math.random()}`,
+                role: m.role,
+                content: m.content,
+                timestamp: new Date(m.timestamp),
+              }),
+            );
             return {
               ...s,
-              title: sessionTitleFromMessages({ ...s, title: data.title, messages }),
+              title: sessionTitleFromMessages({
+                ...s,
+                title: data.title,
+                messages,
+              }),
               messages,
-            }
+            };
           }),
-        )
+        );
       } catch (err) {
-        console.error('Error loading messages:', err)
+        console.error("Error loading messages:", err);
       }
     }
 
-    loadMessages()
-  }, [activeSessionId])
+    loadMessages();
+  }, [activeSessionId]);
 
   // ── Create new session ────────────────────────────────────────────────────
   async function handleNewChat(): Promise<string | undefined> {
     try {
-      const token = localStorage.getItem('aimsl_token')
+      const token = localStorage.getItem("aimsl_token");
       const res = await fetch(`${BASE_URL}/sessions`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ user_id: userIdInt, title: 'New chat' }),
-      })
-      if (!res.ok) throw new Error('Failed to create session')
-      const data = await res.json()
+        body: JSON.stringify({ user_id: userIdInt, title: "New chat" }),
+      });
+      if (!res.ok) throw new Error("Failed to create session");
+      const data = await res.json();
 
       const newSession: Session = {
         id: data.session_id,
         title: data.title,
-        createdAt: 'Just now',
+        createdAt: "Just now",
         messages: [],
-      }
+      };
 
-      setSessions((prev) => [newSession, ...prev])
-      setActiveSessionId(newSession.id)
-      setMessageText('')
-      setActiveMenu(null)
-      return newSession.id
+      setSessions((prev) => [newSession, ...prev]);
+      setActiveSessionId(newSession.id);
+      setMessageText("");
+      setActiveMenu(null);
+      return newSession.id;
     } catch (err) {
-      console.error('Error creating session:', err)
-      return undefined
+      console.error("Error creating session:", err);
+      return undefined;
     }
   }
 
   // ── Send message & get AI reply ───────────────────────────────────────────
   // POST /chat  body: { query: string }
   // Response: { success, message, data: { route, response, leads, preferences } }
+  // ── Send message & get AI reply ───────────────────────────────────────────
   async function handleSend() {
-    const trimmed = messageText.trim()
-    if (!trimmed || isTyping) return
-    // Capture in local variable — avoids stale closure bug when a new
-    // session is created and activeSessionId hasn't re-rendered yet
-    let sessionId: string | undefined = activeSessionId || undefined
+    const trimmed = messageText.trim();
+    if (!trimmed || isTyping) return;
+
+    let sessionId: string | undefined = activeSessionId || undefined;
     if (!sessionId) {
-      sessionId = await handleNewChat()
-      if (!sessionId) return
+      sessionId = await handleNewChat();
+      if (!sessionId) return;
     }
 
     // Optimistically add user message
     const userMsg: ChatMessageType = {
       id: `msg-${Date.now()}`,
-      role: 'user',
+      role: "user",
       content: trimmed,
       timestamp: new Date(),
-    }
+    };
 
     setSessions((prev) =>
       prev.map((s) =>
         s.id === sessionId
           ? {
               ...s,
-              title: sessionTitleFromMessages({ ...s, messages: [...s.messages, userMsg] }),
+              title: sessionTitleFromMessages({
+                ...s,
+                messages: [...s.messages, userMsg],
+              }),
               messages: [...s.messages, userMsg],
             }
           : s,
       ),
-    )
-    setMessageText('')
-    setIsTyping(true)
+    );
+    setMessageText("");
+    setIsTyping(true);
 
     try {
-      // ── Call POST /chat with { query, session_id } ────────────────────────────────────
-      const token = localStorage.getItem('aimsl_token')
+      const token = localStorage.getItem("aimsl_token");
       const res = await fetch(`${BASE_URL}/chat`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token}`
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ query: trimmed, session_id: sessionId }),
-      })
-      if (!res.ok) throw new Error('Failed to send message')
+      });
 
-      const json = await res.json()
-      // json.data.route === 'lead_search' → show leads list
-      // json.data.route === 'general'     → show json.data.response text
-      const data = json.data
-      let content: string = json.message ?? 'Here is what I found.'
-      if (data.route !== 'lead_search' && data.response) {
-        content = data.response
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || "Failed to send message");
       }
-      // Append leads as readable text so existing ChatMessage component renders them
-      if (data.leads?.length) {
-        const leadLines = data.leads.map((l: any, i: number) =>
-          `${i + 1}. @${l.username} (${l.platform}) — ${Math.round(l.score * 100)}% match\n"${l.post}"`
-        )
-        content = `${content}\n\n${leadLines.join('\n\n')}`
+
+      const json = await res.json();
+      console.log("Backend response:", json); // Debug log
+
+      // ✅ NEW: Parse the updated backend response structure
+      // Response: { success, message, data: { message, leads, route } }
+      const responseData = json.data;
+
+      // Start with the AI's message
+      let content: string =
+        responseData.message || json.message || "Here is what I found.";
+
+      // ✅ NEW: Format leads with the correct field names
+      if (responseData.leads && responseData.leads.length > 0) {
+        content += `\n\n**Found ${responseData.leads.length} potential leads:**\n\n`;
+
+        const leadLines = responseData.leads.map((lead: any, index: number) => {
+          const parts = [];
+
+          // Lead header with username and platform
+          parts.push(
+            `**${index + 1}. @${lead.userId || lead.username}** (${lead.platform})`,
+          );
+
+          // Name if available
+          if (lead.name && lead.name !== lead.userId) {
+            parts.push(`   Name: ${lead.name}`);
+          }
+
+          // Property details
+          if (lead.property_type) {
+            parts.push(`   Property Type: ${lead.property_type}`);
+          }
+          if (
+            lead.location &&
+            lead.location !== "null" &&
+            lead.location !== null
+          ) {
+            parts.push(`   Location: ${lead.location}`);
+          }
+          if (lead.date) {
+            const date = new Date(lead.date);
+            parts.push(`   Date: ${date.toLocaleDateString()}`);
+          }
+
+          // Post content (truncated if too long)
+          if (lead.description) {
+            const desc =
+              lead.description.length > 200
+                ? lead.description.substring(0, 200) + "..."
+                : lead.description;
+            parts.push(`   Post: "${desc}"`);
+          }
+
+          // Link
+          if (lead.post_link) {
+            parts.push(`   Link: ${lead.post_link}`);
+          }
+
+          return parts.join("\n");
+        });
+
+        content += leadLines.join("\n\n");
       }
 
       const aiMsg: ChatMessageType = {
         id: `msg-ai-${Date.now()}`,
-        role: 'assistant',
+        role: "assistant",
         content,
         timestamp: new Date(),
-      }
+      };
 
-      // ✅ Use local sessionId, not activeSessionId
       setSessions((prev) =>
         prev.map((s) =>
-          s.id === sessionId
-            ? { ...s, messages: [...s.messages, aiMsg] }
-            : s,
+          s.id === sessionId ? { ...s, messages: [...s.messages, aiMsg] } : s,
         ),
-      )
+      );
     } catch (err) {
-      console.error('Error sending message:', err)
+      console.error("Error sending message:", err);
       const errMsg: ChatMessageType = {
         id: `msg-error-${Date.now()}`,
-        role: 'assistant',
-        content: 'Could not connect to the assistant. Please try again.',
+        role: "assistant",
+        content: `Could not connect to the assistant. ${err instanceof Error ? err.message : "Please try again."}`,
         timestamp: new Date(),
-      }
-      // ✅ Use local sessionId, not activeSessionId
+      };
+
       setSessions((prev) =>
         prev.map((s) =>
-          s.id === sessionId
-            ? { ...s, messages: [...s.messages, errMsg] }
-            : s,
+          s.id === sessionId ? { ...s, messages: [...s.messages, errMsg] } : s,
         ),
-      )
+      );
     } finally {
-      setIsTyping(false)
+      setIsTyping(false);
     }
   }
   // ── Rename session ────────────────────────────────────────────────────────
   async function handleRename(sessionId: string) {
-    const session = sessions.find((s) => s.id === sessionId)
-    const title = window.prompt('Rename chat session', session?.title ?? '')
-    if (!title?.trim()) return
+    const session = sessions.find((s) => s.id === sessionId);
+    const title = window.prompt("Rename chat session", session?.title ?? "");
+    if (!title?.trim()) return;
 
     try {
-      const token = localStorage.getItem('aimsl_token')
+      const token = localStorage.getItem("aimsl_token");
       const res = await fetch(
         `${BASE_URL}/sessions/${sessionId}?title=${encodeURIComponent(title.trim())}`,
-        { 
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${token}` }
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
         },
-      )
-      if (!res.ok) throw new Error('Failed to rename session')
+      );
+      if (!res.ok) throw new Error("Failed to rename session");
 
       setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, title: title.trim() } : s)),
-      )
-      setActiveMenu(null)
+        prev.map((s) =>
+          s.id === sessionId ? { ...s, title: title.trim() } : s,
+        ),
+      );
+      setActiveMenu(null);
     } catch (err) {
-      console.error('Error renaming session:', err)
+      console.error("Error renaming session:", err);
     }
   }
 
   // ── Delete session ────────────────────────────────────────────────────────
   async function handleDelete(sessionId: string) {
     try {
-      const token = localStorage.getItem('aimsl_token')
-      const res = await fetch(`${BASE_URL}/sessions/${sessionId}`, { 
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      if (!res.ok) throw new Error('Failed to delete session')
+      const token = localStorage.getItem("aimsl_token");
+      const res = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete session");
 
-      const remaining = sessions.filter((s) => s.id !== sessionId)
-      setSessions(remaining)
+      const remaining = sessions.filter((s) => s.id !== sessionId);
+      setSessions(remaining);
       if (activeSessionId === sessionId) {
-        setActiveSessionId(remaining[0]?.id ?? '')
+        setActiveSessionId(remaining[0]?.id ?? "");
       }
-      setActiveMenu(null)
+      setActiveMenu(null);
     } catch (err) {
-      console.error('Error deleting session:', err)
+      console.error("Error deleting session:", err);
     }
   }
 
   function openMenu(e: MouseEvent<HTMLButtonElement>, sessionId: string) {
-    e.stopPropagation()
-    setActiveMenu(activeMenu === sessionId ? null : sessionId)
+    e.stopPropagation();
+    setActiveMenu(activeMenu === sessionId ? null : sessionId);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -307,13 +374,16 @@ export default function AIChat() {
         <div className="mx-auto w-full h-full">
           <div className="h-full rounded-[32px] border border-slate-800/80 bg-slate-950/90 shadow-panel overflow-hidden flex flex-col">
             <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-
               {/* ── Sidebar ── */}
               <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.28em] text-slate-500">AI Assistant</p>
-                    <h2 className="mt-3 text-lg font-semibold text-white">Chat history</h2>
+                    <p className="text-xs uppercase tracking-[0.28em] text-slate-500">
+                      AI Assistant
+                    </p>
+                    <h2 className="mt-3 text-lg font-semibold text-white">
+                      Chat history
+                    </h2>
                   </div>
                   <button
                     type="button"
@@ -326,7 +396,7 @@ export default function AIChat() {
 
                 <div className="mt-6 space-y-3">
                   {sessions.map((session) => {
-                    const active = session.id === activeSession?.id
+                    const active = session.id === activeSession?.id;
                     return (
                       <div key={session.id} className="relative">
                         <button
@@ -334,8 +404,8 @@ export default function AIChat() {
                           onClick={() => setActiveSessionId(session.id)}
                           className={`flex w-full items-start justify-between gap-3 rounded-3xl border px-4 py-4 text-left transition ${
                             active
-                              ? 'border-brand bg-slate-900 ring-2 ring-brand/20'
-                              : 'border-slate-800/80 bg-slate-950/90 hover:border-slate-600 hover:bg-slate-900'
+                              ? "border-brand bg-slate-900 ring-2 ring-brand/20"
+                              : "border-slate-800/80 bg-slate-950/90 hover:border-slate-600 hover:bg-slate-900"
                           }`}
                         >
                           <div className="min-w-0">
@@ -372,7 +442,7 @@ export default function AIChat() {
                           </div>
                         )}
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -403,10 +473,12 @@ export default function AIChat() {
                             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-800 text-brand">
                               <Search size={32} />
                             </div>
-                            <p className="text-lg font-semibold text-white">No messages yet</p>
+                            <p className="text-lg font-semibold text-white">
+                              No messages yet
+                            </p>
                             <p className="text-sm text-slate-500">
-                              Start a conversation about property leads, buyer profiles, or
-                              neighbourhood search criteria.
+                              Start a conversation about property leads, buyer
+                              profiles, or neighbourhood search criteria.
                             </p>
                           </div>
                         </div>
@@ -432,25 +504,25 @@ export default function AIChat() {
                             value={messageText}
                             onChange={(e) => setMessageText(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault()
-                                handleSend()
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
                               }
                             }}
                             onFocus={(e) => {
-                              e.currentTarget.style.outline = 'none'
-                              e.currentTarget.style.boxShadow = 'none'
+                              e.currentTarget.style.outline = "none";
+                              e.currentTarget.style.boxShadow = "none";
                             }}
                             onBlur={(e) => {
-                              e.currentTarget.style.outline = 'none'
-                              e.currentTarget.style.boxShadow = 'none'
+                              e.currentTarget.style.outline = "none";
+                              e.currentTarget.style.boxShadow = "none";
                             }}
                             placeholder="Type your request for the AI assistant…"
                             className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                             style={{
-                              outline: 'none',
-                              boxShadow: 'none',
-                              WebkitTapHighlightColor: 'transparent',
+                              outline: "none",
+                              boxShadow: "none",
+                              WebkitTapHighlightColor: "transparent",
                             }}
                             aria-label="Type chat message"
                           />
@@ -468,11 +540,10 @@ export default function AIChat() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }
