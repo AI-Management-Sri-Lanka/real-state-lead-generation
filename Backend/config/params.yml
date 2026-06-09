@@ -1,8 +1,8 @@
 scraping:
-  limit: 10
+  limit: 20
   timeout: 30
 
 vector_search:
   vector_size: 1536
-  top_k: 5
+  top_k: 10
   similarity_threshold: 0.7
