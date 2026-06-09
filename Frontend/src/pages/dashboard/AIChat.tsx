@@ -48,7 +48,10 @@ export default function AIChat() {
   useEffect(() => {
     async function loadSessions() {
       try {
-        const res = await fetch(`${BASE_URL}/sessions?user_id=${userIdInt}`)
+        const token = localStorage.getItem('aimsl_token')
+        const res = await fetch(`${BASE_URL}/sessions?user_id=${userIdInt}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
         if (!res.ok) throw new Error('Failed to fetch sessions')
         const data = await res.json()
 
@@ -80,7 +83,10 @@ export default function AIChat() {
 
     async function loadMessages() {
       try {
-        const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}`)
+        const token = localStorage.getItem('aimsl_token')
+        const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
         if (!res.ok) throw new Error('Failed to fetch session')
         const data = await res.json()
 
@@ -111,9 +117,13 @@ export default function AIChat() {
   // ── Create new session ────────────────────────────────────────────────────
   async function handleNewChat(): Promise<string | undefined> {
     try {
+      const token = localStorage.getItem('aimsl_token')
       const res = await fetch(`${BASE_URL}/sessions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({ user_id: userIdInt, title: 'New chat' }),
       })
       if (!res.ok) throw new Error('Failed to create session')
@@ -174,11 +184,16 @@ export default function AIChat() {
     setIsTyping(true)
 
     try {
-      // ── Call POST /chat with { query } ────────────────────────────────────
+      // ── Call POST /chat with { query, session_id } ────────────────────────────────────
+      const token = localStorage.getItem('aimsl_token')
       const res = await fetch(`${BASE_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify({ query: trimmed }),
+        headers: { 
+          'Content-Type': 'application/json', 
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ query: trimmed, session_id: sessionId }),
       })
       if (!res.ok) throw new Error('Failed to send message')
 
@@ -240,9 +255,13 @@ export default function AIChat() {
     if (!title?.trim()) return
 
     try {
+      const token = localStorage.getItem('aimsl_token')
       const res = await fetch(
         `${BASE_URL}/sessions/${sessionId}?title=${encodeURIComponent(title.trim())}`,
-        { method: 'PATCH' },
+        { 
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` }
+        },
       )
       if (!res.ok) throw new Error('Failed to rename session')
 
@@ -258,7 +277,11 @@ export default function AIChat() {
   // ── Delete session ────────────────────────────────────────────────────────
   async function handleDelete(sessionId: string) {
     try {
-      const res = await fetch(`${BASE_URL}/sessions/${sessionId}`, { method: 'DELETE' })
+      const token = localStorage.getItem('aimsl_token')
+      const res = await fetch(`${BASE_URL}/sessions/${sessionId}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       if (!res.ok) throw new Error('Failed to delete session')
 
       const remaining = sessions.filter((s) => s.id !== sessionId)
