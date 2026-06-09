@@ -25,12 +25,20 @@ class RankLeads:
                 vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
             )
 
-    def _index_leads(self, leads: List[ScrapedLead]):
-        texts = [lead.description for lead in leads]
+    def _index_leads(self, leads: List[ScrapedLead]) -> int:
+        # Keep only leads with non-empty text to avoid generating empty updates.
+        valid_leads = [lead for lead in leads if lead.description and lead.description.strip()]
+        if not valid_leads:
+            return 0
+
+        texts = [lead.description for lead in valid_leads]
         embeddings = self.embedder.embed_documents(texts)
 
+        if not embeddings:
+            return 0
+
         points = []
-        for i, (lead, embedding) in enumerate(zip(leads, embeddings)):
+        for i, (lead, embedding) in enumerate(zip(valid_leads, embeddings)):
             points.append(
                 PointStruct(
                     id=i,
@@ -39,28 +47,43 @@ class RankLeads:
                 )
             )
 
+        if not points:
+            return 0
+
         self.qdrant_client.upsert(
             collection_name=self.collection_name,
             points=points
         )
 
+        return len(points)
+
     def rank_leads(self, query: str, leads: List[ScrapedLead]) -> List:
+        if not leads:
+            return []
+
         self._prepare_collection()
-        self._index_leads(leads)
+        try:
+            indexed_count = self._index_leads(leads)
+            if indexed_count == 0:
+                return []
 
-        search_results = self.qdrant_client.query_points(
-            collection_name=self.collection_name,
-            query=self.embedder.embed_query(query),
-            limit=VECTOR_SEARCH_TOP_K,
-        )
+            search_results = self.qdrant_client.query_points(
+                collection_name=self.collection_name,
+                query=self.embedder.embed_query(query),
+                limit=min(VECTOR_SEARCH_TOP_K, indexed_count),
+            )
 
-        ranked_leads: List[ScrapedLead] = []
-        for hit in search_results.points:
-            ranked_leads.append(ScrapedLead(**hit.payload))
+            ranked_leads: List[ScrapedLead] = []
+            for hit in search_results.points:
+                ranked_leads.append(ScrapedLead(**hit.payload))
 
-        self.qdrant_client.delete_collection(self.collection_name)
-        
-        return ranked_leads
+            return ranked_leads
+        finally:
+            # Best effort cleanup for temporary collection.
+            try:
+                self.qdrant_client.delete_collection(self.collection_name)
+            except Exception:
+                pass
  
     
 # Testing feat: rank-leads
