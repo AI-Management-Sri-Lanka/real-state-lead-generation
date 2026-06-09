@@ -94,8 +94,7 @@ class Orchestrator:
         scraped_leads: List[ScrapedLead] = run_scraper(scraper_input)
 
         # Rank leads
-        leads_to_rank = [lead for lead in scraped_leads if lead.description]
-        ranked_leads: List[ScrapedLead] = RankLeads().rank_leads(query=user_query, leads=leads_to_rank)
+        ranked_leads: List[ScrapedLead] = RankLeads().rank_leads(query=user_query, leads=scraped_leads)
 
         return OrchestratorResponse(
             message="Here are the leads I found for you",
