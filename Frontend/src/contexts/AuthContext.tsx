@@ -63,7 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const userData = await authApi.signIn({ email, password });
+      const tokenData = await authApi.signIn({ email, password });
+      localStorage.setItem("aimsl_access_token", tokenData.access_token);
+      localStorage.setItem("aimsl_refresh_token", tokenData.refresh_token);
+
+      const userData = await authApi.getMe(tokenData.access_token);
       setUser(userData);
       localStorage.setItem("aimsl_user", JSON.stringify(userData));
     } catch (err) {
@@ -80,7 +84,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
       try {
-        const userData = await authApi.signUp({ full_name, email, password });
+        const tokenData = await authApi.signUp({ full_name, email, password });
+        localStorage.setItem("aimsl_access_token", tokenData.access_token);
+        localStorage.setItem("aimsl_refresh_token", tokenData.refresh_token);
+
+        const userData = await authApi.getMe(tokenData.access_token);
         setUser(userData);
         localStorage.setItem("aimsl_user", JSON.stringify(userData));
       } catch (err) {
@@ -98,6 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setError(null);
     localStorage.removeItem("aimsl_user");
+    localStorage.removeItem("aimsl_access_token");
+    localStorage.removeItem("aimsl_refresh_token");
   }, []);
 
   return (
