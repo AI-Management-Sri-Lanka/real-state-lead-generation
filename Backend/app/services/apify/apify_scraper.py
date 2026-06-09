@@ -3,10 +3,13 @@ import re
 import json
 import time
 from datetime import datetime, timezone
+from typing import Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from dotenv import load_dotenv
 from apify_client import ApifyClient
+
+from app.schemas.lead_schema import ScrapedLead, Platform, PropertyType
 
 
 load_dotenv()
@@ -34,7 +37,6 @@ FACEBOOK_PAGE_MAP: dict = {
 
 # LIMITS (keep Apify credits low) 
 
-MAX_TOTAL_LEADS = 20   # hard cap across all platforms combined
 DEFAULT_LIMIT   = 20
 
 # CATEGORISATION TABLES 
@@ -68,28 +70,44 @@ def _make_client() -> ApifyClient:
     return ApifyClient(APIFY_API_TOKEN)
 
 
-def _parse_ts(ts) -> str:
-    """Convert UNIX timestamp or date string to YYYY-MM-DD."""
+def _parse_ts(ts) -> Optional[datetime]:
+    """Convert UNIX timestamp or date string to a datetime object."""
+    if not ts:
+        return None
+    # Try UNIX timestamp
     try:
-        return datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
-    except Exception:
-        return str(ts)
+        return datetime.fromtimestamp(int(ts), tz=timezone.utc)
+    except (ValueError, TypeError, OSError):
+        pass
+    # Try ISO format string
+    try:
+        return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        pass
+    # Try date-only string (YYYY-MM-DD)
+    try:
+        return datetime.strptime(str(ts).split("T")[0], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
 
 
 # CATEGORISATION 
 
-def extract_property_type(text: str) -> str:
+def extract_property_type(text: str) -> PropertyType:
     """Return the best-matching property category from post text."""
     if not text:
-        return "unknown"
+        return PropertyType.unknown
     lower = text.lower()
     for prop_type, keywords in PROPERTY_KEYWORDS.items():
         if any(kw in lower for kw in keywords):
-            return prop_type
-    return "unknown"
+            try:
+                return PropertyType(prop_type)
+            except ValueError:
+                return PropertyType.unknown
+    return PropertyType.unknown
 
 
-def extract_location(text: str, raw_item: dict) -> str:
+def extract_location(text: str, raw_item: dict) -> Optional[str]:
     """
     Extract desired location from:
       1. Native location fields the Apify actor already provides
@@ -110,59 +128,57 @@ def extract_location(text: str, raw_item: dict) -> str:
                 if len(candidate) > 2:
                     return candidate
 
-    return "unknown"
+    return None
 
 
 # NORMALIZERS 
 
-def _normalize_tiktok(item: dict) -> dict:
+def _normalize_tiktok(item: dict) -> ScrapedLead:
     author   = item.get("authorMeta", {})
     username = author.get("name", "") or item.get("author", "")
     video_id = item.get("id", "")
     ts       = item.get("createTime", "")
     desc     = item.get("text", "") or item.get("desc", "")
-    return {
-        "userId":        username,
-        "name":          author.get("nickName", "") or username,
-        "email":         "",
-        "post_link":     (f"https://www.tiktok.com/@{username}/video/{video_id}"
-                          if username and video_id else ""),
-        "date":          _parse_ts(ts) if ts else "",
-        "description":   desc,
-        "platform":      "tiktok",
-        "property_type": extract_property_type(desc),
-        "location":      extract_location(desc, item),
-    }
+    return ScrapedLead(
+        userId=username,
+        name=author.get("nickName", "") or username,
+        email=None,
+        post_link=(f"https://www.tiktok.com/@{username}/video/{video_id}"
+                   if username and video_id else ""),
+        date=_parse_ts(ts),
+        description=desc or None,
+        platform=Platform.tiktok,
+        property_type=extract_property_type(desc),
+        location=extract_location(desc, item),
+    )
 
 
-def _normalize_instagram(item: dict) -> dict:
+def _normalize_instagram(item: dict) -> ScrapedLead:
     username   = (item.get("ownerUsername") or item.get("username")
                   or item.get("owner", {}).get("username", ""))
     short_code = item.get("shortCode") or item.get("shortcode", "")
-    ts         = item.get("timestamp") or item.get("takenAtTimestamp", "")
+    ts         = item.get("timestamp") or item.get("takenAtTimestamp") or item.get("takenAt")
     desc       = (item.get("caption") or item.get("alt")
                   or item.get("biography") or item.get("description", ""))
-    return {
-        "userId":        username,
-        "name":          (item.get("ownerFullName") or item.get("fullName")
-                          or item.get("owner", {}).get("fullName", "") or username),
-        "email":         (item.get("businessEmail") or item.get("email")
-                          or item.get("owner", {}).get("businessEmail", "") or ""),
-        "post_link":     (f"https://www.instagram.com/p/{short_code}/"
-                          if short_code else item.get("url", "") or item.get("postUrl", "")),
-        "date":          _parse_ts(ts) if ts else item.get("takenAt", ""),
-        "description":   desc,
-        "platform":      "instagram",
-        "property_type": extract_property_type(desc),
-        "location":      extract_location(desc, item),
-    }
+    return ScrapedLead(
+        userId=username,
+        name=(item.get("ownerFullName") or item.get("fullName")
+              or item.get("owner", {}).get("fullName", "") or username),
+        email=(item.get("businessEmail") or item.get("email")
+               or item.get("owner", {}).get("businessEmail") or None),
+        post_link=(f"https://www.instagram.com/p/{short_code}/"
+                   if short_code else item.get("url", "") or item.get("postUrl", "")),
+        date=_parse_ts(ts),
+        description=desc or None,
+        platform=Platform.instagram,
+        property_type=extract_property_type(desc),
+        location=extract_location(desc, item),
+    )
 
 
-def _normalize_facebook(item: dict, resolved: dict = None) -> dict:
+def _normalize_facebook(item: dict, resolved: dict = None) -> ScrapedLead:
     r    = resolved or {}
-    date = item.get("date") or item.get("time") or item.get("createdTime", "")
-    if date and "T" in date:
-        date = date.split("T")[0]
+    raw_date = item.get("date") or item.get("time") or item.get("createdTime")
 
     # Text content: hashtag scraper may use different keys
     desc = (item.get("text") or item.get("message") or item.get("story")
@@ -196,17 +212,17 @@ def _normalize_facebook(item: dict, resolved: dict = None) -> dict:
     name    = (r.get("name") or item.get("authorName") or item.get("author")
                or item.get("title") or item.get("pageName") or slug or "")
 
-    return {
-        "userId":        user_id,
-        "name":          name,
-        "email":         r.get("email", "") or item.get("email", ""),
-        "post_link":     post_url,
-        "date":          date,
-        "description":   desc,
-        "platform":      "facebook",
-        "property_type": extract_property_type(desc),
-        "location":      extract_location(desc, {**item, **r}),
-    }
+    return ScrapedLead(
+        userId=user_id,
+        name=name,
+        email=r.get("email") or item.get("email") or None,
+        post_link=post_url or "",
+        date=_parse_ts(raw_date),
+        description=desc or None,
+        platform=Platform.facebook,
+        property_type=extract_property_type(desc),
+        location=extract_location(desc, {**item, **r}),
+    )
 
 
 # FACEBOOK PROFILE RESOLVER 
@@ -229,7 +245,7 @@ def _resolve_fb_profile(client: ApifyClient, fb_id: str) -> dict:
         return {}
 
 
-def _fb_normalize_batch(client: ApifyClient, items, seen_ids: set) -> list:
+def _fb_normalize_batch(client: ApifyClient, items, seen_ids: set) -> List[ScrapedLead]:
     """
     Normalize a batch of Facebook items.
     Only calls the profile resolver when we don't already have author info
@@ -254,14 +270,14 @@ def _fb_normalize_batch(client: ApifyClient, items, seen_ids: set) -> list:
             resolved = _resolve_fb_profile(client, fb_id)
             time.sleep(1)
         lead = _normalize_facebook(item, resolved)
-        if lead["userId"] or lead["name"]:
+        if lead.userId or lead.name:
             results.append(lead)
     return results
 
 
 #  PLATFORM SCRAPERS (each runs in its own thread) 
 
-def scrape_tiktok(hashtags: list, per_limit: int) -> list:
+def scrape_tiktok(hashtags: list, per_limit: int) -> List[ScrapedLead]:
     """Scrape TikTok via hashtag + main actor."""
     client  = _make_client()
     results = []
@@ -277,7 +293,7 @@ def scrape_tiktok(hashtags: list, per_limit: int) -> list:
         })
         for item in client.dataset(run.default_dataset_id).iterate_items():
             lead = _normalize_tiktok(item)
-            if lead["userId"]:
+            if lead.userId:
                 results.append(lead)
     except Exception as e:
         print(f"[TikTok] Hashtag scraper error: {e}")
@@ -306,7 +322,7 @@ def scrape_tiktok(hashtags: list, per_limit: int) -> list:
         })
         for item in client.dataset(run.default_dataset_id).iterate_items():
             lead = _normalize_tiktok(item)
-            if lead["userId"]:
+            if lead.userId:
                 results.append(lead)
     except Exception as e:
         print(f"[TikTok] Main scraper error: {e}")
@@ -314,7 +330,7 @@ def scrape_tiktok(hashtags: list, per_limit: int) -> list:
     return results[:per_limit]
 
 
-def scrape_instagram(hashtags: list, per_limit: int) -> list:
+def scrape_instagram(hashtags: list, per_limit: int) -> List[ScrapedLead]:
     """Scrape Instagram via scraper + hashtag actor."""
     client  = _make_client()
     results = []
@@ -337,8 +353,8 @@ def scrape_instagram(hashtags: list, per_limit: int) -> list:
         })
         for item in client.dataset(run.default_dataset_id).iterate_items():
             lead = _normalize_instagram(item)
-            if lead["userId"] and lead["userId"] not in seen:
-                seen.add(lead["userId"])
+            if lead.userId and lead.userId not in seen:
+                seen.add(lead.userId)
                 results.append(lead)
     except Exception as e:
         print(f"[Instagram] Scraper error: {e}")
@@ -359,8 +375,8 @@ def scrape_instagram(hashtags: list, per_limit: int) -> list:
         })
         for item in client.dataset(run.default_dataset_id).iterate_items():
             lead = _normalize_instagram(item)
-            if lead["userId"] and lead["userId"] not in seen:
-                seen.add(lead["userId"])
+            if lead.userId and lead.userId not in seen:
+                seen.add(lead.userId)
                 results.append(lead)
     except Exception as e:
         print(f"[Instagram] Hashtag scraper error: {e}")
@@ -368,7 +384,7 @@ def scrape_instagram(hashtags: list, per_limit: int) -> list:
     return results[:per_limit]
 
 
-def scrape_facebook(hashtags: list, keywords: list, per_limit: int) -> list:
+def scrape_facebook(hashtags: list, keywords: list, per_limit: int) -> List[ScrapedLead]:
     """
     Scrape Facebook using the hashtag actor only.
     The page-posts scraper returns publisher content (brand pages like Zillow),
@@ -395,25 +411,25 @@ def scrape_facebook(hashtags: list, keywords: list, per_limit: int) -> list:
 
 # DEDUPLICATION 
 
-def deduplicate(leads: list) -> list:
+def deduplicate(leads: List[ScrapedLead]) -> List[ScrapedLead]:
     """Remove duplicate leads keyed on post_link, falling back to platform::userId."""
     seen, unique = set(), []
     for lead in leads:
-        key = lead.get("post_link") or f"{lead['platform']}::{lead['userId']}"
+        key = lead.post_link or f"{lead.platform}::{lead.userId}"
         if key and key not in seen:
             seen.add(key)
             unique.append(lead)
     return unique
 
 
-def filter_valid(leads: list) -> list:
+def filter_valid(leads: List[ScrapedLead]) -> List[ScrapedLead]:
     """Drop leads that have no userId — they are publisher/page posts, not buyer signals."""
-    return [l for l in leads if l.get("userId")]
+    return [l for l in leads if l.userId]
 
 
 # PUBLIC API 
 
-def run_scraper(input_data: dict) -> list:
+def run_scraper(input_data: dict) -> List[ScrapedLead]:
     """
     Main entry point — call this from your backend.
 
@@ -424,7 +440,7 @@ def run_scraper(input_data: dict) -> list:
     tiktok    (bool)  – enable TikTok scraping
     hashtags  (list)  – hashtags to search
     keywords  (list)  – page names / keywords for Facebook
-    limit     (int)   – desired total leads (hard-capped at MAX_TOTAL_LEADS=20)
+    limit     (int)   – desired total leads (DEFAULT_LIMIT=20)
 
     Returns
     -------
@@ -435,7 +451,7 @@ def run_scraper(input_data: dict) -> list:
     tiktok    = input_data.get("tiktok",    False)
     hashtags  = input_data.get("hashtags",  ["realestate", "luxuryhomes"])
     keywords  = input_data.get("keywords",  ["realestate"])
-    total_limit = min(int(input_data.get("limit", DEFAULT_LIMIT)), MAX_TOTAL_LEADS)
+    total_limit = int(input_data.get("limit", DEFAULT_LIMIT))
 
     active = sum([bool(facebook), bool(instagram), bool(tiktok)])
     if active == 0:
@@ -471,7 +487,7 @@ def run_scraper(input_data: dict) -> list:
             except Exception as exc:
                 print(f"[{name.upper()}] ✗ Thread error: {exc}")
 
-    unique = filter_valid(deduplicate(all_leads))[:total_limit]
+    unique: List[ScrapedLead] = filter_valid(deduplicate(all_leads))[:total_limit]
     print(f"\n✓ Total unique leads: {len(unique)} / {total_limit}")
     return unique
 
@@ -518,6 +534,6 @@ if __name__ == "__main__":
     results = run_scraper(test_input)
 
     with open("leads_output.json", "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
+        json.dump([lead.model_dump(mode="json") for lead in results], f, indent=2, ensure_ascii=False)
 
     print(f"\nResults saved → leads_output.json")
