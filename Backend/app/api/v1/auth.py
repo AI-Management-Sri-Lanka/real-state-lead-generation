@@ -128,7 +128,7 @@ async def change_password(
 ):
     """Change current user password."""
     if not verify_password(passwords.current_password, current_user.hashed_password):
-        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS, message="Incorrect current password")
+        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS)
     
     hashed_new = hash_password(passwords.new_password)
     await update_user_db(db, current_user, {"hashed_password": hashed_new})
