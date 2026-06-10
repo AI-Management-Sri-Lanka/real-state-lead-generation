@@ -26,15 +26,14 @@ export interface TokenResponse {
   token_type: string;
 }
 
-export interface BackendResponse<T> {
+export interface ApiResponse<T> {
   success: boolean;
-  message?: string;
+  message: string;
   data: T;
-  error?: any;
 }
 
 export const authApi = {
-  async signUp(payload: SignUpPayload): Promise<TokenResponse> {
+  async signUp(payload: SignUpPayload): Promise<{ user: UserResponse, tokens: TokenResponse }> {
     const res = await fetch(`${BASE_URL}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -44,11 +43,21 @@ export const authApi = {
       const err = (await res.json().catch(() => ({}))) as { detail?: string };
       throw new Error(err.detail ?? "Sign up failed");
     }
-    const responseData = await res.json() as BackendResponse<TokenResponse>;
-    return responseData.data;
+    const resData = await res.json() as ApiResponse<TokenResponse>;
+    const tokens = resData.data;
+    
+    // Fetch user info with the new token
+    const userRes = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${tokens.access_token}` },
+    });
+    if (!userRes.ok) throw new Error("Failed to fetch user after sign up");
+    const userData = await userRes.json() as ApiResponse<UserResponse>;
+    
+    return { user: userData.data, tokens };
   },
 
-  async signIn(payload: SignInPayload): Promise<TokenResponse> {
+  async signIn(payload: SignInPayload): Promise<{ user: UserResponse, tokens: TokenResponse }> {
     const res = await fetch(`${BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -58,23 +67,27 @@ export const authApi = {
       const err = (await res.json().catch(() => ({}))) as { detail?: string };
       throw new Error(err.detail ?? "Sign in failed");
     }
-    const responseData = await res.json() as BackendResponse<TokenResponse>;
-    return responseData.data;
+    const resData = await res.json() as ApiResponse<TokenResponse>;
+    const tokens = resData.data;
+    
+    // Fetch user info with the new token
+    const userRes = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${tokens.access_token}` },
+    });
+    if (!userRes.ok) throw new Error("Failed to fetch user after sign in");
+    const userData = await userRes.json() as ApiResponse<UserResponse>;
+    
+    return { user: userData.data, tokens };
   },
-
+  
   async getMe(token: string): Promise<UserResponse> {
     const res = await fetch(`${BASE_URL}/auth/me`, {
       method: "GET",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
+      headers: { "Authorization": `Bearer ${token}` },
     });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { detail?: string };
-      throw new Error(err.detail ?? "Failed to fetch user data");
-    }
-    const responseData = await res.json() as BackendResponse<UserResponse>;
-    return responseData.data;
+    if (!res.ok) throw new Error("Failed to fetch user");
+    const resData = await res.json() as ApiResponse<UserResponse>;
+    return resData.data;
   }
 };
