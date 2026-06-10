@@ -72,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
       localStorage.setItem("aimsl_user", JSON.stringify(userData));
       localStorage.setItem("aimsl_token", tokens.access_token);
+      localStorage.setItem("aimsl_refresh_token", tokens.refresh_token);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign in failed";
       setError(message);
@@ -90,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
         localStorage.setItem("aimsl_user", JSON.stringify(userData));
         localStorage.setItem("aimsl_token", tokens.access_token);
+        localStorage.setItem("aimsl_refresh_token", tokens.refresh_token);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Sign up failed";
         setError(message);
@@ -106,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     localStorage.removeItem("aimsl_user");
     localStorage.removeItem("aimsl_token");
+    localStorage.removeItem("aimsl_refresh_token");
   }, []);
 
   return (
