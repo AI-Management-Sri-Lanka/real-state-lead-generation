@@ -30,8 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Restore session on mount
   useEffect(() => {
     // Development helper: auto-sign-in when running locally
-    // This makes it faster to test protected routes during development only.
-    // It will not run in production builds.
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     if (import.meta?.env?.DEV) {
@@ -39,22 +37,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (devUser) {
         try { setUser(JSON.parse(devUser)) } catch { /* ignore */ }
       } else {
-        const u: User = { id: 'dev', name: 'Developer', email: 'dev@example.com' }
+        const u: User = { id: 1, full_name: 'Developer', email: 'dev@example.com', is_active: true, created_at: '' }
         setUser(u)
         localStorage.setItem('aimsl_user', JSON.stringify(u))
+        localStorage.setItem('aimsl_token', 'dev-token')
       }
       setLoading(false)
       return
     }
 
-    const stored = localStorage.getItem('aimsl_user')
+    const storedUser = localStorage.getItem('aimsl_user')
+    const storedToken = localStorage.getItem('aimsl_token')
 
-    if (stored) {
+    if (storedUser && storedToken) {
       try {
-        setUser(JSON.parse(stored));
+        setUser(JSON.parse(storedUser));
+        // Optionally, verify token here by calling authApi.getMe(storedToken)
       } catch {
         /* ignore */
       }
+    } else {
+      // Clear potentially mismatched state
+      localStorage.removeItem('aimsl_user');
+      localStorage.removeItem('aimsl_token');
     }
     setLoading(false);
   }, []);
@@ -63,9 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const userData = await authApi.signIn({ email, password });
+      const { user: userData, tokens } = await authApi.signIn({ email, password });
       setUser(userData);
       localStorage.setItem("aimsl_user", JSON.stringify(userData));
+      localStorage.setItem("aimsl_token", tokens.access_token);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign in failed";
       setError(message);
@@ -80,9 +86,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
       try {
-        const userData = await authApi.signUp({ full_name, email, password });
+        const { user: userData, tokens } = await authApi.signUp({ full_name, email, password });
         setUser(userData);
         localStorage.setItem("aimsl_user", JSON.stringify(userData));
+        localStorage.setItem("aimsl_token", tokens.access_token);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Sign up failed";
         setError(message);
@@ -98,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setError(null);
     localStorage.removeItem("aimsl_user");
+    localStorage.removeItem("aimsl_token");
   }, []);
 
   return (
