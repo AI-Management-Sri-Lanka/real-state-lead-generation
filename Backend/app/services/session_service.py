@@ -6,6 +6,7 @@ from fastapi import HTTPException
 
 from app.models.session import Session
 from app.models.message import Message
+from app.models.user import User
 from app.schemas.session_schema import SessionCreate, MessageIn, SessionSummary
 
 
@@ -15,6 +16,12 @@ def _with_messages():
 
 
 async def create_session(db: AsyncSession, body: SessionCreate) -> Session:
+    # Verify the user exists in the database
+    user_result = await db.execute(select(User).where(User.id == body.user_id))
+    user = user_result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     session = Session(
         user_id=body.user_id,
         title=body.title or "New Chat",
