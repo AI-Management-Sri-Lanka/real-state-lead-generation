@@ -36,3 +36,37 @@ async def get_user_by_email_db(db: AsyncSession, email: str) -> User | None:
     except Exception as e:
         logger.error("DB error occurred in get_user_by_email: %s", str(e))
         raise AppException(error=AppError.SYS_DATABASE_UNAVAILABLE) from e
+
+async def update_user_db(db: AsyncSession, user: User, update_data: dict, commit: bool = True) -> User:
+    """Update user information in the database."""
+    try:
+        for key, value in update_data.items():
+            setattr(user, key, value)
+        if commit:
+            await db.commit()
+            await db.refresh(user)
+        else:
+            await db.flush()
+        return user
+    except IntegrityError as e:
+        await db.rollback()
+        if "email" in str(e):
+            raise AppException(error=AppError.AUTH_EMAIL_EXISTS)
+        raise AppException(error=AppError.DB_INTEGRITY_ERROR)
+    except Exception as e:
+        await db.rollback()
+        logger.error("DB error occurred in update_user: %s", str(e))
+        raise AppException(error=AppError.SYS_DATABASE_UNAVAILABLE) from e
+
+async def delete_user_db(db: AsyncSession, user: User, commit: bool = True) -> None:
+    """Delete a user from the database."""
+    try:
+        await db.delete(user)
+        if commit:
+            await db.commit()
+        else:
+            await db.flush()
+    except Exception as e:
+        await db.rollback()
+        logger.error("DB error occurred in delete_user: %s", str(e))
+        raise AppException(error=AppError.SYS_DATABASE_UNAVAILABLE) from e
