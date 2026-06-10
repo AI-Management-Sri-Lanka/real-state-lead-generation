@@ -130,5 +130,41 @@ export const authApi = {
     if (!res.ok) throw new Error("Failed to fetch user");
     const resData = await res.json() as ApiResponse<UserResponse>;
     return resData.data;
+  },
+
+  async updateProfile(payload: { full_name?: string; email?: string }): Promise<UserResponse> {
+    const res = await fetchWithAuth(`${BASE_URL}/auth/me`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || err.detail || err.message || "Failed to update profile");
+    }
+    const resData = await res.json() as ApiResponse<UserResponse>;
+    return resData.data;
+  },
+
+  async changePassword(payload: { current_password: string; new_password: string }): Promise<void> {
+    const res = await fetchWithAuth(`${BASE_URL}/auth/change-password`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || err.detail || err.message || "Failed to change password");
+    }
+  },
+
+  async deleteAccount(): Promise<void> {
+    const res = await fetchWithAuth(`${BASE_URL}/auth/me`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || err.detail || err.message || "Failed to delete account");
+    }
   }
 };
