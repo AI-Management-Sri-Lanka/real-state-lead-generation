@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+from typing import List
 
 from app.db.session import get_db
 from app.schemas.session_schema import (
@@ -8,46 +8,64 @@ from app.schemas.session_schema import (
     MessageIn, MessageOut
 )
 from app.services import session_service
-
-
+from app.models.user import User
 from app.services.dependencies.deps import get_current_user
 
 router = APIRouter(
     prefix="/sessions", 
     tags=["sessions"],
-    dependencies=[Depends(get_current_user)]
 )
 
 
+async def get_owned_session(
+    session_id: str,
+    db: AsyncSession,
+    current_user: User,
+) -> object:
+    """Fetch a session and verify it belongs to the current user."""
+    session = await session_service.get_session(db, session_id)
+    if session.user_id != current_user.id:
+        # Return 404 instead of 403 to avoid leaking existence of sessions
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
+
 @router.post("", response_model=SessionOut, status_code=201,
-             summary="Create a new persistent user chat session")
+             summary="Create a new persistent chat session for the current user")
 async def create_session(
     body: SessionCreate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
-    Creates a new chat history session for a given user.
+    Creates a new chat history session scoped to the authenticated user.
+    The user_id is derived from the JWT token, not the request body.
     """
+    # Always use the authenticated user's ID — ignore any user_id in the body
+    body.user_id = current_user.id
     return await session_service.create_session(db, body)
 
 
 @router.get("", response_model=List[SessionSummary],
-            summary="List all active chat sessions for a specific user")
+            summary="List all chat sessions for the current authenticated user")
 async def list_sessions(
-    user_id: Optional[int] = Query(None, description="Filter sessions by user ID"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    sessions = await session_service.list_sessions(db, user_id)
+    """Returns only sessions that belong to the currently authenticated user."""
+    sessions = await session_service.list_sessions(db, user_id=current_user.id)
     return [session_service.to_summary(s) for s in sessions]
 
 
 @router.get("/{session_id}", response_model=SessionOut,
-            summary="Get a session details and its full chat message history")
+            summary="Get a session's details and full chat message history")
 async def get_session(
     session_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return await session_service.get_session(db, session_id)
+    """Returns the session only if it belongs to the authenticated user."""
+    return await get_owned_session(session_id, db, current_user)
 
 
 @router.patch("/{session_id}", response_model=SessionOut,
@@ -55,8 +73,11 @@ async def get_session(
 async def update_session(
     session_id: str,
     title: str = Query(..., description="The new title for the chat session"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    """Renames a session only if it belongs to the authenticated user."""
+    await get_owned_session(session_id, db, current_user)
     return await session_service.update_session(db, session_id, title)
 
 
@@ -64,8 +85,11 @@ async def update_session(
                summary="Delete a chat session and all its message history")
 async def delete_session(
     session_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    """Deletes a session only if it belongs to the authenticated user."""
+    await get_owned_session(session_id, db, current_user)
     await session_service.delete_session(db, session_id)
 
 
@@ -74,8 +98,11 @@ async def delete_session(
 async def add_message(
     session_id: str,
     body: MessageIn,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    """Appends a message only if the session belongs to the authenticated user."""
+    await get_owned_session(session_id, db, current_user)
     return await session_service.add_message(db, session_id, body)
 
 
@@ -84,9 +111,11 @@ async def add_message(
 async def get_messages(
     session_id: str,
     limit: int = Query(50, description="Max number of recent messages to return"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    session = await session_service.get_session(db, session_id)
+    """Returns messages only if the session belongs to the authenticated user."""
+    session = await get_owned_session(session_id, db, current_user)
     messages = session.messages or []
     return messages[-limit:]
 
@@ -95,6 +124,11 @@ async def get_messages(
                summary="Clear chat history but keep the session metadata")
 async def clear_messages(
     session_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    """Clears messages only if the session belongs to the authenticated user."""
+    await get_owned_session(session_id, db, current_user)
     await session_service.clear_messages(db, session_id)
+
+

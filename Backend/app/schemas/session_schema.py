@@ -21,7 +21,7 @@ class MessageOut(BaseModel):
 
 # ── Session ───────────────────────────────────────────────────────────────────
 class SessionCreate(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None  # Always overridden by the backend from the JWT token
     title: Optional[str] = "New Chat"
 
 
