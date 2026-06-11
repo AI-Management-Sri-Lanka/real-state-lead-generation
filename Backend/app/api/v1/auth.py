@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 
-from app.schemas.user_schema import UserCreate, UserResponse, UserLogin
+from app.schemas.user_schema import UserCreate, UserResponse, UserLogin, UserUpdate, PasswordChange
 from app.schemas.token_schema import TokenResponse, RefreshTokenRequest
 from app.schemas.response_schema import ResponseSchema
 from app.services.auth.auth_service import create_user, authenticate_user
 from app.crud.token_crud import create_refresh_token_db, get_refresh_token_db, revoke_refresh_token_db
-from app.core.security import create_access_token, create_refresh_token, decode_token
+from app.crud.user_crud import update_user_db, delete_user_db
+from app.core.security import create_access_token, create_refresh_token, decode_token, verify_password, hash_password
 from app.core.config import settings
 from app.models.user import User
 from app.db.session import get_db
@@ -93,3 +94,42 @@ async def logout(request: RefreshTokenRequest, db: AsyncSession = Depends(get_db
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current user info (requires authentication)."""
     return ok(message="User retrieved successfully", item=current_user)
+
+
+@router.put("/me", response_model=ResponseSchema[UserResponse])
+async def update_current_user(
+    update_data: UserUpdate, 
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """Update current user profile info."""
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        return ok(message="No updates provided", item=current_user)
+    updated_user = await update_user_db(db, current_user, update_dict)
+    return ok(message="User updated successfully", item=updated_user)
+
+
+@router.delete("/me", response_model=ResponseSchema[None])
+async def delete_current_user(
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """Delete current user account."""
+    await delete_user_db(db, current_user)
+    return ok(message="User deleted successfully")
+
+
+@router.put("/change-password", response_model=ResponseSchema[None])
+async def change_password(
+    passwords: PasswordChange, 
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """Change current user password."""
+    if not verify_password(passwords.current_password, current_user.hashed_password):
+        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS)
+    
+    hashed_new = hash_password(passwords.new_password)
+    await update_user_db(db, current_user, {"hashed_password": hashed_new})
+    return ok(message="Password changed successfully")
