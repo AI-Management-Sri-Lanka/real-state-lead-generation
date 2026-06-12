@@ -4,7 +4,7 @@ from typing import List
 
 from app.db.session import get_db
 from app.schemas.session_schema import (
-    SessionCreate, SessionOut, SessionSummary,
+    SessionCreate, SessionCreateRequest, SessionOut, SessionSummary,
     MessageIn, MessageOut
 )
 from app.services import session_service
@@ -33,17 +33,17 @@ async def get_owned_session(
 @router.post("", response_model=SessionOut, status_code=201,
              summary="Create a new persistent chat session for the current user")
 async def create_session(
-    body: SessionCreate,
+    body: SessionCreateRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
     Creates a new chat history session scoped to the authenticated user.
-    The user_id is derived from the JWT token, not the request body.
+    The `user_id` is derived from the JWT token — do not send it in the request body.
     """
-    # Always use the authenticated user's ID — ignore any user_id in the body
-    body.user_id = current_user.id
-    return await session_service.create_session(db, body)
+    # Build the internal schema with the authenticated user's ID from the JWT
+    session_data = SessionCreate(user_id=current_user.id, title=body.title)
+    return await session_service.create_session(db, session_data)
 
 
 @router.get("", response_model=List[SessionSummary],

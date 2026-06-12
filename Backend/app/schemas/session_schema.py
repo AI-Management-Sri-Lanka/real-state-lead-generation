@@ -20,9 +20,23 @@ class MessageOut(BaseModel):
 
 
 # ── Session ───────────────────────────────────────────────────────────────────
+class SessionCreateRequest(BaseModel):
+    """
+    Request body for creating a new chat session.
+    The user_id is automatically derived from the authenticated JWT token.
+    """
+    title: Optional[str] = Field(
+        default="New Chat",
+        description="A human-readable title for the chat session.",
+        examples=["Property search - Colombo 7"]
+    )
+
+
 class SessionCreate(BaseModel):
-    user_id: Optional[int] = None  # Always overridden by the backend from the JWT token
+    """Internal schema used by the service layer. user_id is always set from JWT."""
+    user_id: Optional[int] = None
     title: Optional[str] = "New Chat"
+
 
 
 class SessionOut(BaseModel):
