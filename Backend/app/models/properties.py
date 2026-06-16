@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, Enum, ForeignKey
-from database import Base
+from app.db.base_class import Base
 from sqlalchemy.orm import relationship
 import enum
  
@@ -12,9 +12,9 @@ class PropertyType(str, enum.Enum):
  
  
 class ListingType(str, enum.Enum):
-    for_sale = "For Sale"
-    for_rent = "For Rent"
-
+    sale = "Sale"
+    rent = "Rent"
+ 
 class Furnishing(str, enum.Enum):
     unfurnished = "Unfurnished"
     semi_furnished = "Semi-Furnished"
@@ -31,14 +31,15 @@ class Property(Base):
     bedrooms = Column(Integer, nullable=True)
     bathrooms = Column(Integer, nullable=True)
     area_sqft = Column(Float, nullable=True)
+    land_size_perches = Column(Float, nullable=True)
     property_type = Column(Enum(PropertyType), nullable=False)
     listing_type = Column(Enum(ListingType), nullable=False)
     is_verified = Column(Boolean, default=False)
     furnishing = Column(Enum(Furnishing), nullable=True)
     parking = Column(String(255), nullable=True)
-    listedBy = Column(String(255), nullable=True)
+    listed_by = Column(String(255), nullable=True)
     description = Column(String(1024), nullable=True)
-
+ 
     images = relationship("PropertyImage", back_populates="property", cascade="all, delete-orphan")
  
  
