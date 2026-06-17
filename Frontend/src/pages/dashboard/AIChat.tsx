@@ -11,6 +11,7 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ChatMessage } from "@/components/dashboard/ChatMessage";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchWithAuth } from "@/api/authApi";
 
 type ChatMessageType = {
   id: string;
@@ -27,7 +28,7 @@ type Session = {
   messages: ChatMessageType[];
 };
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const BASE_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`;
 
 export default function AIChat() {
   const { user } = useAuth();
@@ -55,13 +56,12 @@ export default function AIChat() {
   }
 
   // ── Load sessions on mount ────────────────────────────────────────────────
+  // Sessions are scoped to the current user by the backend via the JWT token.
+  // No need to pass user_id as a query param anymore.
   useEffect(() => {
     async function loadSessions() {
       try {
-        const token = localStorage.getItem("aimsl_token");
-        const res = await fetch(`${BASE_URL}/sessions?user_id=${userIdInt}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetchWithAuth(`${BASE_URL}/sessions`);
         if (!res.ok) throw new Error("Failed to fetch sessions");
         const data = await res.json();
 
@@ -85,7 +85,7 @@ export default function AIChat() {
     }
 
     if (user) loadSessions();
-  }, [user, userIdInt]);
+  }, [user]);
 
   // ── Load messages for active session ─────────────────────────────────────
   useEffect(() => {
@@ -93,10 +93,7 @@ export default function AIChat() {
 
     async function loadMessages() {
       try {
-        const token = localStorage.getItem("aimsl_token");
-        const res = await fetch(`${BASE_URL}/sessions/${activeSessionId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetchWithAuth(`${BASE_URL}/sessions/${activeSessionId}`);
         if (!res.ok) throw new Error("Failed to fetch session");
         const data = await res.json();
 
@@ -131,16 +128,13 @@ export default function AIChat() {
   }, [activeSessionId]);
 
   // ── Create new session ────────────────────────────────────────────────────
+  // The backend assigns user_id from the JWT — no need to send it in the body.
   async function handleNewChat(): Promise<string | undefined> {
     try {
-      const token = localStorage.getItem("aimsl_token");
-      const res = await fetch(`${BASE_URL}/sessions`, {
+      const res = await fetchWithAuth(`${BASE_URL}/sessions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ user_id: userIdInt, title: "New chat" }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "New chat" }),
       });
       if (!res.ok) throw new Error("Failed to create session");
       const data = await res.json();
@@ -203,13 +197,11 @@ export default function AIChat() {
     setIsTyping(true);
 
     try {
-      const token = localStorage.getItem("aimsl_token");
-      const res = await fetch(`${BASE_URL}/chat`, {
+      const res = await fetchWithAuth(`${BASE_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           accept: "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ query: trimmed, session_id: sessionId }),
       });
@@ -320,13 +312,9 @@ export default function AIChat() {
     if (!title?.trim()) return;
 
     try {
-      const token = localStorage.getItem("aimsl_token");
-      const res = await fetch(
+      const res = await fetchWithAuth(
         `${BASE_URL}/sessions/${sessionId}?title=${encodeURIComponent(title.trim())}`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { method: "PATCH" },
       );
       if (!res.ok) throw new Error("Failed to rename session");
 
@@ -344,10 +332,8 @@ export default function AIChat() {
   // ── Delete session ────────────────────────────────────────────────────────
   async function handleDelete(sessionId: string) {
     try {
-      const token = localStorage.getItem("aimsl_token");
-      const res = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
+      const res = await fetchWithAuth(`${BASE_URL}/sessions/${sessionId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to delete session");
 
