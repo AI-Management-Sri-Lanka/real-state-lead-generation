@@ -11,3 +11,4 @@ class ChatResponse(BaseModel):
     success: bool
     message: str
     data: Optional[Any] = None
+    generated_title: Optional[str] = None  # populated on first message of a session
