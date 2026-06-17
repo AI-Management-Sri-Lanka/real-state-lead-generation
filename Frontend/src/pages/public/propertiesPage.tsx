@@ -1,19 +1,11 @@
-// src/pages/public/PropertiesPage.tsx
-//
-// Public-facing property listing page. No auth required.
-// Data source: src/data/properties.json (mock data — swap for
-// `GET /properties` from your FastAPI backend later).
-//
-// Suggested route: <Route path="/properties" element={<PropertiesPage />} />
-
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Building2 } from 'lucide-react'
-import propertiesData from '@/data/properties.json'
+import { Search, Building2, Loader2 } from 'lucide-react'
 import { Property } from '@/types/property'
 import { PropertyCard } from './components/propertyCard'
 
-const properties = propertiesData as Property[]
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const PRICE_RANGES = [
   { label: 'Any price', min: 0, max: Infinity },
@@ -23,8 +15,32 @@ const PRICE_RANGES = [
 ]
 
 export default function PropertiesPage() {
+  const [properties, setProperties] = useState<Property[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [priceRange, setPriceRange] = useState(0)
+
+    useEffect(() => {
+    async function fetchProperties() {
+      try {
+        setLoading(true)
+        setError(null)
+        const res = await fetch(`${BASE_URL}/properties?limit=100`)
+        if (!res.ok) {
+          throw new Error(`Failed to load properties: ${res.statusText}`)
+        }
+        const data = await res.json() as Property[]
+        setProperties(data)
+      } catch (err: unknown) {
+        console.error(err)
+        setError(err instanceof Error ? err.message : 'Failed to connect to server')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProperties()
+  }, [])
 
   const filtered = useMemo(() => {
     const range = PRICE_RANGES[priceRange]
@@ -41,7 +57,7 @@ export default function PropertiesPage() {
 
       return matchesSearch && matchesPrice
     })
-  }, [search, priceRange])
+   }, [properties, search, priceRange])
 
   return (
     <div className="min-h-screen bg-page text-slate-100">
@@ -92,21 +108,30 @@ export default function PropertiesPage() {
           </select>
         </div>
 
-        {/* ── Results count ─────────────────────────────────────── */}
+        {/* ── Results count ───────*/}
         <p className="mt-6 text-xs uppercase tracking-widest text-slate-500">
-          {filtered.length} {filtered.length === 1 ? 'property' : 'properties'} found
+                    {loading ? 'Searching...' : `${filtered.length} ${filtered.length === 1 ? 'property' : 'properties'} found`}
         </p>
 
-        {/* ── Grid ───────────────────────────────────────────────── */}
-        <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map(property => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
+        {/* ── Grid / States ───────*/}
+        {loading ? (
+          <div className="mt-10 flex flex-col items-center justify-center gap-2 py-10 text-slate-400">
+            <Loader2 size={32} className="animate-spin text-brand" />
+            <p className="text-sm">Loading properties...</p>
+          </div>
+        ) : error ? (
+          <div className="mt-10 rounded-2xl border border-dashed border-red-900 bg-red-950/20 p-10 text-center text-red-400">
+            {error}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-dashed border-slate-800 bg-slate-900/50 p-10 text-center text-slate-500">
             No properties match your search. Try a different location or price range.
+          </div>
+                  ) : (
+          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map(property => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
           </div>
         )}
       </div>
