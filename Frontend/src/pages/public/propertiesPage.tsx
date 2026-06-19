@@ -1,9 +1,10 @@
+// src/pages/public/PropertiesPage.tsx
+// ── Added: floating "+" button (bottom-right) → /admin/add-property ──────
 import { useMemo, useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Search, Building2, Loader2 } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Search, Building2, Loader2, Plus } from 'lucide-react'
 import { Property } from '@/types/property'
 import { PropertyCard } from './components/propertyCard'
-
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -15,21 +16,20 @@ const PRICE_RANGES = [
 ]
 
 export default function PropertiesPage() {
+  const navigate = useNavigate()
   const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [priceRange, setPriceRange] = useState(0)
 
-    useEffect(() => {
+  useEffect(() => {
     async function fetchProperties() {
       try {
         setLoading(true)
         setError(null)
         const res = await fetch(`${BASE_URL}/properties?limit=100`)
-        if (!res.ok) {
-          throw new Error(`Failed to load properties: ${res.statusText}`)
-        }
+        if (!res.ok) throw new Error(`Failed to load properties: ${res.statusText}`)
         const data = await res.json() as Property[]
         setProperties(data)
       } catch (err: unknown) {
@@ -45,19 +45,16 @@ export default function PropertiesPage() {
   const filtered = useMemo(() => {
     const range = PRICE_RANGES[priceRange]
     const term = search.trim().toLowerCase()
-
     return properties.filter(p => {
       const matchesSearch =
         !term ||
         p.location.toLowerCase().includes(term) ||
         p.title.toLowerCase().includes(term) ||
         p.type.toLowerCase().includes(term)
-
       const matchesPrice = p.price >= range.min && p.price <= range.max
-
       return matchesSearch && matchesPrice
     })
-   }, [properties, search, priceRange])
+  }, [properties, search, priceRange])
 
   return (
     <div className="min-h-screen bg-page text-slate-100">
@@ -108,12 +105,10 @@ export default function PropertiesPage() {
           </select>
         </div>
 
-        {/* ── Results count ───────*/}
         <p className="mt-6 text-xs uppercase tracking-widest text-slate-500">
-                    {loading ? 'Searching...' : `${filtered.length} ${filtered.length === 1 ? 'property' : 'properties'} found`}
+          {loading ? 'Searching...' : `${filtered.length} ${filtered.length === 1 ? 'property' : 'properties'} found`}
         </p>
 
-        {/* ── Grid / States ───────*/}
         {loading ? (
           <div className="mt-10 flex flex-col items-center justify-center gap-2 py-10 text-slate-400">
             <Loader2 size={32} className="animate-spin text-brand" />
@@ -127,7 +122,7 @@ export default function PropertiesPage() {
           <div className="mt-10 rounded-2xl border border-dashed border-slate-800 bg-slate-900/50 p-10 text-center text-slate-500">
             No properties match your search. Try a different location or price range.
           </div>
-                  ) : (
+        ) : (
           <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map(property => (
               <PropertyCard key={property.id} property={property} />
@@ -135,6 +130,18 @@ export default function PropertiesPage() {
           </div>
         )}
       </div>
+
+      {/* ── Floating admin "Add property" button ──────────────────
+           Visible to everyone; the admin page itself is password-gated.
+           If you add real auth, wrap this in a role check instead.      */}
+      <button
+        onClick={() => navigate('/admin/add-property')}
+        title="Add property (admin)"
+        className="fixed bottom-6 right-6 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/50 transition hover:bg-indigo-500 active:scale-95 z-50"
+      >
+        <Plus size={18} />
+        <span className="hidden sm:inline">Add property</span>
+      </button>
     </div>
   )
 }
