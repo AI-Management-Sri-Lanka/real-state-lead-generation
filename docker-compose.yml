@@ -12,6 +12,7 @@ services:
       POSTGRES_DB: real_estate_dev_db
     ports:
       - "5432:5432"
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,6 +20,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
 
   # ── Qdrant Vector DB ──
   vector_db:

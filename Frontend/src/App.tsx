@@ -7,6 +7,9 @@ import Dashboard from './pages/dashboard/Dashboard'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import SignInPage from './pages/auth/SignInPage'
 import SignUpPage from './pages/auth/SignUpPage'
+import PropertiesPage from '@/pages/public/propertiesPage'
+import PropertyDetailPage from '@/pages/public/propertyDetailPage'
+     import AdminAddPropertyPage from '@/pages/admin/adminAddPropertyPage'
 
 import SettingsPage from './pages/dashboard/SettingsPage'
 
@@ -26,6 +29,9 @@ export default function App() {
         <Route path="/auth/signin" element={<SignInPage />} />
         <Route path="/auth/signup" element={<SignUpPage />} />
         <Route path="*"               element={<Navigate to="/" replace />} />
+        <Route path="/properties" element={<PropertiesPage />} />
+        <Route path="/properties/:id" element={<PropertyDetailPage />} />
+        <Route path="/admin/add-property" element={<AdminAddPropertyPage />} />
       </Routes>
     </SidebarProvider>
   )

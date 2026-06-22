@@ -11,6 +11,8 @@ import uuid
 from app.db.base_class import Base
 from app.db.session import engine
 from app.api.v1.session_router import router as session_router
+from app.api.v1.property_router import router as property_router
+import app.models # Ensure all models are registered
 from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
@@ -120,10 +122,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Include routers — all routes versioned under /api/v1
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(session_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
+app.include_router(property_router,  prefix="/api/v1")
+
 
 @app.on_event("startup")
 async def startup():
