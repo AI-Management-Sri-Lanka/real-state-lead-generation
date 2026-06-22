@@ -1,20 +1,28 @@
 version: '3.8'
 
 services:
+  # ── PostgreSQL + pgvector ──
   db:
     image: ankane/pgvector:latest
     container_name: real_estate_db
     restart: always
     environment:
-      POSTGRES_USER: postgres      
-      POSTGRES_PASSWORD: 12345678   
-      POSTGRES_DB: real_estate_dev_db 
- 
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: real_estate_dev_db
     ports:
       - "5432:5432"
-      
-    
 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  # ── Qdrant Vector DB ──
   vector_db:
     image: qdrant/qdrant
     container_name: qdrant_db
@@ -24,6 +32,42 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+
+  # ── FastAPI Backend ──
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: aimsl_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./Backend/.env
+    environment:
+      # Override QDRANT_URL & DATABASE_URL to use docker service names
+      QDRANT_URL: http://vector_db:6333
+      DATABASE_URL: postgresql+asyncpg://postgres:12345678@db:5432/real_estate_dev_db
+    depends_on:
+      db:
+        condition: service_healthy
+      vector_db:
+        condition: service_started
+
+  # ── React Frontend (Nginx) ──
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        # Set to "" so API calls go to the same origin (nginx proxies them)
+        VITE_API_URL: ""
+    container_name: aimsl_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

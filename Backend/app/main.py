@@ -122,11 +122,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(session_router)
-app.include_router(chat_router) 
-app.include_router(property_router)
+
+# Include routers — all routes versioned under /api/v1
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(session_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")
+app.include_router(property_router,  prefix="/api/v1")
+
 
 @app.on_event("startup")
 async def startup():

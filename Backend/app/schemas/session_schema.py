@@ -3,29 +3,6 @@ from typing import Optional, List, Any
 from datetime import datetime
 
 
-# ── Lead / Buyer Profile ──────────────────────────────────────────────────────
-class LeadProfile(BaseModel):
-    platform: str = Field(..., example="facebook")          # facebook|instagram|tiktok
-    platform_user_id: str = Field(..., example="fb_123456")
-    lead_name: Optional[str] = None
-    budget_min: Optional[float] = None
-    budget_max: Optional[float] = None
-    preferred_location: Optional[str] = None
-    property_type: Optional[str] = None                     # house|apartment|land
-    bedrooms: Optional[int] = None
-    extra: Optional[dict] = {}
-
-
-class LeadProfileUpdate(BaseModel):
-    lead_name: Optional[str] = None
-    budget_min: Optional[float] = None
-    budget_max: Optional[float] = None
-    preferred_location: Optional[str] = None
-    property_type: Optional[str] = None
-    bedrooms: Optional[int] = None
-    extra: Optional[dict] = None
-
-
 # ── Messages ──────────────────────────────────────────────────────────────────
 class MessageIn(BaseModel):
     role: str = Field(..., example="user")                  # user | assistant
@@ -33,15 +10,33 @@ class MessageIn(BaseModel):
 
 
 class MessageOut(BaseModel):
+    id: int
     role: str
     content: str
     timestamp: datetime
 
+    class Config:
+        from_attributes = True
+
 
 # ── Session ───────────────────────────────────────────────────────────────────
+class SessionCreateRequest(BaseModel):
+    """
+    Request body for creating a new chat session.
+    The user_id is automatically derived from the authenticated JWT token.
+    """
+    title: Optional[str] = Field(
+        default="New Chat",
+        description="A human-readable title for the chat session.",
+        examples=["Property search - Colombo 7"]
+    )
+
+
 class SessionCreate(BaseModel):
-    user_id: int
+    """Internal schema used by the service layer. user_id is always set from JWT."""
+    user_id: Optional[int] = None
     title: Optional[str] = "New Chat"
+
 
 
 class SessionOut(BaseModel):
@@ -51,7 +46,6 @@ class SessionOut(BaseModel):
     messages: List[MessageOut]
     created_at: datetime
     updated_at: datetime
-    expires_at: datetime
 
     class Config:
         from_attributes = True
@@ -63,4 +57,6 @@ class SessionSummary(BaseModel):
     title: str
     message_count: int
     updated_at: datetime
-    expires_at: datetime
+
+    class Config:
+        from_attributes = True

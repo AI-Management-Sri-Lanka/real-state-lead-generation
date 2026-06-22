@@ -11,6 +11,8 @@ import PropertiesPage from '@/pages/public/propertiesPage'
 import PropertyDetailPage from '@/pages/public/propertyDetailPage'
      import AdminAddPropertyPage from '@/pages/admin/adminAddPropertyPage'
 
+import SettingsPage from './pages/dashboard/SettingsPage'
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
   return isAuthenticated ? <>{children}</> : <Navigate to="/auth/signin" replace />
@@ -22,6 +24,7 @@ export default function App() {
       <Routes>
         <Route path="/"               element={<HomePage />} />
         <Route path="/dashboard/ai-assistant" element={<PrivateRoute><ErrorBoundary><AIChat /></ErrorBoundary></PrivateRoute>} />
+        <Route path="/dashboard/settings" element={<PrivateRoute><ErrorBoundary><SettingsPage /></ErrorBoundary></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><ErrorBoundary><Dashboard /></ErrorBoundary></PrivateRoute>} />
         <Route path="/auth/signin" element={<SignInPage />} />
         <Route path="/auth/signup" element={<SignUpPage />} />
