@@ -90,11 +90,5 @@ Only discuss publicly available and user-provided information.
 """
 
 simple_chat_user_prompt = """
-    --- Recent Chat History ---
-    {session_history}
-
-    --- Current User Message ---
     "{user_query}"
-
-    Write your direct response:
     """

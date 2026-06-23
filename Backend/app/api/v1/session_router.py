@@ -1,154 +1,134 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+from typing import List
 
 from app.db.session import get_db
 from app.schemas.session_schema import (
-    SessionCreate, SessionOut, SessionSummary,
+    SessionCreate, SessionCreateRequest, SessionOut, SessionSummary,
     MessageIn, MessageOut
 )
-from app.services.session_service import SessionService
-
+from app.services import session_service
+from app.models.user import User
 from app.services.dependencies.deps import get_current_user
 
 router = APIRouter(
     prefix="/sessions", 
     tags=["sessions"],
-    dependencies=[Depends(get_current_user)]
 )
 
 
-# ── Create session ────────────────────────────────────────────────────────────
+async def get_owned_session(
+    session_id: str,
+    db: AsyncSession,
+    current_user: User,
+) -> object:
+    """Fetch a session and verify it belongs to the current user."""
+    session = await session_service.get_session(db, session_id)
+    if session.user_id != current_user.id:
+        # Return 404 instead of 403 to avoid leaking existence of sessions
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
+
 @router.post("", response_model=SessionOut, status_code=201,
-             summary="Create a new persistent user chat session")
+             summary="Create a new persistent chat session for the current user")
 async def create_session(
-    body: SessionCreate,
-    db: AsyncSession = Depends(get_db)
+    body: SessionCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
-    Creates a new chat history session for a given user.
+    Creates a new chat history session scoped to the authenticated user.
+    The `user_id` is derived from the JWT token — do not send it in the request body.
     """
-    return await SessionService.create_session(db, body)
+    # Build the internal schema with the authenticated user's ID from the JWT
+    session_data = SessionCreate(user_id=current_user.id, title=body.title)
+    return await session_service.create_session(db, session_data)
 
 
-# ── List sessions ─────────────────────────────────────────────────────────────
 @router.get("", response_model=List[SessionSummary],
-            summary="List all active chat sessions for a specific user")
+            summary="List all chat sessions for the current authenticated user")
 async def list_sessions(
-    user_id: Optional[int] = Query(None, description="Filter sessions by user ID"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    sessions = await SessionService.list_sessions(db, user_id)
-    return [
-        {
-            "session_id": s.id,
-            "user_id": s.user_id,
-            "title": s.title,
-            "message_count": len(s.messages or []),
-            "updated_at": s.updated_at,
-            "expires_at": s.expires_at,
-        }
-        for s in sessions
-    ]
+    """Returns only sessions that belong to the currently authenticated user."""
+    sessions = await session_service.list_sessions(db, user_id=current_user.id)
+    return [session_service.to_summary(s) for s in sessions]
 
 
-# ── Get session ───────────────────────────────────────────────────────────────
 @router.get("/{session_id}", response_model=SessionOut,
-            summary="Get a session details and its full chat message history")
+            summary="Get a session's details and full chat message history")
 async def get_session(
     session_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return await SessionService.get_session(db, session_id)
+    """Returns the session only if it belongs to the authenticated user."""
+    return await get_owned_session(session_id, db, current_user)
 
 
-# ── Update session title (Rename) ─────────────────────────────────────────────
 @router.patch("/{session_id}", response_model=SessionOut,
               summary="Rename a chat session")
 async def update_session(
     session_id: str,
     title: str = Query(..., description="The new title for the chat session"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return await SessionService.update_session(db, session_id, title)
+    """Renames a session only if it belongs to the authenticated user."""
+    await get_owned_session(session_id, db, current_user)
+    return await session_service.update_session(db, session_id, title)
 
 
-# ── Delete session ────────────────────────────────────────────────────────────
 @router.delete("/{session_id}", status_code=204,
                summary="Delete a chat session and all its message history")
 async def delete_session(
     session_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    await SessionService.delete_session(db, session_id)
+    """Deletes a session only if it belongs to the authenticated user."""
+    await get_owned_session(session_id, db, current_user)
+    await session_service.delete_session(db, session_id)
 
 
-# ── Add message manually ──────────────────────────────────────────────────────
 @router.post("/{session_id}/messages", response_model=MessageOut, status_code=201,
              summary="Manually append a user or assistant message to history")
 async def add_message(
     session_id: str,
     body: MessageIn,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return await SessionService.add_message(db, session_id, body)
+    """Appends a message only if the session belongs to the authenticated user."""
+    await get_owned_session(session_id, db, current_user)
+    return await session_service.add_message(db, session_id, body)
 
 
-# ── Get messages ──────────────────────────────────────────────────────────────
 @router.get("/{session_id}/messages", response_model=List[MessageOut],
             summary="Get message history for a session")
 async def get_messages(
     session_id: str,
     limit: int = Query(50, description="Max number of recent messages to return"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    session = await SessionService.get_session(db, session_id)
+    """Returns messages only if the session belongs to the authenticated user."""
+    session = await get_owned_session(session_id, db, current_user)
     messages = session.messages or []
     return messages[-limit:]
 
 
-# ── Clear messages ────────────────────────────────────────────────────────────
 @router.delete("/{session_id}/messages", status_code=204,
                summary="Clear chat history but keep the session metadata")
 async def clear_messages(
     session_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    await SessionService.clear_messages(db, session_id)
+    """Clears messages only if the session belongs to the authenticated user."""
+    await get_owned_session(session_id, db, current_user)
+    await session_service.clear_messages(db, session_id)
 
 
-# ── Interactive AI Chat Endpoint ──────────────────────────────────────────────
-@router.post("/{session_id}/chat", response_model=MessageOut, status_code=201,
-             summary="Send a message to the AI assistant and get a response stored in DB")
-async def chat_with_assistant(
-    session_id: str,
-    body: MessageIn,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Sends a user message, saves it, queries the LangChain DirectChatTool to
-    generate the assistant reply, saves the assistant reply, and returns it.
-    """
-    # 1. Save user message to database
-    await SessionService.add_message(db, session_id, body)
-
-    # 2. Retrieve history to feed into AI
-    session = await SessionService.get_session(db, session_id)
-    history_str = ""
-    for m in session.messages[:-1]:  # exclude the user message we just added
-        history_str += f"{m.role.capitalize()}: {m.content}\n"
-
-    # 3. Call DirectChatTool
-    try:
-        from app.services.ai.simple_chat import DirectChatTool
-        chat_tool = DirectChatTool()
-        ai_reply = chat_tool.chat(user_query=body.content, session_history=history_str)
-    except Exception as e:
-        # Fallback response when OpenAI / LangChain fails or is not configured
-        ai_reply = f"I'm processing your search request for Sri Lanka real estate. (Running in demo mode: {str(e)})"
-
-    # 4. Save AI assistant message to database
-    assistant_msg = MessageIn(role="assistant", content=ai_reply)
-    saved_ai_msg = await SessionService.add_message(db, session_id, assistant_msg)
-
-    return saved_ai_msg

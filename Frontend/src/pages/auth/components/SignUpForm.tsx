@@ -40,7 +40,7 @@ export function SignUpForm() {
       toast.success("Account created! Welcome.");
       navigate("/dashboard/ai-assistant");
     } catch (err: unknown) {
-      toast.error((err as Error).message ?? "Sign up failed");
+      toast.error((err as Error).message ?? "Sign up failed", { id: "signup-error" });
     } finally {
       setLoading(false);
     }

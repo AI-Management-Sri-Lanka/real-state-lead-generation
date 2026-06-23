@@ -55,3 +55,11 @@ class UserLogin(BaseModel):
             ]
         }
     }
+
+class UserUpdate(BaseModel):
+    full_name: str | None = Field(None, min_length=2, max_length=255)
+    email: EmailStr | None = None
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8, max_length=255)
