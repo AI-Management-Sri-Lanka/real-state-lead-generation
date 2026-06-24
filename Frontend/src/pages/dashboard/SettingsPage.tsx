@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 export default function SettingsPage() {
   const { user, signOut, updateUser } = useAuth();
@@ -78,6 +79,7 @@ export default function SettingsPage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="flex-1 overflow-y-auto bg-slate-900 p-8 text-slate-100">
       <div className="mx-auto max-w-2xl space-y-12">
         <div>
@@ -189,5 +191,6 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }
