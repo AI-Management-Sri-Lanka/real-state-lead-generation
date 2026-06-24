@@ -1,16 +1,31 @@
+
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, BedDouble, Bath, Ruler, MapPin, Building2,
   CheckCircle2, Loader2,
 } from 'lucide-react'
+
+import emailjs from '@emailjs/browser'
+import propertiesData from '@/data/properties.json'
+
+const properties = propertiesData as Property[]
+
+const EMAILJS_SERVICE_ID          = 'service_zx94q0s'
+const EMAILJS_TEMPLATE_ID         = 'template_s0pzf6g'   // inquiry → agent
+const EMAILJS_CONFIRM_TEMPLATE_ID = 'template_v2ux0ph'   // confirmation → user
+const EMAILJS_PUBLIC_KEY          = 'd9YO9qHUQIn_CU9o-'
+
 import { Property, InquiryPayload } from '@/types/property'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
 
+
 function formatPrice(price: number, currency: string, listingType: string) {
   const formatted = price.toLocaleString('en-US')
-  return listingType === 'Rent' ? `${formatted} ${currency} / month` : `${formatted} ${currency}`
+  return listingType === 'Rent'
+    ? `${formatted} ${currency} / month`
+    : `${formatted} ${currency}`
 }
 
 export default function PropertyDetailPage() {
@@ -20,10 +35,10 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
 
-  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
+  const [form, setForm]             = useState({ name: '', email: '', phone: '', message: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [submitted, setSubmitted]   = useState(false)
+  const [error, setError]           = useState<string | null>(null)
 
   // if (!property) {
     useEffect(() => {
@@ -80,22 +95,48 @@ export default function PropertyDetailPage() {
 
   async function handleSubmit() {
     if (!property) return
+
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
       setError('Please fill in your name, email and message.')
       return
     }
+
     setError(null)
     setSubmitting(true)
 
-    const payload: InquiryPayload = {
-      propertyId: property.id,
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      message: form.message.trim(),
-    }
-
     try {
+      // ① Inquiry notification → agent only
+      //    (make sure Auto-Reply is OFF on template_s0pzf6g in EmailJS dashboard)
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          from_name:         form.name.trim(),
+          from_email:        form.email.trim(),
+          phone:             form.phone.trim() || 'Not provided',
+          message:           form.message.trim(),
+          property_title:    property.title,
+          property_price:    `${property.price.toLocaleString()} ${property.currency}`,
+          property_location: property.location,
+        },
+        EMAILJS_PUBLIC_KEY
+      )
+
+      // ② Confirmation receipt → user's typed email
+      //    (To Email in template_v2ux0ph must be {{to_email}})
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_CONFIRM_TEMPLATE_ID,
+        {
+          to_name:           form.name.trim(),
+          to_email:          form.email.trim(),
+          property_title:    property.title,
+          property_price:    `${property.price.toLocaleString()} ${property.currency}`,
+          property_location: property.location,
+        },
+        EMAILJS_PUBLIC_KEY
+      )
+
       const res = await fetch(`${BASE_URL}/inquiries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,6 +147,9 @@ export default function PropertyDetailPage() {
     } catch {
       console.warn('Inquiry endpoint not available — showing mock success.')
       setSubmitted(true)
+    } catch (err) {
+      console.error('EmailJS error:', err)
+      setError('Failed to send inquiry. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -113,6 +157,7 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="min-h-screen bg-page text-slate-100">
+
       {/* ── Top nav ─────────────────────────────────────────────── */}
       <header className="border-b border-slate-800/80 bg-slate-950/95">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
@@ -123,9 +168,9 @@ export default function PropertyDetailPage() {
             <span className="text-base font-semibold text-white">LeadAI Properties</span>
           </Link>
           <nav className="flex items-center gap-6 text-sm text-slate-400">
-            <Link to="/" className="hover:text-white transition">Home</Link>
+            <Link to="/"           className="hover:text-white transition">Home</Link>
             <Link to="/properties" className="hover:text-white transition">Properties</Link>
-            <Link to="/login" className="hover:text-white transition">Sign in</Link>
+            <Link to="/login"      className="hover:text-white transition">Sign in</Link>
           </nav>
         </div>
       </header>
@@ -167,18 +212,10 @@ export default function PropertyDetailPage() {
 
             {/* Specs */}
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-400">
-              {property.bedrooms != null && (
-                <span className="flex items-center gap-1.5"><BedDouble size={16} /> {property.bedrooms} bedrooms</span>
-              )}
-              {property.bathrooms != null && (
-                <span className="flex items-center gap-1.5"><Bath size={16} /> {property.bathrooms} bathrooms</span>
-              )}
-              {property.areaSqft != null && (
-                <span className="flex items-center gap-1.5"><Ruler size={16} /> {property.areaSqft} sqft</span>
-              )}
-              {property.landSizePerches != null && (
-                <span className="flex items-center gap-1.5"><Ruler size={16} /> {property.landSizePerches} perches</span>
-              )}
+              {property.bedrooms        != null && <span className="flex items-center gap-1.5"><BedDouble size={16} /> {property.bedrooms} bedrooms</span>}
+              {property.bathrooms       != null && <span className="flex items-center gap-1.5"><Bath size={16} />      {property.bathrooms} bathrooms</span>}
+              {property.areaSqft        != null && <span className="flex items-center gap-1.5"><Ruler size={16} />    {property.areaSqft} sqft</span>}
+              {property.landSizePerches != null && <span className="flex items-center gap-1.5"><Ruler size={16} />    {property.landSizePerches} perches</span>}
             </div>
 
             <h3 className="mt-6 text-base font-semibold text-white">Description</h3>
@@ -187,9 +224,9 @@ export default function PropertyDetailPage() {
             <h3 className="mt-6 text-base font-semibold text-white">Property details</h3>
             <div className="mt-2 divide-y divide-slate-800 rounded-2xl border border-slate-800">
               <Row label="Property type" value={property.type} />
-              <Row label="Listing type" value={`For ${property.listingType}`} />
+              <Row label="Listing type"  value={`For ${property.listingType}`} />
               {property.furnishing && <Row label="Furnishing" value={property.furnishing} />}
-              {property.parking && <Row label="Parking" value={property.parking} />}
+              {property.parking    && <Row label="Parking"    value={property.parking} />}
               <Row label="Listed by" value={property.listedBy} />
             </div>
           </div>
@@ -200,9 +237,12 @@ export default function PropertyDetailPage() {
               {submitted ? (
                 <div className="flex flex-col items-center gap-3 py-6 text-center">
                   <CheckCircle2 size={32} className="text-emerald-400" />
-                  <p className="text-sm font-semibold text-white">Inquiry sent</p>
+                  <p className="text-sm font-semibold text-white">Inquiry sent!</p>
                   <p className="text-xs text-slate-500">
                     Thanks {form.name.split(' ')[0]}! The listing agent will get back to you shortly.
+                  </p>
+                  <p className="text-xs text-indigo-400">
+                    A confirmation email has been sent to {form.email}
                   </p>
                 </div>
               ) : (
@@ -213,9 +253,9 @@ export default function PropertyDetailPage() {
                   </p>
 
                   <div className="mt-4 space-y-3">
-                    <Field label="Name" placeholder="Your name" value={form.name} onChange={v => update('name', v)} />
-                    <Field label="Email" placeholder="you@email.com" value={form.email} onChange={v => update('email', v)} type="email" />
-                    <Field label="Phone" placeholder="+94 7X XXX XXXX" value={form.phone} onChange={v => update('phone', v)} />
+                    <Field label="Name"  placeholder="Your name"       value={form.name}    onChange={v => update('name', v)} />
+                    <Field label="Email" placeholder="you@email.com"   value={form.email}   onChange={v => update('email', v)} type="email" />
+                    <Field label="Phone" placeholder="+94 7X XXX XXXX" value={form.phone}   onChange={v => update('phone', v)} />
                     <div>
                       <label className="mb-1 block text-xs text-slate-500">Message</label>
                       <textarea
@@ -234,7 +274,7 @@ export default function PropertyDetailPage() {
                       disabled={submitting}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-indigo-500 disabled:opacity-60"
                     >
-                      {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {submitting && <Loader2 size={14} className="animate-spin" />}
                       {submitting ? 'Sending…' : 'Send inquiry'}
                     </button>
                   </div>
