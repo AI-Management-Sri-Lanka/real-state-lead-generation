@@ -17,6 +17,7 @@ export interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (full_name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
+  updateUser: (updated: User) => void;
   error: string | null;
 }
 
@@ -103,6 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const updateUser = useCallback((updated: User) => {
+    setUser(updated);
+    localStorage.setItem("aimsl_user", JSON.stringify(updated));
+  }, []);
+
   const signOut = useCallback(() => {
     setUser(null);
     setError(null);
@@ -120,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signOut,
+        updateUser,
         error,
       }}
     >

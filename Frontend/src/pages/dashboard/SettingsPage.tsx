@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateUser } = useAuth();
   const navigate = useNavigate();
 
   // Profile Form State
@@ -33,13 +33,12 @@ export default function SettingsPage() {
     e.preventDefault();
     setProfileLoading(true);
     try {
-      await authApi.updateProfile({
+      const updatedUser = await authApi.updateProfile({
         full_name: profileForm.full_name,
         email: profileForm.email,
       });
-      // A full app refresh to reload user context with new name
+      updateUser(updatedUser);
       toast.success('Profile updated successfully!');
-      window.location.reload(); 
     } catch (err: unknown) {
       toast.error((err as Error).message ?? 'Failed to update profile', { id: 'profile-err' });
     } finally {
