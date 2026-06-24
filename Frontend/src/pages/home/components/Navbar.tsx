@@ -40,7 +40,7 @@ export function Navbar() {
 
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 24px', height:72, display:'flex', alignItems:'center', gap:32 }}>
+      <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 16px', height:72, display:'flex', alignItems:'center', gap:24 }}>
         <Logo size="md" />
 
         <nav className="flex items-center gap-4" style={{ marginLeft: 'auto' }}>
