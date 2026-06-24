@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { Property, InquiryPayload } from '@/types/property'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
 
 function formatPrice(price: number, currency: string, listingType: string) {
   const formatted = price.toLocaleString('en-US')
