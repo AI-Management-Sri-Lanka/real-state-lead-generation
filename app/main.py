@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import auth
 from app.api.v1.chat import router as chat_router
+from app.api.v1.dashboard import router as dashboard_router
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.errors import AppError, AppException
@@ -120,10 +121,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(session_router)
-app.include_router(chat_router) 
+# Include routers under /api/v1 prefix
+app.include_router(auth.router,      prefix="/api/v1")
+app.include_router(session_router,   prefix="/api/v1")
+app.include_router(chat_router,      prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup():
