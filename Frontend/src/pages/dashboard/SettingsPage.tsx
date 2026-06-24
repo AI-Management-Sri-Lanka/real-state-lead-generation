@@ -5,6 +5,7 @@ import { authApi } from '@/api/authApi';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { AlertTriangle } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -26,6 +27,7 @@ export default function SettingsPage() {
 
   // Delete State
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   async function handleProfileSubmit(e: FormEvent) {
     e.preventDefault();
@@ -63,10 +65,8 @@ export default function SettingsPage() {
   }
 
   async function handleDeleteAccount() {
-    if (!window.confirm('Are you absolutely sure? This action cannot be undone and will delete all your data.')) {
-      return;
-    }
     setDeleteLoading(true);
+    setShowDeleteConfirm(false);
     try {
       await authApi.deleteAccount();
       toast.success('Account deleted.');
@@ -145,7 +145,7 @@ export default function SettingsPage() {
           </p>
           <Button
             type="button"
-            onClick={handleDeleteAccount}
+            onClick={() => setShowDeleteConfirm(true)}
             loading={deleteLoading}
             style={{ backgroundColor: '#7f1d1d', color: '#fca5a5' }}
           >
@@ -153,6 +153,42 @@ export default function SettingsPage() {
           </Button>
         </section>
       </div>
+
+      {/* Custom Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl border border-red-900/50 bg-slate-950 p-6 shadow-2xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-950">
+                <AlertTriangle size={20} className="text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Delete Account</h3>
+            </div>
+            <p className="mb-2 text-sm text-slate-300">
+              Are you absolutely sure you want to delete your account?
+            </p>
+            <p className="mb-6 text-sm text-slate-500">
+              This will permanently remove all your data, sessions, and history. This action <span className="font-semibold text-red-400">cannot be undone</span>.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="flex-1 rounded-xl bg-red-900 px-4 py-2.5 text-sm font-semibold text-red-200 transition hover:bg-red-800"
+              >
+                Yes, delete my account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
