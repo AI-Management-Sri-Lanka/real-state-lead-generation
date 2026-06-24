@@ -1,8 +1,11 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Boolean, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 from datetime import datetime
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .session import Session
 
 from app.db.base_class import Base
 
@@ -22,4 +25,12 @@ class User(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    # Relationships
+    sessions: Mapped[List["Session"]] = relationship(
+        "Session",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )

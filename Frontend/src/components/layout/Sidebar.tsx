@@ -77,9 +77,9 @@ export function Sidebar() {
 
       <div className="mt-auto rounded-[28px] border border-slate-800/90 bg-slate-900/95 p-4">
         <div className="flex items-center gap-3">
-          <Avatar name={user?.name ?? 'User'} size={44} />
+          <Avatar name={user?.full_name ?? 'User'} size={44} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{user?.name ?? 'User'}</p>
+            <p className="truncate text-sm font-semibold text-white">{user?.full_name ?? 'User'}</p>
             <p className="truncate text-xs text-slate-500">{user?.email ?? 'hello@leadai.com'}</p>
           </div>
         </div>

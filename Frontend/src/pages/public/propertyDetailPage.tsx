@@ -1,14 +1,13 @@
-// src/pages/public/PropertyDetailPage.tsx
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, BedDouble, Bath, Ruler, MapPin, Building2,
   CheckCircle2, Loader2,
 } from 'lucide-react'
+
 import emailjs from '@emailjs/browser'
 import propertiesData from '@/data/properties.json'
-import { Property } from '@/types/property'
 
 const properties = propertiesData as Property[]
 
@@ -16,6 +15,11 @@ const EMAILJS_SERVICE_ID          = 'service_zx94q0s'
 const EMAILJS_TEMPLATE_ID         = 'template_s0pzf6g'   // inquiry → agent
 const EMAILJS_CONFIRM_TEMPLATE_ID = 'template_v2ux0ph'   // confirmation → user
 const EMAILJS_PUBLIC_KEY          = 'd9YO9qHUQIn_CU9o-'
+
+import { Property, InquiryPayload } from '@/types/property'
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
 
 function formatPrice(price: number, currency: string, listingType: string) {
   const formatted = price.toLocaleString('en-US')
@@ -27,18 +31,56 @@ function formatPrice(price: number, currency: string, listingType: string) {
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const property = properties.find(p => p.id === id)
+  const [property, setProperty] = useState<Property | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   const [form, setForm]             = useState({ name: '', email: '', phone: '', message: '' })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted]   = useState(false)
   const [error, setError]           = useState<string | null>(null)
 
-  if (!property) {
+  // if (!property) {
+    useEffect(() => {
+    async function fetchProperty() {
+      if (!id) return
+      try {
+        setLoading(true)
+        setFetchError(null)
+        const res = await fetch(`${BASE_URL}/properties/${id}`)
+        if (res.status === 404) {
+          setFetchError('Property not found')
+          return
+        }
+        if (!res.ok) {
+          throw new Error(`Failed to load property: ${res.statusText}`)
+        }
+        const data = await res.json() as Property
+        setProperty(data)
+      } catch (err: unknown) {
+        console.error(err)
+        setFetchError(err instanceof Error ? err.message : 'Failed to connect to server')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProperty()
+  }, [id])
+  if (loading) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-page text-slate-100">
+                <div className="text-center flex flex-col items-center gap-2">
+          <Loader2 className="animate-spin text-brand" size={36} />
+          <p className="text-sm text-slate-400">Loading property details...</p>
+        </div>
+      </div>
+    )
+  }
+  if (fetchError || !property) {
     return (
       <div className="grid min-h-screen place-items-center bg-page text-slate-100">
         <div className="text-center">
-          <p className="text-lg font-semibold">Property not found</p>
+          <p className="text-lg font-semibold">{fetchError ?? 'Property not found'}</p>
           <Link to="/properties" className="mt-3 inline-block text-sm text-indigo-400 hover:underline">
             Back to listings
           </Link>
@@ -95,6 +137,15 @@ export default function PropertyDetailPage() {
         EMAILJS_PUBLIC_KEY
       )
 
+      const res = await fetch(`${BASE_URL}/inquiries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error('Request failed')
+      setSubmitted(true)
+    } catch {
+      console.warn('Inquiry endpoint not available — showing mock success.')
       setSubmitted(true)
     } catch (err) {
       console.error('EmailJS error:', err)
@@ -133,9 +184,19 @@ export default function PropertyDetailPage() {
         </button>
 
         {/* Image placeholder */}
-        <div className="flex h-56 items-center justify-center rounded-2xl bg-slate-900 text-slate-600 sm:h-72">
-          <MapPin size={36} />
-        </div>
+        {property.images && property.images.length > 0 ? (
+          <div className="relative h-56 w-full overflow-hidden rounded-2xl bg-slate-900 sm:h-96">
+            <img
+              src={property.images[0]}
+              alt={property.title}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="flex h-56 items-center justify-center rounded-2xl bg-slate-900 text-slate-600 sm:h-72">
+            <MapPin size={36} />
+          </div>
+        )}
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
 

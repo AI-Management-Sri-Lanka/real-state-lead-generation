@@ -1,4 +1,3 @@
-// src/pages/public/components/PropertyCard.tsx
 import { useNavigate } from 'react-router-dom'
 import { BedDouble, Bath, Ruler, MapPin, BadgeCheck } from 'lucide-react'
 import { Property } from '@/types/property'
@@ -20,10 +19,20 @@ export function PropertyCard({ property }: Props) {
       onClick={() => navigate(`/properties/${property.id}`)}
       className="cursor-pointer overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/90 transition hover:border-indigo-500/60 hover:bg-slate-900"
     >
-      {/* Image placeholder */}
-      <div className="flex h-36 items-center justify-center bg-slate-900 text-slate-600">
-        <MapPin size={28} />
-      </div>
+      {/* Image / placeholder */}
+      {property.images && property.images.length > 0 ? (
+        <div className="h-36 w-full overflow-hidden bg-slate-900">
+          <img
+            src={property.images[0]}
+            alt={property.title}
+            className="h-full w-full object-cover transition duration-300 hover:scale-105"
+          />
+        </div>
+      ) : (
+        <div className="flex h-36 items-center justify-center bg-slate-900 text-slate-600">
+          <MapPin size={28} />
+        </div>
+      )}
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
@@ -41,7 +50,6 @@ export function PropertyCard({ property }: Props) {
           <MapPin size={12} /> {property.location}
         </p>
 
-        {/* Specs row — land has no beds/baths */}
         <div className="mt-3 flex items-center gap-4 text-xs text-slate-400">
           {property.bedrooms != null && (
             <span className="flex items-center gap-1"><BedDouble size={13} /> {property.bedrooms} bed</span>
