@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
@@ -7,9 +6,6 @@ import {
 } from 'lucide-react'
 
 import emailjs from '@emailjs/browser'
-import propertiesData from '@/data/properties.json'
-
-const properties = propertiesData as Property[]
 
 const EMAILJS_SERVICE_ID          = 'service_zx94q0s'
 const EMAILJS_TEMPLATE_ID         = 'template_s0pzf6g'   // inquiry → agent
@@ -40,8 +36,7 @@ export default function PropertyDetailPage() {
   const [submitted, setSubmitted]   = useState(false)
   const [error, setError]           = useState<string | null>(null)
 
-  // if (!property) {
-    useEffect(() => {
+  useEffect(() => {
     async function fetchProperty() {
       if (!id) return
       try {
@@ -66,16 +61,18 @@ export default function PropertyDetailPage() {
     }
     fetchProperty()
   }, [id])
+
   if (loading) {
     return (
       <div className="grid min-h-screen place-items-center bg-page text-slate-100">
-                <div className="text-center flex flex-col items-center gap-2">
+        <div className="text-center flex flex-col items-center gap-2">
           <Loader2 className="animate-spin text-brand" size={36} />
           <p className="text-sm text-slate-400">Loading property details...</p>
         </div>
       </div>
     )
   }
+
   if (fetchError || !property) {
     return (
       <div className="grid min-h-screen place-items-center bg-page text-slate-100">
@@ -137,15 +134,28 @@ export default function PropertyDetailPage() {
         EMAILJS_PUBLIC_KEY
       )
 
-      const res = await fetch(`${BASE_URL}/inquiries`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) throw new Error('Request failed')
-      setSubmitted(true)
-    } catch {
-      console.warn('Inquiry endpoint not available — showing mock success.')
+      // ③ Optionally log the inquiry to our own backend.
+      //    This endpoint may not exist yet — a failure here shouldn't block
+      //    the success UI, since the emails above are what actually matters.
+      const payload: InquiryPayload = {
+        name:    form.name.trim(),
+        email:   form.email.trim(),
+        phone:   form.phone.trim() || undefined,
+        message: form.message.trim(),
+        propertyId: property.id,
+      }
+
+      try {
+        const res = await fetch(`${BASE_URL}/inquiries`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error('Request failed')
+      } catch {
+        console.warn('Inquiry endpoint not available — showing mock success.')
+      }
+
       setSubmitted(true)
     } catch (err) {
       console.error('EmailJS error:', err)
