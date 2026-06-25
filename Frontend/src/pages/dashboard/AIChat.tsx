@@ -157,10 +157,22 @@ export default function AIChat() {
     }
   }
 
+  // ── Persist a message to the backend session ─────────────────────────────
+  async function persistMessage(sid: string, role: "user" | "assistant", content: string) {
+    try {
+      await fetchWithAuth(`${BASE_URL}/sessions/${sid}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, content }),
+      });
+    } catch (err) {
+      console.warn("Failed to persist message:", err);
+    }
+  }
+
   // ── Send message & get AI reply ───────────────────────────────────────────
   // POST /chat  body: { query: string }
   // Response: { success, message, data: { route, response, leads, preferences } }
-  // ── Send message & get AI reply ───────────────────────────────────────────
   async function handleSend() {
     const trimmed = messageText.trim();
     if (!trimmed || isTyping) return;
@@ -195,6 +207,9 @@ export default function AIChat() {
     );
     setMessageText("");
     setIsTyping(true);
+
+    // Persist user message so it survives page navigation
+    void persistMessage(sessionId, "user", trimmed);
 
     try {
       const res = await fetchWithAuth(`${BASE_URL}/chat`, {
@@ -287,6 +302,10 @@ export default function AIChat() {
           s.id === sessionId ? { ...s, messages: [...s.messages, aiMsg] } : s,
         ),
       );
+
+      // Persist the fully-formatted AI message (including lead details) to the
+      // session so it is restored when the user navigates back to this chat.
+      void persistMessage(sessionId, "assistant", content);
     } catch (err) {
       console.error("Error sending message:", err);
       const errMsg: ChatMessageType = {
