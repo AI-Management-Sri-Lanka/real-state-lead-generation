@@ -375,12 +375,12 @@ export default function AIChat() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <DashboardLayout activeNav="AI Chat">
-      <div className="h-full bg-page text-slate-100 px-4 pt-8 pb-0 sm:px-6 lg:px-10 xl:px-12">
-        <div className="mx-auto w-full h-full">
-          <div className="h-full rounded-[32px] border border-slate-800/80 bg-slate-950/90 shadow-panel overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col bg-page text-slate-100 px-4 pt-8 pb-0 sm:px-6 lg:px-10 xl:px-12">
+        <div className="mx-auto w-full flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 rounded-[32px] border border-slate-800/80 bg-slate-950/90 shadow-panel overflow-hidden flex flex-col">
             <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
               {/* ── Sidebar ── */}
-              <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-5">
+              <div className="w-full lg:w-80 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-5 overflow-y-auto">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-slate-500">
