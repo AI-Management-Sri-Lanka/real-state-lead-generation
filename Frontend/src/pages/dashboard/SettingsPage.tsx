@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { authApi } from '@/api/authApi';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { useNavigate } from 'react-router-dom';
+import { Logo } from '@/components/ui/Logo';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -37,7 +38,7 @@ export default function SettingsPage() {
       });
       // A full app refresh to reload user context with new name
       toast.success('Profile updated successfully!');
-      window.location.reload(); 
+      window.location.reload();
     } catch (err: unknown) {
       toast.error((err as Error).message ?? 'Failed to update profile', { id: 'profile-err' });
     } finally {
@@ -53,8 +54,12 @@ export default function SettingsPage() {
     setPasswordLoading(true);
     try {
       await authApi.changePassword(passwordForm);
-      toast.success('Password changed successfully!');
+      // After changing password, backend may revoke tokens. Sign the user out
+      // and require re-login to ensure a clean session.
+      toast.success('Password changed — please sign in again.');
       setPasswordForm({ current_password: '', new_password: '' });
+      signOut();
+      navigate('/auth/signin');
     } catch (err: unknown) {
       toast.error((err as Error).message ?? 'Failed to change password', { id: 'password-err' });
     } finally {
@@ -80,78 +85,96 @@ export default function SettingsPage() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-900 p-8 text-slate-100">
-      <div className="mx-auto max-w-2xl space-y-12">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Settings</h1>
-          <p className="mt-2 text-slate-400">Manage your profile information and security preferences.</p>
+      {/* This relative wrapper spans the FULL width of the page (no max-w here) */}
+      <div className="relative">
+        {/* Back button + Logo — pinned to the true left edge of the screen,
+            inset only by the page's own p-8 padding */}
+        <div className="absolute left-0 top-0 flex items-center gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 focus:outline-none"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-slate-100">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <Link to="/" className="flex items-center gap-2">
+            <Logo size="sm" showText={false} />
+            <span className="text-white font-bold uppercase tracking-wide">LEADAI</span>
+          </Link>
         </div>
 
-        {/* Profile Section */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
-          <h2 className="mb-4 text-xl font-semibold text-white">Profile Information</h2>
-          <form onSubmit={handleProfileSubmit} className="space-y-4">
-            <Input
-              label="Full Name"
-              name="full_name"
-              value={profileForm.full_name}
-              onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
-              required
-            />
-            <Input
-              label="Email Address"
-              name="email"
-              type="email"
-              value={profileForm.email}
-              onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-              required
-            />
-            <div className="pt-2">
-              <Button type="submit" loading={profileLoading}>Save Changes</Button>
-            </div>
-          </form>
-        </section>
+        {/* Centered content column — the max-w-2xl now lives in here, NOT around the button above */}
+        <div className="mx-auto max-w-2xl space-y-12">
+          <header className="mb-6 flex justify-center">
+            <h1 className="text-3xl font-bold tracking-tight text-white">Settings</h1>
+          </header>
 
-        {/* Password Section */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
-          <h2 className="mb-4 text-xl font-semibold text-white">Change Password</h2>
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <Input
-              label="Current Password"
-              name="current_password"
-              type="password"
-              value={passwordForm.current_password}
-              onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
-              required
-            />
-            <Input
-              label="New Password"
-              name="new_password"
-              type="password"
-              value={passwordForm.new_password}
-              onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
-              required
-            />
-            <div className="pt-2">
-              <Button type="submit" loading={passwordLoading}>Update Password</Button>
-            </div>
-          </form>
-        </section>
+          {/* Profile Section */}
+          <section className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">Profile Information</h2>
+            <form onSubmit={handleProfileSubmit} className="space-y-4">
+              <Input
+                label="Full Name"
+                name="full_name"
+                value={profileForm.full_name}
+                disabled
+                readOnly
+              />
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                value={profileForm.email}
+                disabled
+                readOnly
+              />
+            </form>
+          </section>
 
-        {/* Danger Zone */}
-        <section className="rounded-2xl border border-red-900/50 bg-red-950/20 p-6">
-          <h2 className="mb-2 text-xl font-semibold text-red-500">Danger Zone</h2>
-          <p className="mb-6 text-sm text-slate-400">
-            Permanently delete your account and all of your data. This action cannot be reversed.
-          </p>
-          <Button
-            type="button"
-            onClick={handleDeleteAccount}
-            loading={deleteLoading}
-            style={{ backgroundColor: '#7f1d1d', color: '#fca5a5' }}
-          >
-            Delete Account
-          </Button>
-        </section>
+          {/* Password Section */}
+          <section className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">Change Password</h2>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <Input
+                label="Current Password"
+                name="current_password"
+                type="password"
+                value={passwordForm.current_password}
+                onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                required
+              />
+              <Input
+                label="New Password"
+                name="new_password"
+                type="password"
+                value={passwordForm.new_password}
+                onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                required
+              />
+              <div className="pt-2">
+                <Button type="submit" loading={passwordLoading}>Update Password</Button>
+              </div>
+            </form>
+          </section>
+
+          {/* Danger Zone */}
+          <section className="rounded-2xl border border-red-900/50 bg-red-950/20 p-6">
+            <h2 className="mb-2 text-xl font-semibold text-red-500">Danger Zone</h2>
+            <p className="mb-6 text-sm text-slate-400">
+              Permanently delete your account and all of your data. This action cannot be reversed.
+            </p>
+            <Button
+              type="button"
+              onClick={handleDeleteAccount}
+              loading={deleteLoading}
+              style={{ backgroundColor: '#7f1d1d', color: '#fca5a5' }}
+            >
+              Delete Account
+            </Button>
+          </section>
+        </div>
       </div>
     </div>
   );
