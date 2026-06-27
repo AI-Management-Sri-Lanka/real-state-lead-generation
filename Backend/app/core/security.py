@@ -35,3 +35,23 @@ def decode_token(token: str) -> dict:
         return payload
     except jwt.PyJWTError as e:
         raise ValueError("Invalid or expired token") from e
+
+def create_master_admin_token(admin_id: int, email: str) -> str:
+    """Create a JWT access token specifically for a Master Admin."""
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {
+        "sub": str(admin_id), 
+        "email": email, 
+        "is_master_admin": True,
+        "exp": expire, 
+        "type": "access"
+    }
+    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+    return encoded_jwt
+
+def decode_master_admin_token(token: str) -> dict:
+    """Decode and validate a JWT token, ensuring it belongs to a Master Admin."""
+    payload = decode_token(token)
+    if not payload.get("is_master_admin"):
+        raise ValueError("Token is missing is_master_admin=True claim")
+    return payload
