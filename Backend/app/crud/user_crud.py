@@ -70,3 +70,36 @@ async def delete_user_db(db: AsyncSession, user: User, commit: bool = True) -> N
         await db.rollback()
         logger.error("DB error occurred in delete_user: %s", str(e))
         raise AppException(error=AppError.SYS_DATABASE_UNAVAILABLE) from e
+
+async def get_users_db(db: AsyncSession, skip: int = 0, limit: int = 100) -> tuple[list[User], int]:
+    """Retrieve all users with pagination and total count."""
+    try:
+        from sqlalchemy import func
+        # Get total count
+        count_query = select(func.count(User.id))
+        total = await db.scalar(count_query)
+
+        # Get paginated results
+        query = select(User).offset(skip).limit(limit)
+        result = await db.execute(query)
+        users = result.scalars().all()
+        return list(users), total or 0
+    except Exception as e:
+        logger.error("DB error occurred in get_users_db: %s", str(e))
+        raise AppException(error=AppError.SYS_DATABASE_UNAVAILABLE) from e
+
+async def get_user_by_id_db(db: AsyncSession, user_id: int) -> User | None:
+    """Retrieve a user by ID from the database."""
+    try:
+        result = await db.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
+    except Exception as e:
+        logger.error("DB error occurred in get_user_by_id: %s", str(e))
+        raise AppException(error=AppError.SYS_DATABASE_UNAVAILABLE) from e
+
+async def toggle_user_active_status_db(db: AsyncSession, user_id: int, is_active: bool, commit: bool = True) -> User:
+    """Toggle a user's active status (e.g. for ban/unban property owners)."""
+    user = await get_user_by_id_db(db, user_id)
+    if not user:
+        raise AppException(error=AppError.SYS_RESOURCE_NOT_FOUND)
+    return await update_user_db(db, user, {"is_active": is_active}, commit=commit)
