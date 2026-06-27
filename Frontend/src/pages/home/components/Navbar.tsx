@@ -130,8 +130,11 @@ export function Navbar() {
 
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 12px', height:72, display:'flex', alignItems:'center', gap:32 }}>
-        
+      {/* Removed maxWidth + margin:auto centering — that was creating the
+          large empty gaps on either side. Now the bar uses the full
+          available width, with just reasonable side padding. */}
+      <div style={{ width:'100%', padding:'0 20px', height:72, display:'flex', alignItems:'center', gap:32, boxSizing:'border-box' }}>
+
         {/* ── Logo → always navigates home ── */}
         <Link to="/" style={{ textDecoration:'none', flexShrink:0 }}>
           <Logo size="md" />

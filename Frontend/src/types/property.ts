@@ -24,6 +24,6 @@ export interface InquiryPayload {
   propertyId: string
   name: string
   email: string
-  phone: string
+  phone?: string
   message: string
 }

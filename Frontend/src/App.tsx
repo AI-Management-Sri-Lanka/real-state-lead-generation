@@ -14,7 +14,9 @@ import PropertyDetailPage from '@/pages/public/propertyDetailPage'
 import SettingsPage from './pages/dashboard/SettingsPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
+  // While auth state is being restored, don't redirect — wait silently.
+  if (isLoading) return null
   return isAuthenticated ? <>{children}</> : <Navigate to="/auth/signin" replace />
 }
 
