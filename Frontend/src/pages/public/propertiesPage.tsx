@@ -247,10 +247,10 @@ export default function PropertiesPage() {
       {/* ── Hero / search ───────────────────────────────────────── */}
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">
-          Find your next home in Sri Lanka
+          Find your next Property
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          Browse verified apartments, houses and land across Colombo, Kandy and beyond.
+          Browse verified apartments, houses and land.
         </p>
 
         {isAdmin && (

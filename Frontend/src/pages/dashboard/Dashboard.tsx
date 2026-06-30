@@ -227,7 +227,7 @@ export default function Dashboard() {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-white">Recent leads</h2>
-                <p className="mt-0.5 text-sm text-slate-500">Search and review your latest Sri Lanka leads.</p>
+                <p className="mt-0.5 text-sm text-slate-500">Search and review your latest leads.</p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 {/* Search */}

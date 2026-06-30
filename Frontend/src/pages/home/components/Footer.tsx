@@ -61,7 +61,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div style={{ borderTop:'1px solid var(--color-border)', paddingTop:24, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <span style={{ fontSize:13, color:'var(--color-text-secondary)' }}>© 2026 LeadAI. All rights reserved.</span>
-          <span style={{ fontSize:13, color:'var(--color-text-secondary)' }}>Built for real estate agents in Sri Lanka 🇱🇰</span>
+          <span style={{ fontSize:13, color:'var(--color-text-secondary)' }}>Built for real estate agents.</span>
         </div>
       </div>
     </footer>
