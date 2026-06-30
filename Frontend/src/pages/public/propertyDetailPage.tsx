@@ -158,7 +158,7 @@ export default function PropertyDetailPage() {
           {/* ── Left: details ──────────────────────────────────── */}
           <div>
             <p className="flex items-center gap-1 text-xs text-slate-500">
-              <MapPin size={12} /> {property.location}, Sri Lanka
+              <MapPin size={12} /> {property.location}, Australia
             </p>
             <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
               {formatPrice(property.price, property.currency, property.listingType)}
