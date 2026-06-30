@@ -148,6 +148,54 @@ function LeadsGrid({ leads }: { leads: Lead[] }) {
   );
 }
 
+// Decide whether the backend's message text is just a generic/empty
+// placeholder (so we should replace it with an honest "no leads" message)
+// vs. a specific error/explanation we should preserve as-is.
+function isGenericNoResultsMessage(content: string): boolean {
+  const trimmed = content.trim();
+  if (!trimmed) return true;
+  if (trimmed === "Here is what I found.") return true;
+  if (/no leads/i.test(trimmed)) return true;
+  if (/\b0\s*\/\s*\d+\b/.test(trimmed)) return true;
+  if (/could not find|did not find|couldn't find/i.test(trimmed)) return true;
+  return false;
+}
+
+const NO_LEADS_MESSAGE =
+  "I couldn't find any leads matching that search right now. This can happen if the data sources have hit their usage limit for the month, or if there's just nothing matching those filters today. Try a different platform, location, or hashtag, or check back later.";
+
+function parseLeadsFromBakedContent(content: string): { intro: string; leads: Lead[] } {
+  const introMatch = content.match(/^([\s\S]*?)(?=\*\*\d+\.)/);
+  let intro = introMatch ? introMatch[1].trim() : "";
+  intro = intro.replace(/\*\*Found \d+ potential leads:\*\*/i, "").trim();
+  if (!intro) intro = "Here are the leads I found for you";
+
+  const blocks = content.split(/(?=\*\*\d+\.\s+@)/).slice(1);
+  const leads = blocks
+    .map((block) => {
+      const handleMatch = block.match(/\*\*\d+\.\s+(@[\w.]+)\*\*\s*\((\w+)\)/);
+      const nameMatch = block.match(/Name:\s*(.+)/);
+      const propMatch = block.match(/Property Type:\s*(.+)/);
+      const locMatch = block.match(/Location:\s*(.+)/);
+      const dateMatch = block.match(/Date:\s*(.+)/);
+      const descMatch = block.match(/Post:\s*"?([\s\S]+?)(?="?\s*\n\s*(?:Link:|$))/);
+      const linkMatch = block.match(/Link:\s*(https?:\/\/\S+)/);
+      return {
+        userId: handleMatch?.[1]?.replace("@", "") ?? "unknown",
+        platform: handleMatch?.[2] ?? "unknown",
+        name: nameMatch?.[1]?.trim(),
+        property_type: propMatch?.[1]?.trim(),
+        location: locMatch?.[1]?.trim(),
+        date: dateMatch?.[1]?.trim(),
+        description: descMatch?.[1]?.trim(),
+        post_link: linkMatch?.[1]?.trim(),
+      } as Lead;
+    })
+    .filter((l: Lead) => l.userId !== "unknown");
+
+  return { intro, leads };
+}
+
 export default function AIChat() {
   const { user } = useAuth();
   const userName = (user as any)?.name || (user as any)?.email || "You";
@@ -185,23 +233,34 @@ export default function AIChat() {
   );
 
   // ── Load sessions on mount ──────────────────────────────────────────────
+  const sessionsLoadedRef = useRef(false);
   useEffect(() => {
-    if (!user) return;
+    if (!user || sessionsLoadedRef.current) return;
+    sessionsLoadedRef.current = true;
     async function loadSessions() {
       try {
         const res = await fetchWithAuth(`${BASE_URL}/sessions`);
         if (!res.ok) return;
         const data = await res.json();
-        const mapped: Session[] = data.map((s: any) => ({
-          id: s.session_id,
-          title: s.title || "New chat",
-          createdAt: new Date(s.updated_at).toLocaleDateString(undefined, {
-            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-          }),
-          messages: [],
-        }));
-        setSessions(mapped);
-        if (mapped.length > 0) setActiveSessionId(mapped[0].id);
+        setSessions((prev) => {
+          const mapped: Session[] = data.map((s: any) => {
+            const existing = prev.find((p) => p.id === s.session_id);
+            return {
+              id: s.session_id,
+              title: s.title || existing?.title || "New chat",
+              createdAt: new Date(s.updated_at).toLocaleDateString(undefined, {
+                month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+              }),
+              // Preserve cached messages (with leads) if we already have them
+              messages: existing?.messages ?? [],
+            };
+          });
+          // Keep any local-only sessions (not yet known to backend, e.g. just created) at the front
+          const backendIds = new Set(mapped.map((m) => m.id));
+          const localOnly = prev.filter((p) => !backendIds.has(p.id));
+          return [...localOnly, ...mapped];
+        });
+        setActiveSessionId((prevId) => prevId || (data.length > 0 ? data[0].session_id : ""));
       } catch (err) {
         console.error("Error loading sessions:", err);
       }
@@ -210,12 +269,17 @@ export default function AIChat() {
   }, [user]);
 
   // ── Load messages when active session changes ───────────────────────────
+  const sessionsRef = useRef(sessions);
+  sessionsRef.current = sessions;
+  const loadedSessionsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!activeSessionId) return;
-    if (!activeSessionId) return;
-    // Skip backend fetch if we already have messages cached (leads preserved)
-    const cached = sessions.find((s) => s.id === activeSessionId);
+    if (loadedSessionsRef.current.has(activeSessionId)) return;
+
+    // Read the LATEST sessions via ref, not the effect's stale closure
+    const cached = sessionsRef.current.find((s) => s.id === activeSessionId);
     if (cached && cached.messages.length > 0) {
+      loadedSessionsRef.current.add(activeSessionId);
       // Ensure timestamps are Date objects (localStorage stores them as strings)
       setSessions((prev) => prev.map((s) =>
         s.id !== activeSessionId ? s : {
@@ -228,6 +292,8 @@ export default function AIChat() {
       ));
       return;
     }
+
+    loadedSessionsRef.current.add(activeSessionId);
 
     async function loadMessages() {
       try {
@@ -243,35 +309,11 @@ export default function AIChat() {
             // Match both "**Found N potential leads:**" and numbered lead blocks like "**1. @handle** (platform)"
             const hasLeadBlock = /\*\*\d+\.\s+@/.test(content);
             if (hasLeadBlock) {
-              // Extract intro text before the first numbered lead
-              const introMatch = content.match(/^([\s\S]*?)(?=\*\*\d+\.)/);
-              // Strip "**Found N potential leads:**\n\n" from the intro
-              let intro = introMatch ? introMatch[1].trim() : "";
-              intro = intro.replace(/\*\*Found \d+ potential leads:\*\*/i, "").trim();
-              if (!intro) intro = "Here are the leads I found for you";
-
-              // Split on numbered lead markers
-              const blocks = content.split(/(?=\*\*\d+\.\s+@)/).slice(1);
-              leads = blocks.map((block: string) => {
-                const handleMatch = block.match(/\*\*\d+\.\s+(@[\w.]+)\*\*\s*\((\w+)\)/);
-                const nameMatch = block.match(/Name:\s*(.+)/);
-                const propMatch = block.match(/Property Type:\s*(.+)/);
-                const locMatch = block.match(/Location:\s*(.+)/);
-                const dateMatch = block.match(/Date:\s*(.+)/);
-                const descMatch = block.match(/Post:\s*"?([\s\S]+?)(?="?\s*\n\s*(?:Link:|$))/);
-                const linkMatch = block.match(/Link:\s*(https?:\/\/\S+)/);
-                return {
-                  userId: handleMatch?.[1]?.replace("@", "") ?? "unknown",
-                  platform: handleMatch?.[2] ?? "unknown",
-                  name: nameMatch?.[1]?.trim(),
-                  property_type: propMatch?.[1]?.trim(),
-                  location: locMatch?.[1]?.trim(),
-                  date: dateMatch?.[1]?.trim(),
-                  description: descMatch?.[1]?.trim(),
-                  post_link: linkMatch?.[1]?.trim(),
-                } as Lead;
-              }).filter((l: Lead) => l.userId !== "unknown");
-              if (leads.length > 0) content = intro;
+              const parsed = parseLeadsFromBakedContent(content);
+              if (parsed.leads.length > 0) {
+                leads = parsed.leads;
+                content = parsed.intro;
+              }
             }
           }
 
@@ -385,31 +427,18 @@ export default function AIChat() {
 
       // Fallback: if backend bakes everything into the message string, parse leads from it
       if (leads.length === 0 && /\*\*\d+\.\s+@/.test(content)) {
-        const introMatch = content.match(/^([\s\S]*?)(?=\*\*\d+\.)/);
-        let intro = introMatch ? introMatch[1].trim() : "";
-        intro = intro.replace(/\*\*Found \d+ potential leads:\*\*/i, "").trim();
-        if (!intro) intro = "Here are the leads I found for you";
-        const blocks = content.split(/(?=\*\*\d+\.\s+@)/).slice(1);
-        leads = blocks.map((block) => {
-          const handleMatch = block.match(/\*\*\d+\.\s+(@[\w.]+)\*\*\s*\((\w+)\)/);
-          const nameMatch = block.match(/Name:\s*(.+)/);
-          const propMatch = block.match(/Property Type:\s*(.+)/);
-          const locMatch = block.match(/Location:\s*(.+)/);
-          const dateMatch = block.match(/Date:\s*(.+)/);
-          const descMatch = block.match(/Post:\s*"?([\s\S]+?)(?="?\s*\n\s*(?:Link:|$))/);
-          const linkMatch = block.match(/Link:\s*(https?:\/\/\S+)/);
-          return {
-            userId: handleMatch?.[1]?.replace("@", "") ?? "unknown",
-            platform: handleMatch?.[2] ?? "unknown",
-            name: nameMatch?.[1]?.trim(),
-            property_type: propMatch?.[1]?.trim(),
-            location: locMatch?.[1]?.trim(),
-            date: dateMatch?.[1]?.trim(),
-            description: descMatch?.[1]?.trim(),
-            post_link: linkMatch?.[1]?.trim(),
-          } as Lead;
-        }).filter((l) => l.userId !== "unknown");
-        if (leads.length > 0) content = intro;
+        const parsed = parseLeadsFromBakedContent(content);
+        if (parsed.leads.length > 0) {
+          leads = parsed.leads;
+          content = parsed.intro;
+        }
+      }
+
+      // Honest empty-state: if there are genuinely no leads, don't show a
+      // message that implies success. Preserve specific backend error text
+      // if it gave one; otherwise show a clear explanation.
+      if (leads.length === 0 && isGenericNoResultsMessage(content)) {
+        content = NO_LEADS_MESSAGE;
       }
 
       const aiMsg: ChatMessageType = {
@@ -562,7 +591,7 @@ export default function AIChat() {
                 <div className="border-b border-slate-800/90 px-6 py-4">
                   <p className="text-xs font-medium tracking-wide text-slate-500">AI LEAD ASSISTANT</p>
                   <h1 className="mt-1 text-xl font-medium text-white">
-                    Ask, refine and qualify leads.
+                    Ask, refine and qualify leads in Sri Lanka.
                   </h1>
                 </div>
 
