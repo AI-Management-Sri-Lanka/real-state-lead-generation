@@ -510,17 +510,17 @@ export default function AIChat() {
     setActiveMenu(activeMenu === sessionId ? null : sessionId);
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────
+ // ── Render ──────────────────────────────────────────────────────────────
   return (
     <DashboardLayout activeNav="AI Chat">
-      <div className="h-full bg-slate-950 text-slate-100">
-        <div className="w-full h-full">
+      <div className="h-screen max-h-screen bg-slate-950 text-slate-100 overflow-hidden">
+        <div className="w-full h-full overflow-hidden">
           <div className="h-full bg-slate-950 overflow-hidden flex flex-col">
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+            <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
-              {/* ── Sidebar ── */}
-              <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-5 flex flex-col">
-                <div className="flex items-center justify-between gap-3">
+              {/* ── Sidebar (fixed, never scrolls/resizes with chat) ── */}
+              <div className="w-full lg:w-80 lg:shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-5 flex flex-col h-full overflow-hidden">
+                <div className="flex items-center justify-between gap-3 shrink-0">
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-slate-500">AI Assistant</p>
                     <h2 className="mt-3 text-lg font-semibold text-white">Chat history</h2>
@@ -534,7 +534,7 @@ export default function AIChat() {
                   </button>
                 </div>
 
-                <div className="mt-6 flex-1 overflow-y-auto space-y-3">
+                <div className="mt-6 flex-1 min-h-0 overflow-y-auto space-y-3">
                   {sessions.map((session) => {
                     const active = session.id === activeSession?.id;
                     return (
@@ -586,18 +586,18 @@ export default function AIChat() {
                 </div>
               </div>
 
-              {/* ── Main chat area ── */}
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="border-b border-slate-800/90 px-6 py-4">
+              {/* ── Main chat area (only this part scrolls) ── */}
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="border-b border-slate-800/90 px-6 py-4 shrink-0">
                   <p className="text-xs font-medium tracking-wide text-slate-500">AI LEAD ASSISTANT</p>
                   <h1 className="mt-1 text-xl font-medium text-white">
-                    Ask, refine and qualify leads in Sri Lanka.
+                    Ask, refine and qualify leads.
                   </h1>
                 </div>
 
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4 sm:px-8">
+                  {/* Messages — the ONLY scrollable region */}
+                  <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-4 sm:px-8">
                     <div className="flex flex-col gap-5">
                       {!activeSession || activeSession.messages.length === 0 ? (
                         <div className="grid min-h-[320px] place-items-center rounded-[28px] border border-dashed border-slate-800/90 bg-slate-900/70 p-10 text-center">
@@ -635,8 +635,8 @@ export default function AIChat() {
                     </div>
                   </div>
 
-                  {/* Input bar */}
-                  <div className="border-t border-slate-800/90 bg-slate-950/95 px-5 py-4 sm:px-6">
+                  {/* Input bar (fixed at the bottom of the chat column) */}
+                  <div className="border-t border-slate-800/90 bg-slate-950/95 px-5 py-4 sm:px-6 shrink-0">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 rounded-full bg-slate-900/95 p-2">
                         <div className="flex items-center gap-3 rounded-full border border-slate-800/80 bg-slate-950 px-4 py-3">
@@ -650,7 +650,7 @@ export default function AIChat() {
                               }
                             }}
                             placeholder="Type your request for the AI assistant…"
-                            className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none"
+                            className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none border-none ring-0 focus:outline-none focus:ring-0 focus:border-none appearance-none"
                             aria-label="Type chat message"
                           />
                           <button
