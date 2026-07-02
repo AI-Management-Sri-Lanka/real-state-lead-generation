@@ -24,7 +24,8 @@ const BASE_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api
 
 // Helper outside component — no stale closure risk
 function deriveTitleFromMessages(messages: ChatMessageType[], fallback: string): string {
-  if (fallback && fallback !== "New chat") return fallback;
+  const isFallbackDefault = !fallback || fallback.toLowerCase() === "new chat";
+  if (!isFallbackDefault) return fallback;
   const first = messages.find((m) => m.role === "user" && m.content.trim());
   if (!first) return fallback || "New chat";
   const snippet = first.content.trim().replace(/\s+/g, " ");
@@ -221,9 +222,16 @@ export default function AIChat() {
       };
 
       setSessions((prev) =>
-        prev.map((s) =>
-          s.id === resolvedId ? { ...s, messages: [...s.messages, aiMsg] } : s,
-        ),
+        prev.map((s) => {
+          if (s.id === resolvedId) {
+            const updated = { ...s, messages: [...s.messages, aiMsg] };
+            if (json.generated_title) {
+              updated.title = json.generated_title;
+            }
+            return updated;
+          }
+          return s;
+        }),
       );
     } catch (err) {
       const errMsg: ChatMessageType = {
