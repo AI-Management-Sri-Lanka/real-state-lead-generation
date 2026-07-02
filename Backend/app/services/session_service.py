@@ -40,15 +40,15 @@ async def get_session(db: AsyncSession, session_id: str) -> Session:
     return session
 
 
-async def list_sessions(db: AsyncSession, user_id: int | None = None) -> list[Session]:
+async def list_sessions(db: AsyncSession, user_id: int | None = None, skip: int = 0, limit: int = 100) -> list[Session]:
     """List non-expired sessions, newest first. Eagerly loads messages for message_count."""
     query = select(Session).options(_with_messages())
     if user_id is not None:
         query = query.where(Session.user_id == user_id)
-    query = query.order_by(Session.updated_at.desc())
+    query = query.order_by(Session.updated_at.desc()).offset(skip).limit(limit)
 
     result = await db.execute(query)
-    return result.scalars().all()
+    return list(result.scalars().all())
 
 
 async def update_session(db: AsyncSession, session_id: str, title: str) -> Session:

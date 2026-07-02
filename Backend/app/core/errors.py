@@ -119,11 +119,40 @@ class AppError:
         http_status=400
     )
 
+    PERM_PERMISSION_DENIED = ErrorDefinition(
+        code="PERM-001",
+        name="Permission Denied",
+        category="authorization_error",
+        severity="high",
+        module="auth",
+        user_message="You do not have permission to perform this action.",
+        internal_message="User lacks required permissions or roles.",
+        recommended_action="Request access from an administrator.",
+        log_level="warn",
+        alert_required=False,
+        http_status=403
+    )
+
+    SYS_RESOURCE_NOT_FOUND = ErrorDefinition(
+        code="SYS-003",
+        name="Resource Not Found",
+        category="system_error",
+        severity="low",
+        module="system",
+        user_message="The requested resource could not be found.",
+        internal_message="Database entity not found.",
+        recommended_action="Check the provided ID or parameters.",
+        log_level="info",
+        alert_required=False,
+        http_status=404
+    )
+
 
 class AppException(Exception):
     """
     Main application exception that takes an ErrorDefinition.
     """
-    def __init__(self, error: ErrorDefinition):
+    def __init__(self, error: ErrorDefinition, custom_message: Optional[str] = None):
         self.error = error
-        super().__init__(self.error.user_message)
+        self.custom_message = custom_message
+        super().__init__(self.custom_message or self.error.user_message)
