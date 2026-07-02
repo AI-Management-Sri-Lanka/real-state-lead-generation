@@ -19,13 +19,7 @@ export function ChatHeader({ onMenuToggle }: Props) {
         flexShrink: 0,
       }}
     >
-      {/*
-       * RESPONSIVE FIX:
-       * Mobile hamburger button — hidden on md+ because the sidebar
-       * is always visible there.  Uses a simple inline media-query via
-       * className (Tailwind).  We rely on `onMenuToggle` being provided
-       * by the parent (AIAssistantPage).
-       */}
+      
       {onMenuToggle && (
         <button
           onClick={onMenuToggle}

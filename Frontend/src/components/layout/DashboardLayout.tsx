@@ -10,9 +10,9 @@ export function DashboardLayout({ children }: Props) {
   const { isOpen: sidebarOpen, close: closeSidebar } = useSidebar()
 
   return (
-    <div className="min-h-screen flex min-w-full flex-col bg-page" style={{ color: 'var(--color-text-primary)' }}>
+    <div className="h-screen flex min-w-full flex-col overflow-hidden bg-page" style={{ color: 'var(--color-text-primary)' }}>
       <Navbar />
-      <div className="relative flex min-h-[calc(100vh-72px)] overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
         {sidebarOpen && (
           <div
             onClick={closeSidebar}
@@ -31,7 +31,7 @@ export function DashboardLayout({ children }: Props) {
           <Sidebar />
         </aside>
 
-        <main className="flex min-h-[calc(100vh-72px)] flex-1 flex-col overflow-y-auto">
+        <main className="flex flex-1 flex-col overflow-y-auto">
           {children}
         </main>
       </div>

@@ -11,6 +11,8 @@ import uuid
 from app.db.base_class import Base
 from app.db.session import engine
 from app.api.v1.session_router import router as session_router
+from app.api.v1.property_router import router as property_router
+import app.models # Ensure all models are registered
 from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
@@ -34,7 +36,7 @@ async def app_error_handler(request: Request, exc: AppException):
     request_id = getattr(request.state, "request_id", None)
     
     # Dynamic logging based on log_level
-    log_msg = f"[{request_id}] {error_def.code} at {request.url.path}: {error_def.internal_message}"
+    log_msg = f"[{request_id}] {error_def.code} at {request.url.path}: {exc.custom_message or error_def.internal_message}"
     if error_def.log_level == "error":
         logger.error(log_msg)
     elif error_def.log_level == "warn":
@@ -46,6 +48,8 @@ async def app_error_handler(request: Request, exc: AppException):
         logger.critical(f"ALERT REQUIRED: {error_def.code} occurred. Request ID: {request_id}")
         
     error_dict = build_error_dict(error_def, request_id)
+    if exc.custom_message:
+        error_dict["message"] = exc.custom_message
     return fail(error_dict=error_dict, status_code=error_def.http_status)
 
 @app.exception_handler(RequestValidationError)
@@ -120,10 +124,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(session_router)
-app.include_router(chat_router) 
+
+# Include routers — all routes versioned under /api/v1
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(session_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")
+app.include_router(property_router,  prefix="/api/v1")
+
+from app.api.v1.admin_auth_router import router as admin_auth_router
+from app.api.v1.admin_manage_router import router as admin_manage_router
+from app.api.v1.admin_dashboard_router import router as admin_dashboard_router
+
+app.include_router(admin_auth_router, prefix="/api/v1")
+app.include_router(admin_manage_router, prefix="/api/v1")
+app.include_router(admin_dashboard_router, prefix="/api/v1")
+
 
 @app.on_event("startup")
 async def startup():
