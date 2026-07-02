@@ -36,7 +36,8 @@ type Session = {
 const BASE_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`;
 
 function deriveTitleFromMessages(messages: ChatMessageType[], fallback: string): string {
-  if (fallback && fallback !== "New chat") return fallback;
+  const isFallbackDefault = !fallback || fallback.toLowerCase() === "new chat";
+  if (!isFallbackDefault) return fallback;
   const first = messages.find((m) => m.role === "user" && m.content.trim());
   if (!first) return fallback || "New chat";
   const snippet = first.content.trim().replace(/\s+/g, " ");
@@ -366,6 +367,26 @@ export default function AIChat() {
     }
   }, []);
 
+  const generateSessionTitle = useCallback(async (sessionId: string, userQuery: string) => {
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/sessions/${sessionId}/generate-title`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_query: userQuery }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.title) {
+          setSessions((prev) =>
+            prev.map((s) => (s.id === sessionId ? { ...s, title: data.title } : s))
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Error generating session title:", err);
+    }
+  }, []);
+
   // ── Send message ────────────────────────────────────────────────────────
   async function handleSend() {
     const trimmed = messageText.trim();
@@ -377,6 +398,9 @@ export default function AIChat() {
       if (!newId) return;
       resolvedId = newId;
     }
+
+    const targetSession = sessions.find((s) => s.id === resolvedId);
+    const isFirstMessage = !targetSession || targetSession.messages.length === 0;
 
     const userMsg: ChatMessageType = {
       id: `user-${Date.now()}`,
@@ -400,6 +424,10 @@ export default function AIChat() {
     setActiveSessionId(resolvedId);
     setMessageText("");
     setIsTyping(true);
+
+    if (isFirstMessage) {
+      generateSessionTitle(resolvedId, trimmed);
+    }
 
     try {
       const res = await fetchWithAuth(`${BASE_URL}/chat`, {
@@ -450,9 +478,16 @@ export default function AIChat() {
       };
 
       setSessions((prev) =>
-        prev.map((s) =>
-          s.id === resolvedId ? { ...s, messages: [...s.messages, aiMsg] } : s,
-        ),
+        prev.map((s) => {
+          if (s.id === resolvedId) {
+            const updated = { ...s, messages: [...s.messages, aiMsg] };
+            if (json.generated_title) {
+              updated.title = json.generated_title;
+            }
+            return updated;
+          }
+          return s;
+        }),
       );
     } catch (err) {
       const errMsg: ChatMessageType = {
@@ -470,6 +505,7 @@ export default function AIChat() {
       setIsTyping(false);
     }
   }
+
 
   // ── Rename ──────────────────────────────────────────────────────────────
   async function handleRename(sessionId: string) {

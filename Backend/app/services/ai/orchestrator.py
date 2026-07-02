@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 from typing import List
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -96,11 +97,71 @@ class Orchestrator:
         # Rank leads
         ranked_leads: List[ScrapedLead] = RankLeads().rank_leads(query=user_query, leads=scraped_leads)
 
+        message = self._format_leads_as_markdown(ranked_leads)
+
         return OrchestratorResponse(
-            message="Here are the leads I found for you",
+            message=message,
             leads=ranked_leads,
             route="lead_search"
         )
+
+    @staticmethod
+    def _format_leads_as_markdown(leads: List[ScrapedLead]) -> str:
+        """Serialise lead results as a markdown string for DB persistence."""
+        if not leads:
+            return (
+                "I searched social media but couldn't find any matching leads "
+                "right now. Try broadening your search criteria."
+            )
+
+        lines: list[str] = [
+            f"## Found {len(leads)} Potential Lead{'s' if len(leads) != 1 else ''}",
+            "",
+        ]
+
+        for i, lead in enumerate(leads, start=1):
+            handle = lead.userId or lead.name or "Unknown"
+            platform = lead.platform.value.capitalize()
+
+            lines.append(f"### {i}. @{handle} &middot; {platform}")
+            lines.append("")
+
+            if lead.name and lead.name != lead.userId:
+                lines.append(f"- **Name:** {lead.name}")
+
+            prop_value = lead.property_type.value if lead.property_type else "unknown"
+            if prop_value != "unknown":
+                lines.append(f"- **Property type:** {prop_value.capitalize()}")
+
+            if lead.location and str(lead.location).lower() not in ("null", "none", ""):
+                lines.append(f"- **Location:** {lead.location}")
+
+            if lead.date:
+                try:
+                    date_str = lead.date.strftime("%d %b %Y")
+                    lines.append(f"- **Posted:** {date_str}")
+                except Exception:
+                    pass
+
+            if lead.description:
+                raw = lead.description.strip()
+                clean = re.sub(r"(\s#\w+)+$", "", raw).strip()
+                if not clean:
+                    clean = raw
+                if len(clean) > 200:
+                    clean = clean[:200].rstrip() + "..."
+                lines.append("")
+                lines.append(f"> {clean}")
+
+            if lead.post_link:
+                lines.append("")
+                lines.append(f"[View post]({lead.post_link})")
+
+            lines.append("")
+            lines.append("---")
+            lines.append("")
+
+        return "\n".join(lines)
 
 
     @staticmethod

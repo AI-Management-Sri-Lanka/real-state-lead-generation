@@ -1,6 +1,7 @@
 // src/pages/auth/components/AuthBrandPanel.tsx
 // Left gradient panel — matches LeadAI screenshot (deep blue-indigo-green gradient)
 import { Logo } from '@/components/ui/Logo'
+import { Link } from 'react-router-dom'
 
 interface AuthBrandPanelProps {
   heading:    React.ReactNode
@@ -19,7 +20,7 @@ export function AuthBrandPanel({ heading, subheading, bullets, className }: Auth
 
       {/* Logo top-left */}
       <div style={{ position:'absolute', top:36, left:48, zIndex:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <Link to="/" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
           <div style={{ width:36, height:36, borderRadius:10, background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
               <path d="M11 3C7.13 3 4 6.13 4 10c0 2.45 1.27 4.61 3.18 5.88L6 19l3.28-1.09A7 7 0 1 0 11 3z" fill="white"/>
@@ -27,7 +28,7 @@ export function AuthBrandPanel({ heading, subheading, bullets, className }: Auth
             </svg>
           </div>
           <span style={{ color:'white', fontWeight:700, fontSize:18, fontFamily:'var(--font-sans)' }}>LeadAI</span>
-        </div>
+        </Link>
       </div>
 
       {/* Main content — bottom aligned */}

@@ -60,3 +60,20 @@ class SessionSummary(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class TitleGenerateRequest(BaseModel):
+    user_query: str = Field(
+        ...,
+        description="The user's first query/message text to base the generated title on.",
+        example="I'm looking for a 3-bedroom house in Colombo."
+    )
+
+
+class TitleGenerateResponse(BaseModel):
+    title: str = Field(
+        ...,
+        description="The newly generated and saved chat session title.",
+        example="Colombo 3-Bed House Search"
+    )
+

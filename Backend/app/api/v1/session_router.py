@@ -5,9 +5,9 @@ from typing import List
 from app.db.session import get_db
 from app.schemas.session_schema import (
     SessionCreate, SessionCreateRequest, SessionOut, SessionSummary,
-    MessageIn, MessageOut
+    MessageIn, MessageOut, TitleGenerateRequest, TitleGenerateResponse
 )
-from app.services import session_service
+from app.services import session_service, title_service
 from app.models.user import User
 from app.services.dependencies.deps import get_current_user
 
@@ -43,7 +43,8 @@ async def create_session(
     """
     # Build the internal schema with the authenticated user's ID from the JWT
     session_data = SessionCreate(user_id=current_user.id, title=body.title)
-    return await session_service.create_session(db, session_data)
+    session = await session_service.create_session(db, session_data)
+    return session_service.to_out_dict(session)
 
 
 @router.get("", response_model=List[SessionSummary],
@@ -65,7 +66,8 @@ async def get_session(
     current_user: User = Depends(get_current_user),
 ):
     """Returns the session only if it belongs to the authenticated user."""
-    return await get_owned_session(session_id, db, current_user)
+    session = await get_owned_session(session_id, db, current_user)
+    return session_service.to_out_dict(session)
 
 
 @router.patch("/{session_id}", response_model=SessionOut,
@@ -78,7 +80,8 @@ async def update_session(
 ):
     """Renames a session only if it belongs to the authenticated user."""
     await get_owned_session(session_id, db, current_user)
-    return await session_service.update_session(db, session_id, title)
+    session = await session_service.update_session(db, session_id, title)
+    return session_service.to_out_dict(session)
 
 
 @router.delete("/{session_id}", status_code=204,
@@ -132,3 +135,22 @@ async def clear_messages(
     await session_service.clear_messages(db, session_id)
 
 
+@router.post("/{session_id}/generate-title", response_model=TitleGenerateResponse,
+             summary="Generate and save a chat session title")
+async def generate_session_title(
+    session_id: str,
+    body: TitleGenerateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Generate a title based on the user's first query and save it to the session.
+    Verifies that the session belongs to the authenticated user.
+    """
+    await get_owned_session(session_id, db, current_user)
+    title = await title_service.generate_and_save_title(
+        db=db,
+        session_id=session_id,
+        user_query=body.user_query
+    )
+    return TitleGenerateResponse(title=title)

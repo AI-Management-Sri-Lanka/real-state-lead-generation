@@ -1,50 +1,60 @@
 // src/pages/dashboard/Dashboard.tsx
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowRight, CalendarDays, CheckCircle2, Circle,
-  Users, TrendingUp, Sparkles, Info, AlertTriangle,
+  CalendarDays, CheckCircle2, Circle,
+  Users, Sparkles, Info, AlertTriangle, MessageSquare,
 } from 'lucide-react'
 import { useAuth }           from '@/hooks/useAuth'
 import { DashboardLayout }   from '@/components/layout/DashboardLayout'
 import { StatsCard }         from '@/components/dashboard/StatsCard'
 import { LeadItem }          from '@/components/dashboard/LeadItem'
+import { fetchDashboardStats, type DashboardStats } from '@/api/dashboardApi'
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const statCards = [
-  {
-    label: 'Total leads',
-    value: 248,
-    trend: '+12 this week',
-    trendPositive: true,
-    accentLabel: 'Growth',
-    icon: <Users size={20} className="text-brand" />,
-  },
-  {
-    label: 'Qualified leads',
-    value: 34,
-    trend: '+5 this week',
-    trendPositive: true,
-    accentLabel: 'Verified',
-    icon: <CheckCircle2 size={20} className="text-emerald-400" />,
-  },
-  {
-    label: 'New today',
-    value: 12,
-    trend: '+3 vs yesterday',
-    trendPositive: true,
-    accentLabel: 'Fresh',
-    icon: <Sparkles size={20} className="text-brand" />,
-  },
-  {
-    label: 'AI match rate',
-    value: '87%',
-    trend: '+2% this month',
-    trendPositive: true,
-    accentLabel: 'Accuracy',
-    icon: <TrendingUp size={20} className="text-brand" />,
-  },
-]
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function buildStatCards(stats: DashboardStats | null) {
+  return [
+    {
+      label: 'Total leads',
+      value: stats?.total_sessions ?? 0,
+      trend: 'All AI sessions',
+      trendPositive: true,
+      accentLabel: 'Sessions',
+      icon: <Users size={20} className="text-brand" />,
+    },
+    {
+      label: 'Active chats',
+      value: stats?.active_sessions ?? 0,
+      trend: 'Non-expired sessions',
+      trendPositive: true,
+      accentLabel: 'Active',
+      icon: <CheckCircle2 size={20} className="text-emerald-400" />,
+    },
+    {
+      label: 'New today',
+      value: stats?.sessions_today ?? 0,
+      trend: 'Sessions started',
+      trendPositive: (stats?.sessions_today ?? 0) > 0,
+      accentLabel: 'Fresh',
+      icon: <Sparkles size={20} className="text-brand" />,
+    },
+    {
+      label: 'AI queries',
+      value: stats?.total_messages ?? 0,
+      trend: 'Messages sent',
+      trendPositive: true,
+      accentLabel: 'Queries',
+      icon: <MessageSquare size={20} className="text-brand" />,
+    },
+  ]
+}
 
 type LeadScore = 'High' | 'Medium' | 'Low'
 type Lead = { id: string; initials: string; name: string; location: string; amount: string; score: LeadScore }
@@ -74,10 +84,13 @@ export default function Dashboard() {
   const { user }   = useAuth()
   const [query,      setQuery]     = useState('')
   const [isLoading,  setIsLoading] = useState(true)
+  const [stats,      setStats]     = useState<DashboardStats | null>(null)
 
   useEffect(() => {
-    const t = window.setTimeout(() => setIsLoading(false), 700)
-    return () => window.clearTimeout(t)
+    fetchDashboardStats()
+      .then(setStats)
+      .catch(() => { /* keep null stats; cards show 0 */ })
+      .finally(() => setIsLoading(false))
   }, [])
 
   const today = useMemo(
@@ -111,7 +124,7 @@ export default function Dashboard() {
               <div className="min-w-0">
                 {/* Friendly greeting — readable size, not all-caps tiny text */}
                 <p className="text-sm font-medium text-slate-400">
-                  Good morning,  👋
+                  {getGreeting()}, {user?.full_name ?? ''} 👋
                 </p>
                 <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
                   Welcome back to LeadAI.
@@ -141,7 +154,7 @@ export default function Dashboard() {
             className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-4"
             aria-label="Pipeline statistics"
           >
-            {statCards.map(card => (
+            {buildStatCards(stats).map(card => (
               <StatsCard key={card.label} card={card} isLoading={isLoading} />
             ))}
           </section>
