@@ -5,6 +5,9 @@ from sqlalchemy import select, func
 from app.services.ai.title_generator import TitleGenerator
 from app.models.session import Session
 from app.models.message import Message
+from app.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 async def is_first_message(db: AsyncSession, session_id: str) -> bool:
@@ -32,13 +35,17 @@ async def generate_and_save_title(db: AsyncSession, session_id: str, user_query:
     Returns:
         The generated title string.
     """
-    title = await TitleGenerator().generate(user_query)
+    try:
+        title = await TitleGenerator().generate(user_query)
 
-    await db.execute(
-        Session.__table__.update()
-        .where(Session.id == session_id)
-        .values(title=title, updated_at=datetime.utcnow())
-    )
-    await db.commit()
+        await db.execute(
+            Session.__table__.update()
+            .where(Session.id == session_id)
+            .values(title=title, updated_at=datetime.utcnow())
+        )
+        await db.commit()
 
-    return title
+        return title
+    except Exception as e:
+        logger.error("Failed to generate and save session title: %s", str(e), exc_info=True)
+        return "New Chat"
