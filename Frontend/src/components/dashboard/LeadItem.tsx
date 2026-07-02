@@ -44,7 +44,7 @@ export function LeadItem({ lead, onSelect, isActive = false }: LeadItemProps) {
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-white">{lead.name}</p>
-          <p className="mt-1 text-xs text-slate-500">{lead.location} · LKR {lead.amount}</p>
+          <p className="mt-1 text-xs text-slate-500">{lead.location} ·AUD {lead.amount}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
