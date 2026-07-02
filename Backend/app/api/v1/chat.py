@@ -46,5 +46,7 @@ async def post_chat(
     return ChatResponse(
         success=True,
         message="Response generated successfully",
-        data=res
+        data=res,
+        generated_title=None,
     )
+

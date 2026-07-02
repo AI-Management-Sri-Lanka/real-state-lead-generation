@@ -104,12 +104,40 @@ async def clear_messages(db: AsyncSession, session_id: str) -> None:
     await db.commit()
 
 
+def derive_title(session: Session) -> str:
+    """Derive a chat title from the first user message if the title is default/empty."""
+    title = session.title
+    if (not title or title.strip().lower() == "new chat") and session.messages:
+        # Find first user message
+        first_user_msg = next((m for m in session.messages if m.role == "user"), None)
+        if first_user_msg and first_user_msg.content.strip():
+            snippet = first_user_msg.content.strip().replace("\n", " ").replace("\r", " ")
+            snippet = " ".join(snippet.split())
+            if len(snippet) > 30:
+                title = snippet[:30] + "..."
+            else:
+                title = snippet
+    return title or "New Chat"
+
+
+def to_out_dict(session: Session) -> dict:
+    """Convert a Session ORM object to a dict matching SessionOut schema with derived title."""
+    return {
+        "session_id": session.id,
+        "user_id": session.user_id,
+        "title": derive_title(session),
+        "messages": session.messages,
+        "created_at": session.created_at,
+        "updated_at": session.updated_at,
+    }
+
+
 def to_summary(session: Session) -> SessionSummary:
     """Convert a Session ORM object to a SessionSummary schema."""
     return SessionSummary(
         session_id=session.id,
         user_id=session.user_id,
-        title=session.title,
+        title=derive_title(session),
         message_count=len(session.messages),
         updated_at=session.updated_at,
     )
