@@ -9,9 +9,10 @@ import SignInPage from './pages/auth/SignInPage'
 import SignUpPage from './pages/auth/SignUpPage'
 import PropertiesPage from '@/pages/public/propertiesPage'
 import PropertyDetailPage from '@/pages/public/propertyDetailPage'
-     import AdminAddPropertyPage from '@/pages/admin/adminAddPropertyPage'
-
+import AdminAddPropertyPage from '@/pages/admin/adminAddPropertyPage'
 import SettingsPage from './pages/dashboard/SettingsPage'
+import ContactPage from "@/pages/contactPage";
+
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/properties/:id"         element={<PropertyDetailPage />} />
         <Route path="/admin/add-property"     element={<AdminAddPropertyPage />} />
         <Route path="*"                       element={<Navigate to="/" replace />} />
+        <Route path="/contact" element={<ContactPage />} />
       </Routes>
     </SidebarProvider>
   )

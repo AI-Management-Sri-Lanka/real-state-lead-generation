@@ -4,15 +4,17 @@ import { Search, Building2, Loader2, Plus, Trash2, ShieldCheck, X } from 'lucide
 import { Property } from '@/types/property'
 import { PropertyCard } from './components/propertyCard'
 import { deleteProperty } from '@/app/be/adminProperty/[action]'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
+import { BASE_URL } from '@/api/config'
 const ADMIN_PASSWORD = 'admin123'
 
 const PRICE_RANGES = [
-  { label: 'Any price', min: 0, max: Infinity },
-  { label: 'Under 25M LKR', min: 0, max: 25_000_000 },
-  { label: '25M - 50M LKR', min: 25_000_000, max: 50_000_000 },
-  { label: '50M+ LKR', min: 50_000_000, max: Infinity },
+  { label: 'Any Price', min: 0, max: Infinity },
+  { label: 'Under A$250K', min: 0, max: 250_000 },
+  { label: 'A$250K - A$500K', min: 250_000, max: 500_000 },
+  { label: 'A$500K - A$1M', min: 500_000, max: 1_000_000 },
+  { label: 'A$1M - A$2M', min: 1_000_000, max: 2_000_000 },
+  { label: 'Over A$2M', min: 2_000_000, max: Infinity },
+
 ]
 
 // ── Admin login modal ──────────────────────────────────────────────────────
@@ -247,10 +249,10 @@ export default function PropertiesPage() {
       {/* ── Hero / search ───────────────────────────────────────── */}
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">
-          Find your next home in Sri Lanka
+          Find your next Property
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          Browse verified apartments, houses and land across Colombo, Kandy and beyond.
+          Browse verified apartments, houses and land.
         </p>
 
         {isAdmin && (
@@ -265,7 +267,7 @@ export default function PropertiesPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by location, e.g. Colombo 07"
+              placeholder="Search by location, e.g. Sydeny"
               className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none"
             />
           </div>

@@ -51,7 +51,7 @@ export function ChatHeader({ onMenuToggle }: Props) {
           display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500, marginTop: 2,
         }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-success)', display: 'inline-block' }} />
-          Online · Sri Lanka market
+          Online 
         </div>
       </div>
     </div>

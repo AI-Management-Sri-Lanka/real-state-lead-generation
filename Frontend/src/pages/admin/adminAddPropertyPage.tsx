@@ -25,7 +25,7 @@ type FormState = {
 }
 
 const EMPTY: FormState = {
-  title: '', price: '', currency: 'LKR', location: '',
+  title: '', price: '', currency: 'AUD', location: '',
   bedrooms: '', bathrooms: '', areaSqft: '', landSizePerches: '',
   type: 'Apartment', listingType: 'Sale', verified: false,
   furnishing: '', parking: '', listedBy: '', description: '', images: [],
@@ -96,7 +96,7 @@ export default function AdminAddPropertyPage() {
         setForm({
           title: p.title ?? '',
           price: p.price != null ? String(p.price) : '',
-          currency: p.currency ?? 'LKR',
+          currency: p.currency ?? 'AUD',
           location: p.location ?? '',
           bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',
           bathrooms: p.bathrooms != null ? String(p.bathrooms) : '',
@@ -340,12 +340,12 @@ export default function AdminAddPropertyPage() {
           {/* Core info */}
           <Section title="Core info">
             <FieldGroup>
-              <TextInput label="Title *" placeholder="e.g. Spacious 3BR House in Nugegoda" value={form.title} onChange={v => set('title', v)} />
+              <TextInput label="Title *" placeholder="e.g. Spacious 3BR House in Sydeny" value={form.title} onChange={v => set('title', v)} />
               <div className="grid grid-cols-2 gap-4">
                 <TextInput label="Price *" placeholder="e.g. 25000000" type="number" value={form.price} onChange={v => set('price', v)} />
-                <SelectInput label="Currency" value={form.currency} onChange={v => set('currency', v)} options={['LKR', 'USD']} />
+                <SelectInput label="Currency" value={form.currency} onChange={v => set('currency', v)} options={['AUD', 'USD']} />
               </div>
-              <TextInput label="Location *" placeholder="e.g. Colombo 07" value={form.location} onChange={v => set('location', v)} />
+              <TextInput label="Location *" placeholder="e.g. Sydeny" value={form.location} onChange={v => set('location', v)} />
             </FieldGroup>
           </Section>
 
