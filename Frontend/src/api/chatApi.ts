@@ -4,7 +4,7 @@
 
 import { Message } from '@/hooks/useChat'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
 
 function buildHistory(messages: Message[]) {
   return messages.map(m => ({
@@ -34,7 +34,7 @@ export const chatApi = {
     signal?: AbortSignal
   ): Promise<string> {
     try {
-      const res = await fetch(`${BASE_URL}/api/chat`, {
+      const res = await fetch(`${BASE_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: content, history: buildHistory(history) }),
