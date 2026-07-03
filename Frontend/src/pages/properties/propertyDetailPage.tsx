@@ -13,6 +13,8 @@ const EMAILJS_CONFIRM_TEMPLATE_ID = 'template_v2ux0ph'   // confirmation → use
 const EMAILJS_PUBLIC_KEY          = 'd9YO9qHUQIn_CU9o-'
 
 import { Property, InquiryPayload } from '@/types/property'
+import { propertyApi } from '@/api/propertyApi'
+import { useAuth } from '@/hooks/useAuth'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
 
@@ -35,6 +37,7 @@ export default function PropertyDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted]   = useState(false)
   const [error, setError]           = useState<string | null>(null)
+  const { isAuthenticated }         = useAuth()
 
   useEffect(() => {
     async function fetchProperty() {
@@ -42,16 +45,17 @@ export default function PropertyDetailPage() {
       try {
         setLoading(true)
         setFetchError(null)
-        const res = await fetch(`${BASE_URL}/properties/${id}`)
-        if (res.status === 404) {
-          setFetchError('Property not found')
-          return
+        try {
+          const data = await propertyApi.getProperty(id)
+          // PropertyApi returns PropertyPayload & { id, images }
+          setProperty(data as unknown as Property)
+        } catch (err: any) {
+          if (err.message?.includes('not found') || err.message?.includes('404')) {
+            setFetchError('Property not found')
+            return
+          }
+          throw err
         }
-        if (!res.ok) {
-          throw new Error(`Failed to load property: ${res.statusText}`)
-        }
-        const data = await res.json() as Property
-        setProperty(data)
       } catch (err: unknown) {
         console.error(err)
         setFetchError(err instanceof Error ? err.message : 'Failed to connect to server')
@@ -180,7 +184,11 @@ export default function PropertyDetailPage() {
           <nav className="flex items-center gap-6 text-sm text-slate-400">
             <Link to="/"           className="hover:text-white transition">Home</Link>
             <Link to="/properties" className="hover:text-white transition">Properties</Link>
-            <Link to="/login"      className="hover:text-white transition">Sign in</Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="hover:text-white transition">Dashboard</Link>
+            ) : (
+              <Link to="/auth/signin" className="hover:text-white transition">Sign in</Link>
+            )}
           </nav>
         </div>
       </header>

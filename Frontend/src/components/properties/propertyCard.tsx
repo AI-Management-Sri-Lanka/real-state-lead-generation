@@ -34,32 +34,38 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
       className="cursor-pointer overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/90 transition hover:border-indigo-500/60 hover:bg-slate-900 relative"
     >
       {/* ── Three-dot menu ───────────────────────────────────── */}
-      <div ref={menuRef} className="absolute top-2 right-2 z-10">
-        <button
-          onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}
-          title="Options"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/95 text-slate-300 transition hover:border-indigo-500 hover:text-white"
-        >
-          <MoreVertical size={14} />
-        </button>
-
-        {menuOpen && (
-          <div className="absolute right-0 top-9 w-32 overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-xl">
-            <button
-              onClick={e => { e.stopPropagation(); setMenuOpen(false); onEdit?.(property) }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-slate-300 transition hover:bg-slate-800 hover:text-white"
-            >
-              <Pencil size={12} /> Edit
-            </button>
-            <button
-              onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete?.(property) }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-400 transition hover:bg-red-950/40"
-            >
-              <Trash2 size={12} /> Delete
-            </button>
-          </div>
-        )}
-      </div>
+      {(onEdit || onDelete) && (
+        <div ref={menuRef} className="absolute top-2 right-2 z-10">
+          <button
+            onClick={e => { e.stopPropagation(); setMenuOpen(v => !v) }}
+            title="Options"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/95 text-slate-300 transition hover:border-indigo-500 hover:text-white"
+          >
+            <MoreVertical size={14} />
+          </button>
+  
+          {menuOpen && (
+            <div className="absolute right-0 top-9 w-32 overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-xl">
+              {onEdit && (
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuOpen(false); onEdit(property) }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                >
+                  <Pencil size={12} /> Edit
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete(property) }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-400 transition hover:bg-red-950/40"
+                >
+                  <Trash2 size={12} /> Delete
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Image / placeholder ─────────────────────────────── */}
       {property.images && property.images.length > 0 ? (

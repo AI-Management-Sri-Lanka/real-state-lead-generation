@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Building2, Loader2, CheckCircle2, Plus, X, UploadCloud } from 'lucide-react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { addProperty, editProperty, addPropertyImage, fetchProperty, PropertyPayload } from '@/app/be/adminProperty/[action]'
-
-const ADMIN_PASSWORD = 'admin123'
+import { propertyApi, PropertyPayload } from '@/api/propertyApi'
 
 type FormState = {
   title: string
@@ -25,7 +23,7 @@ type FormState = {
 }
 
 const EMPTY: FormState = {
-  title: '', price: '', currency: 'LKR', location: '',
+  title: '', price: '', currency: 'AUD', location: '',
   bedrooms: '', bathrooms: '', areaSqft: '', landSizePerches: '',
   type: 'Apartment', listingType: 'Sale', verified: false,
   furnishing: '', parking: '', listedBy: '', description: '', images: [],
@@ -33,48 +31,14 @@ const EMPTY: FormState = {
 
 const MAX_FILE_MB = 5
 
-// ── Auth gate ──────────────────────────────────────────────────────────────
-function AdminGate({ onAuth }: { onAuth: () => void }) {
-  const [pw, setPw] = useState('')
-  const [err, setErr] = useState(false)
-  function check() {
-    if (pw === ADMIN_PASSWORD) { onAuth() }
-    else { setErr(true); setPw('') }
-  }
-  return (
-    <div className="grid min-h-screen place-items-center bg-slate-950 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-8">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white">
-            <Building2 size={16} />
-          </div>
-          <span className="text-sm font-semibold text-white">Admin access</span>
-        </div>
-        <p className="mb-4 text-xs text-slate-500">Enter the admin password to manage listings.</p>
-        <input
-          type="password" value={pw} autoFocus
-          onChange={e => { setPw(e.target.value); setErr(false) }}
-          onKeyDown={e => e.key === 'Enter' && check()}
-          placeholder="Password"
-          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-indigo-500"
-        />
-        {err && <p className="mt-2 text-xs text-red-400">Incorrect password.</p>}
-        <button onClick={check} className="mt-4 w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500">
-          Continue
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────
-export default function AdminAddPropertyPage() {
+export default function PropertyManager() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('id')
   const isEditMode = Boolean(editId)
 
-  const [authed, setAuthed] = useState(false)
+
   const [form, setForm] = useState<FormState>(EMPTY)
   const [imageInput, setImageInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -88,15 +52,15 @@ export default function AdminAddPropertyPage() {
 
   // Load existing property in edit mode
   useEffect(() => {
-    if (!authed || !editId) return
+    if (!editId) return
     async function load() {
       setLoadingProperty(true)
       try {
-        const p = await fetchProperty(editId!)
+        const p = await propertyApi.getProperty(editId!)
         setForm({
           title: p.title ?? '',
           price: p.price != null ? String(p.price) : '',
-          currency: p.currency ?? 'LKR',
+          currency: p.currency ?? 'AUD',
           location: p.location ?? '',
           bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',
           bathrooms: p.bathrooms != null ? String(p.bathrooms) : '',
@@ -119,15 +83,13 @@ export default function AdminAddPropertyPage() {
       }
     }
     load()
-  }, [authed, editId])
-
-  if (!authed) return <AdminGate onAuth={() => setAuthed(true)} />
+  }, [editId])
 
   if (loadingProperty) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-950">
-        <div className="flex flex-col items-center gap-3 text-slate-400">
-          <Loader2 size={28} className="animate-spin text-indigo-400" />
+      <div className="grid min-h-screen place-items-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3 text-slate-500">
+          <Loader2 size={28} className="animate-spin text-indigo-600" />
           <p className="text-sm">Loading property…</p>
         </div>
       </div>
@@ -249,17 +211,17 @@ export default function AdminAddPropertyPage() {
     try {
       let propertyId: string
       if (isEditMode) {
-        await editProperty(editId!, payload)
+        await propertyApi.editProperty(editId!, payload)
         propertyId = editId!
       } else {
-        const created = await addProperty(payload)
+        const created = await propertyApi.addProperty(payload)
         propertyId = String(created.id)
       }
 
       const newImageUrls = allImages.filter(url => !originalImageUrls.includes(url))
       const startIndex = originalImageUrls.length
       for (let i = 0; i < newImageUrls.length; i++) {
-        await addPropertyImage(propertyId, {
+        await propertyApi.addPropertyImage(propertyId, {
           url: newImageUrls[i],
           isPrimary: startIndex + i === 0,
           sortOrder: startIndex + i,
@@ -277,27 +239,27 @@ export default function AdminAddPropertyPage() {
   // ── Success screen ───────────────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-950 px-4">
+      <div className="grid min-h-screen place-items-center bg-slate-50 px-4">
         <div className="flex flex-col items-center gap-4 text-center">
-          <CheckCircle2 size={48} className="text-emerald-400" />
-          <p className="text-xl font-semibold text-white">
+          <CheckCircle2 size={48} className="text-emerald-500" />
+          <p className="text-xl font-semibold text-slate-900">
             {isEditMode ? 'Property updated!' : 'Property added!'}
           </p>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             {isEditMode ? 'Your changes have been saved.' : 'It will appear in the listings shortly.'}
           </p>
           <div className="mt-2 flex gap-3">
             {!isEditMode && (
               <button
                 onClick={() => { setForm(EMPTY); setSubmitted(false) }}
-                className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 transition"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
               >
                 Add another
               </button>
             )}
             <button
               onClick={() => navigate('/properties')}
-              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition shadow-sm"
             >
               View listings
             </button>
@@ -309,26 +271,26 @@ export default function AdminAddPropertyPage() {
 
   // ── Form ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="sticky top-0 z-10 border-b border-slate-800/80 bg-slate-950/95">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white">
+          <Link to="/auth/signup" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
               <Building2 size={16} />
             </div>
-            <span className="text-sm font-semibold text-white">LeadAI Admin</span>
+            <span className="text-sm font-semibold text-slate-900">LeadAI Admin</span>
           </Link>
           <button
-            onClick={() => navigate('/properties')}
-            className="flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white"
+            onClick={() => navigate('/dashboard/properties')}
+            className="flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-900"
           >
-            <ArrowLeft size={14} /> Back to listings
+            <ArrowLeft size={14} /> Back to my properties
           </button>
         </div>
       </header>
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        <h1 className="text-xl font-semibold text-white">
+        <h1 className="text-2xl font-bold text-slate-900">
           {isEditMode ? 'Edit property' : 'Add new property'}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -340,12 +302,12 @@ export default function AdminAddPropertyPage() {
           {/* Core info */}
           <Section title="Core info">
             <FieldGroup>
-              <TextInput label="Title *" placeholder="e.g. Spacious 3BR House in Nugegoda" value={form.title} onChange={v => set('title', v)} />
+              <TextInput label="Title *" placeholder="e.g. Spacious 3BR House in Sydney" value={form.title} onChange={v => set('title', v)} />
               <div className="grid grid-cols-2 gap-4">
-                <TextInput label="Price *" placeholder="e.g. 25000000" type="number" value={form.price} onChange={v => set('price', v)} />
-                <SelectInput label="Currency" value={form.currency} onChange={v => set('currency', v)} options={['LKR', 'USD']} />
+                <TextInput label="Price *" placeholder="e.g. 1500000" type="number" value={form.price} onChange={v => set('price', v)} />
+                <SelectInput label="Currency" value={form.currency} onChange={v => set('currency', v)} options={['AUD', 'USD', 'LKR']} />
               </div>
-              <TextInput label="Location *" placeholder="e.g. Colombo 07" value={form.location} onChange={v => set('location', v)} />
+              <TextInput label="Location *" placeholder="e.g. Sydney CBD" value={form.location} onChange={v => set('location', v)} />
             </FieldGroup>
           </Section>
 
@@ -357,10 +319,10 @@ export default function AdminAddPropertyPage() {
                 <SelectInput label="For" value={form.listingType} onChange={v => set('listingType', v)} options={['Sale', 'Rent']} />
               </div>
               <label className="flex cursor-pointer select-none items-center gap-2">
-                <div onClick={() => set('verified', !form.verified)} className={`relative h-5 w-9 rounded-full transition ${form.verified ? 'bg-emerald-500' : 'bg-slate-700'}`}>
-                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${form.verified ? 'left-4' : 'left-0.5'}`} />
+                <div onClick={() => set('verified', !form.verified)} className={`relative h-5 w-9 rounded-full transition ${form.verified ? 'bg-emerald-500' : 'bg-slate-200 shadow-inner'}`}>
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.verified ? 'left-4' : 'left-0.5'}`} />
                 </div>
-                <span className="text-sm text-slate-300">Mark as verified</span>
+                <span className="text-sm font-medium text-slate-700">Mark as verified</span>
               </label>
             </FieldGroup>
           </Section>
@@ -386,11 +348,11 @@ export default function AdminAddPropertyPage() {
               </div>
               <TextInput label="Listed by *" placeholder="Agent or owner name" value={form.listedBy} onChange={v => set('listedBy', v)} />
               <div>
-                <label className="mb-1 block text-xs text-slate-500">Description</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">Description</label>
                 <textarea
                   value={form.description} onChange={e => set('description', e.target.value)}
                   placeholder="Describe the property…" rows={4}
-                  className="w-full resize-none rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-500"
+                  className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
                 />
               </div>
             </FieldGroup>
@@ -408,7 +370,7 @@ export default function AdminAddPropertyPage() {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 className={`flex gap-2 rounded-xl border p-1 transition ${
-                  isDragging ? 'border-indigo-500 bg-indigo-950/20' : 'border-transparent'
+                  isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-transparent'
                 }`}
               >
                 <input
@@ -423,44 +385,44 @@ export default function AdminAddPropertyPage() {
                   value={imageInput} onChange={e => setImageInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleAddButtonClick()}
                   placeholder="https://example.com/image.jpg — or leave blank to upload"
-                  className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-500"
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
                 />
                 <button
                   onClick={handleAddButtonClick}
-                  className="flex shrink-0 items-center gap-1 rounded-xl bg-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-700"
+                  className="flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 transition hover:bg-slate-200"
                 >
-                  {imageInput.trim() ? <Plus size={14} /> : <UploadCloud size={14} />}
+                  {imageInput.trim() ? <Plus size={16} /> : <UploadCloud size={16} />}
                   {imageInput.trim() ? 'Add' : 'Upload'}
                 </button>
               </div>
 
               {isDragging && (
-                <p className="text-xs text-indigo-400">Drop image files anywhere in that box to upload.</p>
+                <p className="text-xs font-medium text-indigo-600">Drop image files anywhere in that box to upload.</p>
               )}
               {uploadError && (
-                <p className="text-xs text-red-400">{uploadError}</p>
+                <p className="text-xs font-medium text-red-500">{uploadError}</p>
               )}
 
               {/* Image previews with thumbnails */}
               {form.images.length > 0 && (
-                <ul className="space-y-2">
+                <ul className="space-y-2 mt-4">
                   {form.images.map((url, i) => (
-                    <li key={i} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2">
+                    <li key={i} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                       <img
                         src={url} alt=""
-                        className="h-10 w-14 shrink-0 rounded-lg object-cover bg-slate-800"
+                        className="h-12 w-16 shrink-0 rounded-lg object-cover bg-slate-100 border border-slate-200"
                         onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
                       />
-                      <span className="flex-1 truncate text-xs text-slate-400">
+                      <span className="flex-1 truncate text-xs font-medium text-slate-600">
                         {url.startsWith('data:') ? `Uploaded image ${i + 1}` : url}
                       </span>
                       {i === 0 && (
-                        <span className="shrink-0 rounded-full bg-indigo-950/60 px-2 py-0.5 text-[10px] font-medium text-indigo-300">
+                        <span className="shrink-0 rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700">
                           Primary
                         </span>
                       )}
-                      <button onClick={() => removeImage(i)} className="shrink-0 text-slate-600 transition hover:text-red-400">
-                        <X size={13} />
+                      <button onClick={() => removeImage(i)} className="shrink-0 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition">
+                        <X size={16} />
                       </button>
                     </li>
                   ))}
@@ -472,17 +434,17 @@ export default function AdminAddPropertyPage() {
         </div>
 
         {error && (
-          <p className="mt-6 rounded-xl border border-red-900 bg-red-950/30 px-4 py-3 text-sm text-red-400">{error}</p>
+          <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>
         )}
         <div className="mt-8 flex justify-end gap-3 pb-12">
-          <button onClick={() => navigate('/properties')} className="rounded-xl border border-slate-700 px-5 py-2.5 text-sm text-slate-300 transition hover:bg-slate-800">
+          <button onClick={() => navigate('/dashboard/properties')} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
             Cancel
           </button>
           <button
             onClick={handleSubmit} disabled={submitting}
-            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-60"
           >
-            {submitting && <Loader2 size={14} className="animate-spin" />}
+            {submitting && <Loader2 size={16} className="animate-spin" />}
             {submitting ? (isEditMode ? 'Updating…' : 'Saving…') : (isEditMode ? 'Update property' : 'Save property')}
           </button>
         </div>
@@ -495,8 +457,8 @@ export default function AdminAddPropertyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500">{title}</h2>
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">{children}</div>
+      <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400">{title}</h2>
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">{children}</div>
     </div>
   )
 }
@@ -508,9 +470,9 @@ function TextInput({ label, value, onChange, placeholder, type = 'text' }: {
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-slate-500">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-500" />
+        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm" />
     </div>
   )
 }
@@ -519,9 +481,9 @@ function SelectInput({ label, value, onChange, options, placeholder }: {
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-slate-500">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">{label}</label>
       <select value={value} onChange={e => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-300 outline-none transition focus:border-indigo-500">
+        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm">
         {placeholder && <option value="">{placeholder}</option>}
         {options.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
       </select>
