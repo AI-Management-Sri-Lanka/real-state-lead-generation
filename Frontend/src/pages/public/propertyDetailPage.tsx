@@ -13,8 +13,7 @@ const EMAILJS_CONFIRM_TEMPLATE_ID = 'template_v2ux0ph'   // confirmation → use
 const EMAILJS_PUBLIC_KEY          = 'd9YO9qHUQIn_CU9o-'
 
 import { Property, InquiryPayload } from '@/types/property'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
+import { BASE_URL } from '@/api/config'
 
 
 function formatPrice(price: number, currency: string, listingType: string) {

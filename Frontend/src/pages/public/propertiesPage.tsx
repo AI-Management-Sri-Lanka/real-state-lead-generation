@@ -4,8 +4,7 @@ import { Search, Building2, Loader2, Plus, Trash2, ShieldCheck, X } from 'lucide
 import { Property } from '@/types/property'
 import { PropertyCard } from './components/propertyCard'
 import { deleteProperty } from '@/app/be/adminProperty/[action]'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
+import { BASE_URL } from '@/api/config'
 const ADMIN_PASSWORD = 'admin123'
 
 const PRICE_RANGES = [

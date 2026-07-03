@@ -1,7 +1,7 @@
 // src/api/authApi.ts
 // Connects to your FastAPI /auth endpoints
 
-const BASE_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`;
+import { BASE_URL } from './config';
 
 export interface SignInPayload {
   email: string;
