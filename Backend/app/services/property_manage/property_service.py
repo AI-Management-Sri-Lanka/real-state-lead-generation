@@ -7,9 +7,9 @@ from app.models.properties import Property, PropertyImage, PropertyType, Listing
 from app.schemas.properties_schema import PropertyCreate, PropertyUpdate, PropertyImageCreate
 
 
-async def create_property(db: AsyncSession, payload: PropertyCreate) -> Property:
+async def create_property(db: AsyncSession, payload: PropertyCreate, owner_id: int) -> Property:
     data = payload.model_dump(exclude={"images"})
-    prop = Property(**data)
+    prop = Property(**data, owner_id=owner_id)
     for idx, img_url in enumerate(payload.images):
         prop.images.append(PropertyImage(url=img_url, is_primary=(idx == 0), sort_order=idx))
     db.add(prop)
@@ -40,6 +40,7 @@ async def list_properties(
     max_price: Optional[float] = None,
     min_beds: Optional[int] = None,
     is_verified: Optional[bool] = None,
+    owner_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 20,
 ) -> List[Property]:
@@ -57,14 +58,18 @@ async def list_properties(
         query = query.where(Property.bedrooms >= min_beds)
     if is_verified is not None:
         query = query.where(Property.is_verified == is_verified)
+    if owner_id is not None:
+        query = query.where(Property.owner_id == owner_id)
 
     query = query.offset(skip).limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())
 
 
-async def update_property(db: AsyncSession, property_id: int, payload: PropertyUpdate) -> Property:
+async def update_property(db: AsyncSession, property_id: int, payload: PropertyUpdate, owner_id: int) -> Property:
     prop = await get_property(db, property_id)
+    if prop.owner_id != owner_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this property")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(prop, field, value)
     await db.commit()
@@ -72,15 +77,19 @@ async def update_property(db: AsyncSession, property_id: int, payload: PropertyU
     return prop
 
 
-async def delete_property(db: AsyncSession, property_id: int) -> None:
+async def delete_property(db: AsyncSession, property_id: int, owner_id: int) -> None:
     prop = await get_property(db, property_id)
+    if prop.owner_id != owner_id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this property")
     await db.delete(prop)
     await db.commit()
 
 
-async def add_image(db: AsyncSession, property_id: int, payload: PropertyImageCreate) -> PropertyImage:
-    # Ensure property exists
-    await get_property(db, property_id)
+async def add_image(db: AsyncSession, property_id: int, payload: PropertyImageCreate, owner_id: int) -> PropertyImage:
+    # Ensure property exists and belongs to user
+    prop = await get_property(db, property_id)
+    if prop.owner_id != owner_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this property")
     img = PropertyImage(property_id=property_id, **payload.model_dump())
     db.add(img)
     await db.commit()
@@ -88,7 +97,11 @@ async def add_image(db: AsyncSession, property_id: int, payload: PropertyImageCr
     return img
 
 
-async def delete_image(db: AsyncSession, property_id: int, image_id: int) -> None:
+async def delete_image(db: AsyncSession, property_id: int, image_id: int, owner_id: int) -> None:
+    prop = await get_property(db, property_id)
+    if prop.owner_id != owner_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this property")
+        
     result = await db.execute(
         select(PropertyImage).where(
             PropertyImage.id == image_id,

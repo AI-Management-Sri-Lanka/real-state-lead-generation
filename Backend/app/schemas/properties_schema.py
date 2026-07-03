@@ -63,6 +63,7 @@ class PropertyUpdate(BaseModel):
 
 class PropertyResponse(PropertyBase):
     id: str
+    owner_id: Optional[int] = Field(None, serialization_alias="ownerId")
     images: List[str] = []
 
     @field_validator("id", mode="before")

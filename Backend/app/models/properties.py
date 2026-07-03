@@ -38,9 +38,11 @@ class Property(Base):
     furnishing = Column(Enum(Furnishing), nullable=True)
     parking = Column(String(255), nullable=True)
     listed_by = Column(String(255), nullable=True)
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     description = Column(String(1024), nullable=True)
  
     images = relationship("PropertyImage", back_populates="property", cascade="all, delete-orphan")
+    owner = relationship("User", back_populates="properties")
  
  
 class PropertyImage(Base):
