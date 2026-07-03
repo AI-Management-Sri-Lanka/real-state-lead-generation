@@ -20,7 +20,7 @@ type Session = {
   messages: ChatMessageType[];
 };
 
-const BASE_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`;
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api/v1";
 
 // Helper outside component — no stale closure risk
 function deriveTitleFromMessages(messages: ChatMessageType[], fallback: string): string {
