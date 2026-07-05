@@ -24,6 +24,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   title: '', price: '', currency: 'AUD', location: '',
+  title: '', price: '', currency: 'AUD', location: '',
   bedrooms: '', bathrooms: '', areaSqft: '', landSizePerches: '',
   type: 'Apartment', listingType: 'Sale', verified: false,
   furnishing: '', parking: '', listedBy: '', description: '', images: [],
@@ -60,6 +61,7 @@ export default function PropertyManager() {
         setForm({
           title: p.title ?? '',
           price: p.price != null ? String(p.price) : '',
+          currency: p.currency ?? 'AUD',
           currency: p.currency ?? 'AUD',
           location: p.location ?? '',
           bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',

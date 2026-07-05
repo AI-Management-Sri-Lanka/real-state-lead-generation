@@ -15,8 +15,7 @@ const EMAILJS_PUBLIC_KEY          = 'd9YO9qHUQIn_CU9o-'
 import { Property, InquiryPayload } from '@/types/property'
 import { propertyApi } from '@/api/propertyApi'
 import { useAuth } from '@/hooks/useAuth'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
+import { BASE_URL } from '@/api/config'
 
 
 function formatPrice(price: number, currency: string, listingType: string) {
@@ -221,7 +220,7 @@ export default function PropertyDetailPage() {
           {/* ── Left: details ──────────────────────────────────── */}
           <div>
             <p className="flex items-center gap-1 text-xs text-slate-500">
-              <MapPin size={12} /> {property.location}, Sri Lanka
+              <MapPin size={12} /> {property.location}, Australia
             </p>
             <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
               {formatPrice(property.price, property.currency, property.listingType)}

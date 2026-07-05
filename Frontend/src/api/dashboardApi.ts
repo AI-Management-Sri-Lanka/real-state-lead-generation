@@ -1,6 +1,5 @@
 import { fetchWithAuth } from './authApi'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
+import { BASE_URL } from './config'
 
 export interface DashboardStats {
   total_sessions: number

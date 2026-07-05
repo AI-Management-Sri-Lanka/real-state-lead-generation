@@ -7,12 +7,13 @@ import Dashboard from './pages/dashboard/Dashboard'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import SignInPage from './pages/auth/SignInPage'
 import SignUpPage from './pages/auth/SignUpPage'
-import PropertiesPage from '@/pages/properties/propertiesPage'
-import PropertyDetailPage from '@/pages/properties/propertyDetailPage'
-import PropertyManager from '@/pages/dashboard/properties/PropertyManager'
-import MyPropertiesList from '@/pages/dashboard/properties/MyPropertiesList'
+import PropertiesPage from '@/pages/public/propertiesPage'
+import PropertyDetailPage from '@/pages/public/propertyDetailPage'
+     import AdminAddPropertyPage from '@/pages/admin/adminAddPropertyPage'
 
 import SettingsPage from './pages/dashboard/SettingsPage'
+import ContactPage from "@/pages/contactPage";
+
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/properties"             element={<PropertiesPage />} />
         <Route path="/properties/:id"         element={<PropertyDetailPage />} />
         <Route path="*"                       element={<Navigate to="/" replace />} />
+        <Route path="/contact" element={<ContactPage />} />
       </Routes>
     </SidebarProvider>
   )

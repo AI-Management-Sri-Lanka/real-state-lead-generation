@@ -3,8 +3,7 @@
 // The backend proxies to OpenAI with your API key stored server-side.
 
 import { Message } from '@/hooks/useChat'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
+import { API_ROOT, BASE_URL } from './config'
 
 function buildHistory(messages: Message[]) {
   return messages.map(m => ({
