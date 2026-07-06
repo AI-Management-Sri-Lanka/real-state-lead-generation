@@ -7,6 +7,14 @@ from app.models.properties import Property, PropertyImage, PropertyType, Listing
 from app.schemas.properties_schema import PropertyCreate, PropertyUpdate, PropertyImageCreate
 
 
+def _property_query():
+    """Base query that eager-loads both images and owner profile."""
+    return select(Property).options(
+        selectinload(Property.images),
+        selectinload(Property.owner),
+    )
+
+
 async def create_property(db: AsyncSession, payload: PropertyCreate, owner_id: int) -> Property:
     data = payload.model_dump(exclude={"images"})
     prop = Property(**data, owner_id=owner_id)
@@ -15,17 +23,13 @@ async def create_property(db: AsyncSession, payload: PropertyCreate, owner_id: i
     db.add(prop)
     await db.commit()
     await db.refresh(prop)
-    # Re-fetch to load images relationship
-    result = await db.execute(
-        select(Property).options(selectinload(Property.images)).where(Property.id == prop.id)
-    )
+    # Re-fetch to load images + owner relationship
+    result = await db.execute(_property_query().where(Property.id == prop.id))
     return result.scalar_one()
 
 
 async def get_property(db: AsyncSession, property_id: int) -> Property:
-    result = await db.execute(
-        select(Property).options(selectinload(Property.images)).where(Property.id == property_id)
-    )
+    result = await db.execute(_property_query().where(Property.id == property_id))
     prop = result.scalar_one_or_none()
     if not prop:
         raise HTTPException(status_code=404, detail="Property not found")
@@ -44,7 +48,7 @@ async def list_properties(
     skip: int = 0,
     limit: int = 20,
 ) -> List[Property]:
-    query = select(Property).options(selectinload(Property.images))
+    query = _property_query()
 
     if property_type:
         query = query.where(Property.property_type == property_type)
@@ -66,29 +70,47 @@ async def list_properties(
     return list(result.scalars().all())
 
 
-async def update_property(db: AsyncSession, property_id: int, payload: PropertyUpdate, owner_id: int) -> Property:
+async def update_property(
+    db: AsyncSession,
+    property_id: int,
+    payload: PropertyUpdate,
+    actor_id: int,
+    is_admin: bool = False,
+) -> Property:
     prop = await get_property(db, property_id)
-    if prop.owner_id != owner_id:
+    if not is_admin and prop.owner_id != actor_id:
         raise HTTPException(status_code=403, detail="Not authorized to update this property")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(prop, field, value)
     await db.commit()
     await db.refresh(prop)
-    return prop
+    # Re-fetch to reload relationships after update
+    result = await db.execute(_property_query().where(Property.id == prop.id))
+    return result.scalar_one()
 
 
-async def delete_property(db: AsyncSession, property_id: int, owner_id: int) -> None:
+async def delete_property(
+    db: AsyncSession,
+    property_id: int,
+    actor_id: int,
+    is_admin: bool = False,
+) -> None:
     prop = await get_property(db, property_id)
-    if prop.owner_id != owner_id:
+    if not is_admin and prop.owner_id != actor_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this property")
     await db.delete(prop)
     await db.commit()
 
 
-async def add_image(db: AsyncSession, property_id: int, payload: PropertyImageCreate, owner_id: int) -> PropertyImage:
-    # Ensure property exists and belongs to user
+async def add_image(
+    db: AsyncSession,
+    property_id: int,
+    payload: PropertyImageCreate,
+    actor_id: int,
+    is_admin: bool = False,
+) -> PropertyImage:
     prop = await get_property(db, property_id)
-    if prop.owner_id != owner_id:
+    if not is_admin and prop.owner_id != actor_id:
         raise HTTPException(status_code=403, detail="Not authorized to update this property")
     img = PropertyImage(property_id=property_id, **payload.model_dump())
     db.add(img)
@@ -97,11 +119,17 @@ async def add_image(db: AsyncSession, property_id: int, payload: PropertyImageCr
     return img
 
 
-async def delete_image(db: AsyncSession, property_id: int, image_id: int, owner_id: int) -> None:
+async def delete_image(
+    db: AsyncSession,
+    property_id: int,
+    image_id: int,
+    actor_id: int,
+    is_admin: bool = False,
+) -> None:
     prop = await get_property(db, property_id)
-    if prop.owner_id != owner_id:
+    if not is_admin and prop.owner_id != actor_id:
         raise HTTPException(status_code=403, detail="Not authorized to update this property")
-        
+
     result = await db.execute(
         select(PropertyImage).where(
             PropertyImage.id == image_id,
