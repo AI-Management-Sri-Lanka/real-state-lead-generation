@@ -43,6 +43,8 @@ export default function AIChat() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ id: string; value: string } | null>(null);
   const [renaming, setRenaming] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom whenever messages or typing state change
@@ -287,16 +289,26 @@ export default function AIChat() {
   }
 
   // ── Delete ──────────────────────────────────────────────────────────────
-  async function handleDelete(sessionId: string) {
+  function handleDelete(sessionId: string) {
+    const session = sessions.find((s) => s.id === sessionId);
+    setDeleteTarget({ id: sessionId, title: session?.title ?? "this chat" });
+    setActiveMenu(null);
+  }
+
+  async function submitDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetchWithAuth(`${BASE_URL}/sessions/${sessionId}`, { method: "DELETE" });
+      const res = await fetchWithAuth(`${BASE_URL}/sessions/${deleteTarget.id}`, { method: "DELETE" });
       if (!res.ok) return;
-      const remaining = sessions.filter((s) => s.id !== sessionId);
+      const remaining = sessions.filter((s) => s.id !== deleteTarget.id);
       setSessions(remaining);
-      if (activeSessionId === sessionId) setActiveSessionId(remaining[0]?.id ?? "");
-      setActiveMenu(null);
+      if (activeSessionId === deleteTarget.id) setActiveSessionId(remaining[0]?.id ?? "");
+      setDeleteTarget(null);
     } catch (err) {
       console.error("Error deleting:", err);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -495,6 +507,38 @@ export default function AIChat() {
               >
                 {renaming && <Loader2 size={14} className="animate-spin" />}
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-red-900/50 bg-slate-950 p-6 shadow-2xl">
+            <h3 className="mb-2 text-lg font-semibold text-white">Delete chat session</h3>
+            <p className="mb-6 text-sm text-slate-400">
+              Are you sure you want to delete{' '}
+              <span className="font-medium text-white">"{deleteTarget.title}"</span>? This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitDelete}
+                disabled={deleting}
+                className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-60"
+              >
+                {deleting && <Loader2 size={14} className="animate-spin" />}
+                {deleting ? 'Deleting…' : 'Yes, delete'}
               </button>
             </div>
           </div>
