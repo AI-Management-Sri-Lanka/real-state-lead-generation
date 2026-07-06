@@ -23,6 +23,10 @@ function formatPrice(price: number, currency: string, listingType: string) {
     : `${formatted} ${currency}`
 }
 
+// Only letters, spaces, hyphens and apostrophes are valid in a name
+// (covers names like "Anne-Marie" or "O'Brien").
+const NAME_PATTERN = /^[A-Za-z\s'-]*$/
+
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -86,7 +90,11 @@ export default function PropertyDetailPage() {
   }
 
   function update<K extends keyof typeof form>(key: K, value: string) {
-    setForm(prev => ({ ...prev, [key]: value }))
+    // The name field should only ever contain letters, spaces, hyphens and
+    // apostrophes — strip out anything else (digits, symbols) as it's typed
+    // or pasted, so numeric input is never accepted in the first place.
+    const sanitized = key === 'name' ? value.replace(/[^A-Za-z\s'-]/g, '') : value
+    setForm(prev => ({ ...prev, [key]: sanitized }))
   }
 
   async function handleSubmit() {
@@ -94,6 +102,11 @@ export default function PropertyDetailPage() {
 
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
       setError('Please fill in your name, email and message.')
+      return
+    }
+
+    if (!NAME_PATTERN.test(form.name.trim())) {
+      setError('Name can only contain letters.')
       return
     }
 
