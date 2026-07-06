@@ -31,6 +31,10 @@ const NAME_PATTERN = /^[A-Za-z\s'-]*$/
 // (rejects missing @, missing domain, etc.)
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// Sri Lankan phone numbers: either local (0 + 9 digits, e.g. 0771234567)
+// or international (+94 + 9 digits, e.g. +94771234567).
+const PHONE_PATTERN = /^(0\d{9}|\+94\d{9})$/
+
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -97,7 +101,15 @@ export default function PropertyDetailPage() {
     // The name field should only ever contain letters, spaces, hyphens and
     // apostrophes — strip out anything else (digits, symbols) as it's typed
     // or pasted, so numeric input is never accepted in the first place.
-    const sanitized = key === 'name' ? value.replace(/[^A-Za-z\s'-]/g, '') : value
+    // The phone field should only ever contain digits, with an optional
+    // leading "+" for the country code — strip letters and other symbols.
+    let sanitized = value
+    if (key === 'name') sanitized = value.replace(/[^A-Za-z\s'-]/g, '')
+    if (key === 'phone') {
+      const hasPlus = value.trim().startsWith('+')
+      const digits = value.replace(/\D/g, '').slice(0, 11)
+      sanitized = (hasPlus ? '+' : '') + digits
+    }
     setForm(prev => ({ ...prev, [key]: sanitized }))
   }
 
@@ -116,6 +128,11 @@ export default function PropertyDetailPage() {
 
     if (!EMAIL_PATTERN.test(form.email.trim())) {
       setError('Please enter a valid email address.')
+      return
+    }
+
+    if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
+      setError('Please enter a valid phone number (e.g. 07X XXX XXXX or +94 7X XXX XXXX).')
       return
     }
 
