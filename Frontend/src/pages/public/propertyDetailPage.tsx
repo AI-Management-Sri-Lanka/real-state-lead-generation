@@ -27,6 +27,10 @@ function formatPrice(price: number, currency: string, listingType: string) {
 // (covers names like "Anne-Marie" or "O'Brien").
 const NAME_PATTERN = /^[A-Za-z\s'-]*$/
 
+// Basic but solid email shape check: something@something.tld
+// (rejects missing @, missing domain, etc.)
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -107,6 +111,11 @@ export default function PropertyDetailPage() {
 
     if (!NAME_PATTERN.test(form.name.trim())) {
       setError('Name can only contain letters.')
+      return
+    }
+
+    if (!EMAIL_PATTERN.test(form.email.trim())) {
+      setError('Please enter a valid email address.')
       return
     }
 
