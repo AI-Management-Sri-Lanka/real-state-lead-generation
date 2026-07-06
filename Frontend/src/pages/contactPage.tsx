@@ -85,6 +85,10 @@ const questions = [
   },
 ];
 
+// Only letters, spaces, hyphens and apostrophes are valid in a name
+// (covers names like "Anne-Marie" or "O'Brien").
+const NAME_PATTERN = /^[A-Za-z\s'-]*$/;
+
 export default function ContactPage() {
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -105,7 +109,11 @@ export default function ContactPage() {
   }
 
   function setText(id: string, val: string) {
-    setAnswers((a) => ({ ...a, [id]: val }));
+    // The name field should only ever contain letters, spaces, hyphens and
+    // apostrophes — strip out anything else (digits, symbols) as it's typed
+    // or pasted, so numeric input is never accepted in the first place.
+    const sanitized = id === "name" ? val.replace(/[^A-Za-z\s'-]/g, "") : val;
+    setAnswers((a) => ({ ...a, [id]: sanitized }));
     setErrors((e) => { const n = { ...e }; delete n[id]; return n; });
   }
 
@@ -114,7 +122,11 @@ export default function ContactPage() {
     for (const q of questions) {
       const val = answers[q.id];
       if (q.type === "text") {
-        if (!val || !(val as string).trim()) newErrors[q.id] = "This field is required.";
+        if (!val || !(val as string).trim()) {
+          newErrors[q.id] = "This field is required.";
+        } else if (q.id === "name" && !NAME_PATTERN.test(val as string)) {
+          newErrors[q.id] = "Name can only contain letters.";
+        }
       } else if (q.type === "multi") {
         if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
       } else {
