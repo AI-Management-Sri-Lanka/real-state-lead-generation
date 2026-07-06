@@ -89,6 +89,10 @@ const questions = [
 // (covers names like "Anne-Marie" or "O'Brien").
 const NAME_PATTERN = /^[A-Za-z\s'-]*$/;
 
+// Basic but solid email shape check: something@something.tld
+// (rejects plain numbers, missing @, missing domain, etc.)
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function ContactPage() {
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -126,6 +130,8 @@ export default function ContactPage() {
           newErrors[q.id] = "This field is required.";
         } else if (q.id === "name" && !NAME_PATTERN.test(val as string)) {
           newErrors[q.id] = "Name can only contain letters.";
+        } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
+          newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
         }
       } else if (q.type === "multi") {
         if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
