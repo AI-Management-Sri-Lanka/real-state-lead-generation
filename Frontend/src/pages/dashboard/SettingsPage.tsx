@@ -5,7 +5,6 @@ import { authApi } from '@/api/authApi';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 export default function SettingsPage() {
@@ -148,7 +147,7 @@ export default function SettingsPage() {
               </p>
               <Button
                 type="button"
-                onClick={() => setShowDeleteConfirm(true)}
+                onClick={handleDeleteAccount}
                 loading={deleteLoading}
                 style={{ backgroundColor: '#7f1d1d', color: '#fca5a5' }}
               >

@@ -1,6 +1,7 @@
 // src/pages/contactPage.tsx
-import { useState } from "react";
-import { CheckCircle2, ChevronDown } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import emailjs from "@emailjs/browser";
+import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { Navbar } from "@/pages/home/components/Navbar";
 
 type Answer = string | string[];
@@ -85,6 +86,9 @@ const questions = [
   },
 ];
 
+const EMAILJS_SERVICE_ID = "service_j04bg14";
+const EMAILJS_TEMPLATE_ID = "template_hqwgj6x";
+const EMAILJS_PUBLIC_KEY = "a86EnkBTiFCWDxu1F";
 // Only letters, spaces, hyphens and apostrophes are valid in a name
 // (covers names like "Anne-Marie" or "O'Brien").
 const NAME_PATTERN = /^[A-Za-z\s'-]*$/;
@@ -97,9 +101,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^0\d{9}$/;
 
 export default function ContactPage() {
-  const [answers, setAnswers] = useState<Record<string, Answer>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+    const [answers, setAnswers] = useState<Record<string, Answer>>({});
+    const [submitted, setSubmitted] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [sending, setSending] = useState(false);
+    const [sendError, setSendError] = useState<string | null>(null);
 
   function setSingle(id: string, val: string) {
     setAnswers((a) => ({ ...a, [id]: val }));
@@ -171,7 +177,27 @@ export default function ContactPage() {
     return newErrors;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function buildDetailsHtml() {
+    const rows = questions
+      .map((q) => {
+        const val = answers[q.id];
+        const display = Array.isArray(val) ? val.join(", ") : val || "-";
+        return `
+          <tr>
+            <td style="padding:10px 14px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;font-size:13px;font-weight:600;color:#475569;width:40%;">
+              ${q.label}
+            </td>
+            <td style="padding:10px 14px;background:#ffffff;border-bottom:1px solid #E2E8F0;font-size:13px;color:#1E293B;">
+              ${display}
+            </td>
+          </tr>`;
+      })
+      .join("");
+
+    return `<table style="width:100%;border-collapse:collapse;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;">${rows}</table>`;
+  }
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -180,7 +206,33 @@ export default function ContactPage() {
       firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    setSubmitted(true);
+    setSending(true);
+    setSendError(null);
+
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          to_email: "olkevin099@gmail.com",
+          lead_name: answers.name,
+          lead_email: answers.email,
+          lead_phone: answers.phone,
+          submitted_at: new Date().toLocaleString("en-AU", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }),
+          details_html: buildDetailsHtml(),
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Email send failed:", err);
+      setSendError("Something went wrong sending your details. Please try again.");
+    } finally {
+      setSending(false);
+    }
   }
 
   if (submitted) {
@@ -353,11 +405,22 @@ export default function ContactPage() {
 
             {/* Submit */}
             <div className="pb-10">
+              {sendError && (
+                <p className="mb-3 text-center text-sm text-red-500">{sendError}</p>
+              )}
               <button
                 type="submit"
-                className="w-full rounded-2xl bg-indigo-600 px-8 py-4 text-sm font-bold text-white hover:bg-indigo-500 active:scale-[0.99] transition-all shadow-lg shadow-indigo-500/20"
+                disabled={sending}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 text-sm font-bold text-white hover:bg-indigo-500 active:scale-[0.99] transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Submit my details →
+                {sending ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Sending…
+                  </>
+                ) : (
+                  "Submit my details →"
+                )}
               </button>
               <p className="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">
                 By submitting you agree that we may contact you about property investment opportunities.
