@@ -23,6 +23,18 @@ function formatPrice(price: number, currency: string, listingType: string) {
     : `${formatted} ${currency}`
 }
 
+// Only letters, spaces, hyphens and apostrophes are valid in a name
+// (covers names like "Anne-Marie" or "O'Brien").
+const NAME_PATTERN = /^[A-Za-z\s'-]*$/
+
+// Basic but solid email shape check: something@something.tld
+// (rejects missing @, missing domain, etc.)
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Sri Lankan phone numbers: either local (0 + 9 digits, e.g. 0771234567)
+// or international (+94 + 9 digits, e.g. +94771234567).
+const PHONE_PATTERN = /^(0\d{9}|\+94\d{9})$/
+
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -86,7 +98,31 @@ export default function PropertyDetailPage() {
   }
 
   function update<K extends keyof typeof form>(key: K, value: string) {
-    setForm(prev => ({ ...prev, [key]: value }))
+    // The name field should only ever contain letters, spaces, hyphens and
+    // apostrophes
+    let sanitized = value
+    let rejected = false
+
+    if (key === 'name') {
+      sanitized = value.replace(/[^A-Za-z\s'-]/g, '')
+      rejected = sanitized !== value
+    }
+
+    if (rejected && key === 'name') {
+      setError('Name can only contain letters.')
+    } else {
+      setError(null)
+    }
+    setForm(prev => ({ ...prev, [key]: sanitized }))
+  }
+
+  
+  function validatePhoneOnBlur() {
+    const phone = form.phone.trim()
+    if (!phone) return // phone is optional — nothing to validate if empty
+    if (!PHONE_PATTERN.test(phone)) {
+      setError('Please enter a valid phone number.')
+    }
   }
 
   async function handleSubmit() {
@@ -94,6 +130,21 @@ export default function PropertyDetailPage() {
 
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
       setError('Please fill in your name, email and message.')
+      return
+    }
+
+    if (!NAME_PATTERN.test(form.name.trim())) {
+      setError('Name can only contain letters.')
+      return
+    }
+
+    if (!EMAIL_PATTERN.test(form.email.trim())) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
+      setError('Please enter a valid phone number.')
       return
     }
 
@@ -168,7 +219,7 @@ export default function PropertyDetailPage() {
     <div className="min-h-screen bg-page text-slate-100">
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
-      <header className="border-b border-slate-800/80 bg-slate-950/95">
+      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-slate-950">
@@ -264,7 +315,7 @@ export default function PropertyDetailPage() {
                   <div className="mt-4 space-y-3">
                     <Field label="Name"  placeholder="Your name"       value={form.name}    onChange={v => update('name', v)} />
                     <Field label="Email" placeholder="you@email.com"   value={form.email}   onChange={v => update('email', v)} type="email" />
-                    <Field label="Phone" placeholder="+94 7X XXX XXXX" value={form.phone}   onChange={v => update('phone', v)} />
+                    <Field label="Phone" placeholder="+94 7X XXX XXXX" value={form.phone}   onChange={v => update('phone', v)} onBlur={validatePhoneOnBlur} />
                     <div>
                       <label className="mb-1 block text-xs text-slate-500">Message</label>
                       <textarea
@@ -310,13 +361,14 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function Field({
-  label, value, onChange, placeholder, type = 'text',
+  label, value, onChange, placeholder, type = 'text', onBlur,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   placeholder: string
   type?: string
+  onBlur?: () => void
 }) {
   return (
     <div>
@@ -325,6 +377,7 @@ function Field({
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
         className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-indigo-500"
       />

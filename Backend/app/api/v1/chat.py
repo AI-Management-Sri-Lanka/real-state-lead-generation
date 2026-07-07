@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.schemas.chat_schema import ChatResponse, ChatRequest
 from app.schemas.session_schema import MessageIn
+from app.schemas.orchestrator_schema import OrchestratorResponse
 from app.services import session_service
 from app.services.ai.orchestrator import Orchestrator
 from app.core.logger import get_logger
@@ -17,6 +18,33 @@ router = APIRouter(
     tags=["chat"],
     dependencies=[Depends(get_current_user)]
 )
+
+
+def _format_persisted_message(res: OrchestratorResponse) -> str:
+    
+    if not res.leads:
+        return res.message
+
+    lines = [res.message, "", f"**Found {len(res.leads)} potential leads:**", ""]
+    for i, lead in enumerate(res.leads, start=1):
+        lines.append(f"**{i}. @{lead.userId or lead.name}** ({lead.platform})")
+        if lead.name and lead.name != lead.userId:
+            lines.append(f"   Name: {lead.name}")
+        if lead.property_type:
+            lines.append(f"   Property Type: {lead.property_type}")
+        if lead.location and lead.location != "null":
+            lines.append(f"   Location: {lead.location}")
+        if lead.date:
+            lines.append(f"   Date: {lead.date.date()}")
+        if lead.description:
+            desc = lead.description if len(lead.description) <= 200 else lead.description[:200] + "..."
+            lines.append(f'   Post: "{desc}"')
+        if lead.post_link:
+            lines.append(f"   Link: {lead.post_link}")
+        lines.append("")
+
+    return "\n".join(lines).rstrip()
+
 
 @router.post("", response_model=ChatResponse)
 async def post_chat(
@@ -40,7 +68,7 @@ async def post_chat(
     await session_service.add_message(
         db=db,
         session_id=request.session_id,
-        msg=MessageIn(role="assistant", content=res.message)
+        msg=MessageIn(role="assistant", content=_format_persisted_message(res))
     )
 
     return ChatResponse(
@@ -49,4 +77,3 @@ async def post_chat(
         data=res,
         generated_title=None,
     )
-

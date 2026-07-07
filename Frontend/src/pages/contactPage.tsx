@@ -89,6 +89,16 @@ const questions = [
 const EMAILJS_SERVICE_ID = "service_j04bg14";
 const EMAILJS_TEMPLATE_ID = "template_hqwgj6x";
 const EMAILJS_PUBLIC_KEY = "a86EnkBTiFCWDxu1F";
+// Only letters, spaces, hyphens and apostrophes are valid in a name
+// (covers names like "Anne-Marie" or "O'Brien").
+const NAME_PATTERN = /^[A-Za-z\s'-]*$/;
+
+// Basic but solid email shape check: something@something.tld
+// (rejects plain numbers, missing @, missing domain, etc.)
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Australian phone numbers: 10 digits starting with 0 (e.g. 04XX XXX XXX).
+const PHONE_PATTERN = /^0\d{9}$/;
 
 export default function ContactPage() {
     const [answers, setAnswers] = useState<Record<string, Answer>>({});
@@ -112,8 +122,36 @@ export default function ContactPage() {
   }
 
   function setText(id: string, val: string) {
-    setAnswers((a) => ({ ...a, [id]: val }));
-    setErrors((e) => { const n = { ...e }; delete n[id]; return n; });
+    // The name field should only ever contain letters, spaces, hyphens and
+    // apostrophes — strip out anything else (digits, symbols) as it's typed
+    // or pasted, so numeric input is never accepted in the first place.
+    // The phone field should only ever contain digits — strip letters,
+    // symbols and spaces as it's typed or pasted.
+    let sanitized = val;
+    let rejected = false;
+
+    if (id === "name") {
+      sanitized = val.replace(/[^A-Za-z\s'-]/g, "");
+      rejected = sanitized !== val;
+    }
+    if (id === "phone") {
+      const digitsOnly = val.replace(/\D/g, "");
+      rejected = digitsOnly !== val; // true only if a non-digit was typed/pasted
+      sanitized = digitsOnly.slice(0, 10);
+    }
+
+    setAnswers((a) => ({ ...a, [id]: sanitized }));
+    setErrors((e) => {
+      const n = { ...e };
+      if (rejected && id === "name") {
+        n[id] = "Name can only contain letters.";
+      } else if (rejected && id === "phone") {
+        n[id] = "Phone number can only contain digits.";
+      } else {
+        delete n[id];
+      }
+      return n;
+    });
   }
 
   function validate() {
@@ -121,7 +159,15 @@ export default function ContactPage() {
     for (const q of questions) {
       const val = answers[q.id];
       if (q.type === "text") {
-        if (!val || !(val as string).trim()) newErrors[q.id] = "This field is required.";
+        if (!val || !(val as string).trim()) {
+          newErrors[q.id] = "This field is required.";
+        } else if (q.id === "name" && !NAME_PATTERN.test(val as string)) {
+          newErrors[q.id] = "Name can only contain letters.";
+        } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
+          newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
+        } else if (q.id === "phone" && !PHONE_PATTERN.test((val as string).trim())) {
+          newErrors[q.id] = "Please enter a valid 10-digit phone number (e.g. 04XX XXX XXX).";
+        }
       } else if (q.type === "multi") {
         if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
       } else {
