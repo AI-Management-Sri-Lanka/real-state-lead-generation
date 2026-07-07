@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo, useState, useCallback, type MouseEvent } from "react";
 import { Loader2, Plus, Search, Send, MoreVertical, Trash2, Edit2, ExternalLink, MapPin, Calendar, Tag, User } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { ChatMessage } from "@/components/dashboard/ChatMessage";
+import { ChatMessage } from "./components/ChatMessage";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchWithAuth } from "@/api/authApi";
 import { BASE_URL } from "@/api/config";
@@ -236,6 +236,18 @@ export default function AIChat() {
     [sessions, activeSessionId],
   );
 
+  const syncTitleToBackend = useCallback(async (sessionId: string, title: string) => {
+    if (!title || title.toLowerCase() === "new chat" || title.toLowerCase() === "new conversation") return;
+    try {
+      await fetchWithAuth(
+        `${BASE_URL}/sessions/${sessionId}?title=${encodeURIComponent(title)}`,
+        { method: "PATCH" }
+      );
+    } catch (err) {
+      console.error("Failed to sync derived title to backend:", err);
+    }
+  }, []);
+
   // ── Load sessions on mount ──────────────────────────────────────────────
   const sessionsLoadedRef = useRef(false);
   useEffect(() => {
@@ -249,9 +261,17 @@ export default function AIChat() {
         setSessions((prev) => {
           const mapped: Session[] = data.map((s: any) => {
             const existing = prev.find((p) => p.id === s.session_id);
+            const backendTitle = s.title;
+            const existingTitle = existing?.title;
+            const isDefault = (t?: string) => !t || t.toLowerCase() === "new chat" || t.toLowerCase() === "new conversation";
+
+            const finalTitle = !isDefault(backendTitle)
+              ? backendTitle
+              : (!isDefault(existingTitle) ? existingTitle : (backendTitle || "New chat"));
+
             return {
               id: s.session_id,
-              title: s.title || existing?.title || "New chat",
+              title: finalTitle,
               createdAt: new Date(s.updated_at).toLocaleDateString(undefined, {
                 month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
               }),
@@ -329,10 +349,19 @@ export default function AIChat() {
             leads: leads.length > 0 ? leads : undefined,
           };
         });
+
+        const originalTitle = data.title || cached?.title || "New chat";
+        const derivedTitle = deriveTitleFromMessages(messages, originalTitle);
+
+        const isDefault = (t?: string) => !t || t.toLowerCase() === "new chat" || t.toLowerCase() === "new conversation";
+        if (derivedTitle !== originalTitle && isDefault(originalTitle)) {
+          syncTitleToBackend(activeSessionId, derivedTitle);
+        }
+
         setSessions((prev) =>
           prev.map((s) =>
             s.id === activeSessionId
-              ? { ...s, messages, title: deriveTitleFromMessages(messages, data.title || s.title) }
+              ? { ...s, messages, title: derivedTitle }
               : s,
           ),
         );
@@ -412,6 +441,15 @@ export default function AIChat() {
       timestamp: new Date(),
     };
 
+    const currentTitle = targetSession?.title || "New chat";
+    const newMessages = targetSession ? [...targetSession.messages, userMsg] : [userMsg];
+    const derivedTitle = deriveTitleFromMessages(newMessages, currentTitle);
+
+    const isDefault = (t?: string) => !t || t.toLowerCase() === "new chat" || t.toLowerCase() === "new conversation";
+    if (derivedTitle !== currentTitle && isDefault(currentTitle)) {
+      syncTitleToBackend(resolvedId, derivedTitle);
+    }
+
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id !== resolvedId) return s;
@@ -419,7 +457,7 @@ export default function AIChat() {
         return {
           ...s,
           messages: newMessages,
-          title: deriveTitleFromMessages(newMessages, s.title),
+          title: derivedTitle,
         };
       }),
     );
@@ -568,7 +606,7 @@ export default function AIChat() {
     setActiveMenu(activeMenu === sessionId ? null : sessionId);
   }
 
- // ── Render ──────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────
   return (
     <DashboardLayout activeNav="AI Chat">
       <div className="h-screen max-h-screen bg-slate-950 text-slate-100 overflow-hidden">
@@ -600,11 +638,10 @@ export default function AIChat() {
                         <button
                           type="button"
                           onClick={() => setActiveSessionId(session.id)}
-                          className={`group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition border ${
-                            active
+                          className={`group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition border ${active
                               ? "border-brand/30 bg-slate-800/70"
                               : "border-transparent hover:bg-slate-800/40"
-                          }`}
+                            }`}
                         >
                           <p className="truncate text-sm font-semibold text-white flex-1 min-w-0">
                             {session.title}
@@ -647,7 +684,7 @@ export default function AIChat() {
               {/* ── Main chat area (only this part scrolls) ── */}
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <div className="border-b border-slate-800/90 px-6 py-4 shrink-0">
-                  <p className="text-xs font-medium tracking-wide text-slate-500">AI LEAD ASSISTANT</p>
+                  <p className="text-xs font-medium tracking-wide text-slate-500 font">AI Lead Assistant</p>
                   <h1 className="mt-1 text-xl font-medium text-white">
                     Ask, refine and qualify leads.
                   </h1>
