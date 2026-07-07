@@ -99,18 +99,30 @@ export default function PropertyDetailPage() {
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     // The name field should only ever contain letters, spaces, hyphens and
-    // apostrophes — strip out anything else (digits, symbols) as it's typed
-    // or pasted, so numeric input is never accepted in the first place.
-    // The phone field should only ever contain digits, with an optional
-    // leading "+" for the country code — strip letters and other symbols.
+    // apostrophes
     let sanitized = value
-    if (key === 'name') sanitized = value.replace(/[^A-Za-z\s'-]/g, '')
-    if (key === 'phone') {
-      const hasPlus = value.trim().startsWith('+')
-      const digits = value.replace(/\D/g, '').slice(0, 11)
-      sanitized = (hasPlus ? '+' : '') + digits
+    let rejected = false
+
+    if (key === 'name') {
+      sanitized = value.replace(/[^A-Za-z\s'-]/g, '')
+      rejected = sanitized !== value
+    }
+
+    if (rejected && key === 'name') {
+      setError('Name can only contain letters.')
+    } else {
+      setError(null)
     }
     setForm(prev => ({ ...prev, [key]: sanitized }))
+  }
+
+  
+  function validatePhoneOnBlur() {
+    const phone = form.phone.trim()
+    if (!phone) return // phone is optional — nothing to validate if empty
+    if (!PHONE_PATTERN.test(phone)) {
+      setError('Please enter a valid phone number.')
+    }
   }
 
   async function handleSubmit() {
@@ -132,7 +144,7 @@ export default function PropertyDetailPage() {
     }
 
     if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
-      setError('Please enter a valid phone number (e.g. 07X XXX XXXX or +94 7X XXX XXXX).')
+      setError('Please enter a valid phone number.')
       return
     }
 
@@ -303,7 +315,7 @@ export default function PropertyDetailPage() {
                   <div className="mt-4 space-y-3">
                     <Field label="Name"  placeholder="Your name"       value={form.name}    onChange={v => update('name', v)} />
                     <Field label="Email" placeholder="you@email.com"   value={form.email}   onChange={v => update('email', v)} type="email" />
-                    <Field label="Phone" placeholder="+94 7X XXX XXXX" value={form.phone}   onChange={v => update('phone', v)} />
+                    <Field label="Phone" placeholder="+94 7X XXX XXXX" value={form.phone}   onChange={v => update('phone', v)} onBlur={validatePhoneOnBlur} />
                     <div>
                       <label className="mb-1 block text-xs text-slate-500">Message</label>
                       <textarea
@@ -349,13 +361,14 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function Field({
-  label, value, onChange, placeholder, type = 'text',
+  label, value, onChange, placeholder, type = 'text', onBlur,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   placeholder: string
   type?: string
+  onBlur?: () => void
 }) {
   return (
     <div>
@@ -364,6 +377,7 @@ function Field({
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
         className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-indigo-500"
       />

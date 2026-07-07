@@ -122,10 +122,30 @@ export default function ContactPage() {
     // The phone field should only ever contain digits — strip letters,
     // symbols and spaces as it's typed or pasted.
     let sanitized = val;
-    if (id === "name") sanitized = val.replace(/[^A-Za-z\s'-]/g, "");
-    if (id === "phone") sanitized = val.replace(/\D/g, "").slice(0, 10);
+    let rejected = false;
+
+    if (id === "name") {
+      sanitized = val.replace(/[^A-Za-z\s'-]/g, "");
+      rejected = sanitized !== val;
+    }
+    if (id === "phone") {
+      const digitsOnly = val.replace(/\D/g, "");
+      rejected = digitsOnly !== val; // true only if a non-digit was typed/pasted
+      sanitized = digitsOnly.slice(0, 10);
+    }
+
     setAnswers((a) => ({ ...a, [id]: sanitized }));
-    setErrors((e) => { const n = { ...e }; delete n[id]; return n; });
+    setErrors((e) => {
+      const n = { ...e };
+      if (rejected && id === "name") {
+        n[id] = "Name can only contain letters.";
+      } else if (rejected && id === "phone") {
+        n[id] = "Phone number can only contain digits.";
+      } else {
+        delete n[id];
+      }
+      return n;
+    });
   }
 
   function validate() {
