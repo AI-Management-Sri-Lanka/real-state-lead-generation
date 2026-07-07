@@ -7,11 +7,11 @@
 
 :root {
   /* Brand */
-  --color-brand:           #3D3BF3;
-  --color-brand-hover:     #2D2BD8;
-  --color-brand-light:     #EEEEFF;
-  --color-accent:          #00C896;
-  --color-accent-light:    #E6FAF5;
+  --color-brand:           #0EA5E9;
+  --color-brand-hover:     #0284C7;
+  --color-brand-light:     #EFF6FF;
+  --color-accent:          #4F46E5;
+  --color-accent-light:    #EEF2FF;
 
   /* Backgrounds */
   --color-bg:              #FFFFFF;
@@ -52,7 +52,7 @@
   --color-info:            #3B82F6;
 
   /* Typography */
-  --font-sans:  'Inter', sans-serif;
+  --font-sans:  'Plus Jakarta Sans', 'Inter', sans-serif;
   --font-mono:  'DM Mono', monospace;
 
   /* Radii */
@@ -110,6 +110,7 @@
 [data-theme='light'] .text-slate-500 { color: #64748B !important; }
 [data-theme='light'] .text-slate-600 { color: #475569 !important; }
 [data-theme='light'] .text-slate-700 { color: #334155 !important; }
+[data-theme='light'] .text-slate-800 { color: #1E293B !important; }
 [data-theme='light'] .text-slate-900 { color: #0F172A !important; }
 [data-theme='light'] .hover\:bg-slate-900:hover { background-color: rgba(239,242,255,0.9) !important; }
 [data-theme='light'] .hover\:bg-slate-900\/90:hover { background-color: rgba(239,242,255,0.9) !important; }
@@ -121,12 +122,59 @@
 [data-theme='light'] .hover\:text-white:hover { color: #0F172A !important; }
 [data-theme='light'] .text-white { color: #0F172A !important; }
 
+[data-theme='light'] body {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+  color: #1f2937;
+}
+
+[data-theme='light'] h1,
+[data-theme='light'] h2,
+[data-theme='light'] h3,
+[data-theme='light'] h4,
+[data-theme='light'] h5,
+[data-theme='light'] h6 {
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+[data-theme='light'] p,
+[data-theme='light'] span,
+[data-theme='light'] li,
+[data-theme='light'] small {
+  color: inherit;
+}
+
+[data-theme='light'] a {
+  color: #3D3BF3;
+}
+
+[data-theme='light'] a:hover {
+  color: #2D2BD8;
+}
+
+[data-theme='light'] input,
+[data-theme='light'] textarea,
+[data-theme='light'] select {
+  color: #0f172a;
+}
+
+[data-theme='light'] ::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+[data-theme='light'] .shadow-sm,
+[data-theme='light'] .shadow-md,
+[data-theme='light'] .shadow-lg {
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+}
+
 [data-theme='dark'] {
-  --color-brand:           #7dd3fc;
-  --color-brand-hover:     #38bdf8;
+  --color-brand:           #38BDF8;
+  --color-brand-hover:     #0EA5E9;
   --color-brand-light:     #11253f;
-  --color-accent:          #34d399;
-  --color-accent-light:    #0f172a;
+  --color-accent:          #6366F1;
+  --color-accent-light:    #111827;
 
   --color-bg:              #0f172a;
   --color-bg-subtle:       #111827;

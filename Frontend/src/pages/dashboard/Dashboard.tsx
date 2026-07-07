@@ -119,7 +119,7 @@ export default function Dashboard() {
         <div className="mx-auto max-w-7xl space-y-6 lg:space-y-8">
 
           {/* ── Greeting banner ─────────────────────────────────────────── */}
-          <section className="rounded-2xl border border-slate-800/80 bg-slate-950/90 p-5 shadow-panel sm:rounded-[28px] sm:p-8">
+          <section className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.96),rgba(238,242,255,0.96))] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_18px_45px_rgba(2,6,23,0.45)] sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 {/* Friendly greeting — readable size, not all-caps tiny text */}
@@ -167,28 +167,28 @@ export default function Dashboard() {
           <section className="grid gap-5 lg:grid-cols-2">
 
             {/* Leads by source */}
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/90 p-5 shadow-panel sm:rounded-[28px] sm:p-6">
+            <div className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.95),rgba(238,242,255,0.95))] p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_16px_35px_rgba(2,6,23,0.35)] sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-white sm:text-lg">Leads by source</h2>
-                  <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white sm:text-lg">Leads by source</h2>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
                     Lead count and conversion share per channel.
                   </p>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-slate-400">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
                   <CalendarDays size={13} /> Updated today
                 </span>
               </div>
               <div className="mt-5 space-y-4">
                 {leadSources.map(src => (
                   <div key={src.source}>
-                    <div className="mb-2 flex items-center justify-between text-sm font-medium text-slate-200">
+                    <div className="mb-2 flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
                       <span>{src.source}</span>
-                      <span className="text-xs text-slate-400">
-                        {src.percentage}% · <span className="font-semibold text-slate-200">{src.amount} leads</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {src.percentage}% · <span className="font-semibold text-slate-700 dark:text-slate-200">{src.amount} leads</span>
                       </span>
                     </div>
-                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-900">
+                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-900">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{ width: `${src.percentage}%`, background: src.color }}
@@ -200,15 +200,15 @@ export default function Dashboard() {
             </div>
 
             {/* Match score legend */}
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/90 p-5 shadow-panel sm:rounded-[28px] sm:p-6">
+            <div className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.95),rgba(238,242,255,0.95))] p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_16px_35px_rgba(2,6,23,0.35)] sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-white sm:text-lg">Match score legend</h2>
-                  <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white sm:text-lg">Match score legend</h2>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
                     What match quality means for each lead.
                   </p>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-xs text-slate-400">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1.5 text-xs text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
                   <Info size={13} /> High = top priority
                 </span>
               </div>
@@ -218,14 +218,14 @@ export default function Dashboard() {
                   return (
                     <div
                       key={item.title}
-                      className="flex items-start gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/80 p-3 sm:gap-4 sm:p-4"
+                      className="flex items-start gap-3 rounded-2xl border border-sky-200/70 bg-white/70 p-3 shadow-sm sm:gap-4 sm:p-4 dark:border-sky-800/40 dark:bg-slate-900/70"
                     >
-                      <div className={`mt-0.5 flex-shrink-0 rounded-xl bg-slate-800 p-2 ${item.tone}`}>
+                      <div className={`mt-0.5 flex-shrink-0 rounded-xl bg-sky-50 p-2 dark:bg-slate-800 ${item.tone}`}>
                         <Icon size={16} />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-white">{item.title}</p>
-                        <p className="mt-0.5 text-xs leading-5 text-slate-500">{item.description}</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                        <p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-slate-400">{item.description}</p>
                       </div>
                     </div>
                   )
@@ -235,12 +235,12 @@ export default function Dashboard() {
           </section>
 
           {/* ── Recent leads ─────────────────────────────────────────────── */}
-          <section className="rounded-2xl border border-slate-800/80 bg-slate-950/90 p-5 shadow-panel sm:rounded-[28px] sm:p-6">
+          <section className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.95),rgba(238,242,255,0.95))] p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_16px_35px_rgba(2,6,23,0.35)] sm:p-6">
             {/* Header + search */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-white">Recent leads</h2>
-                <p className="mt-0.5 text-sm text-slate-500">Search and review your latest leads.</p>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Recent leads</h2>
+                <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Search and review your latest leads.</p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 {/* Search */}
@@ -252,7 +252,7 @@ export default function Dashboard() {
                     onChange={e => setQuery(e.target.value)}
                     placeholder="Name, location or score…"
                     aria-label="Search leads"
-                    className="w-full rounded-2xl border border-slate-800 bg-slate-900/90 py-2.5 pl-4 pr-10 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    className="w-full rounded-2xl border border-sky-200 bg-white/90 py-2.5 pl-4 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-400 dark:focus:ring-sky-400/20"
                   />
                   <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -260,7 +260,7 @@ export default function Dashboard() {
                     </svg>
                   </span>
                 </label>
-                <button className="flex-shrink-0 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-slate-800 transition hover:bg-slate-800">
+                <button className="flex-shrink-0 rounded-2xl bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 ring-1 ring-sky-200 transition hover:bg-sky-100 dark:bg-slate-900 dark:text-white dark:ring-slate-800 dark:hover:bg-slate-800">
                   Filter
                 </button>
               </div>
@@ -272,7 +272,7 @@ export default function Dashboard() {
                 <LeadItem key={lead.id} lead={lead} onSelect={() => {}} />
               ))}
               {filteredLeads.length === 0 && (
-                <div className="rounded-2xl border border-slate-800/90 bg-slate-900/90 p-8 text-center text-sm text-slate-500">
+                <div className="rounded-2xl border border-sky-200/80 bg-white/70 p-8 text-center text-sm text-slate-500 dark:border-slate-800/90 dark:bg-slate-900/90 dark:text-slate-400">
                   No matching leads found. Try a different name, location, or score.
                 </div>
               )}

@@ -609,22 +609,22 @@ export default function AIChat() {
   // ── Render ──────────────────────────────────────────────────────────────
   return (
     <DashboardLayout activeNav="AI Chat">
-      <div className="h-screen max-h-screen bg-slate-950 text-slate-100 overflow-hidden">
+      <div className="h-screen max-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_28%),linear-gradient(135deg,_#f8fbff_0%,_#f3f7ff_48%,_#eef2ff_100%)] text-slate-100 overflow-hidden dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)]">
         <div className="w-full h-full overflow-hidden">
-          <div className="h-full bg-slate-950 overflow-hidden flex flex-col">
+          <div className="h-full bg-white/70 backdrop-blur-sm overflow-hidden flex flex-col dark:bg-slate-950/80">
             <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
               {/* ── Sidebar (fixed, never scrolls/resizes with chat) ── */}
-              <div className="w-full lg:w-80 lg:shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 p-5 flex flex-col h-full overflow-hidden">
+              <div className="w-full lg:w-80 lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/70">
                 <div className="flex items-center justify-between gap-3 shrink-0">
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-slate-500">AI Assistant</p>
-                    <h2 className="mt-3 text-lg font-semibold text-white">Chat history</h2>
+                    <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">Chat history</h2>
                   </div>
                   <button
                     type="button"
                     onClick={handleNewChat}
-                    className="inline-flex items-center gap-2 rounded-3xl bg-brand px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-indigo-500"
+                    className="inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 text-sm font-semibold !text-white shadow-[0_10px_25px_rgba(14,116,144,0.24)] transition hover:from-sky-400 hover:to-indigo-500"
                   >
                     <Plus size={16} /> New chat
                   </button>
@@ -639,11 +639,11 @@ export default function AIChat() {
                           type="button"
                           onClick={() => setActiveSessionId(session.id)}
                           className={`group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition border ${active
-                              ? "border-brand/30 bg-slate-800/70"
-                              : "border-transparent hover:bg-slate-800/40"
+                              ? "border-sky-400/40 bg-gradient-to-r from-sky-500/15 to-indigo-500/15"
+                              : "border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
                             }`}
                         >
-                          <p className="truncate text-sm font-semibold text-white flex-1 min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900 flex-1 min-w-0 dark:text-white">
                             {session.title}
                           </p>
                           <div
@@ -651,18 +651,18 @@ export default function AIChat() {
                             tabIndex={0}
                             onClick={(e) => openMenu(e as any, session.id)}
                             onKeyDown={(e) => e.key === "Enter" && openMenu(e as any, session.id)}
-                            className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-slate-800/80 bg-slate-900 text-slate-400 transition hover:border-slate-600 hover:text-white cursor-pointer opacity-0 group-hover:opacity-100 ${activeMenu === session.id ? "opacity-100" : ""}`}
+                            className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 transition hover:border-sky-300 hover:text-slate-700 cursor-pointer opacity-0 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-white ${activeMenu === session.id ? "opacity-100" : ""}`}
                           >
                             <MoreVertical size={16} />
                           </div>
                         </button>
 
                         {activeMenu === session.id && (
-                          <div className="absolute right-4 top-full z-20 mt-2 w-44 rounded-3xl border border-slate-800/80 bg-slate-950 p-2 shadow-panel">
+                          <div className="absolute right-4 top-full z-20 mt-2 w-44 rounded-3xl border border-sky-200/80 bg-white/95 p-2 shadow-[0_10px_25px_rgba(15,23,42,0.08)] dark:border-slate-800/80 dark:bg-slate-950 dark:shadow-panel">
                             <button
                               type="button"
                               onClick={() => handleRename(session.id)}
-                              className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-900"
+                              className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-900"
                             >
                               <Edit2 size={16} /> Rename
                             </button>
@@ -683,9 +683,9 @@ export default function AIChat() {
 
               {/* ── Main chat area (only this part scrolls) ── */}
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div className="border-b border-slate-800/90 px-6 py-4 shrink-0">
-                  <p className="text-xs font-medium tracking-wide text-slate-500 font">AI Lead Assistant</p>
-                  <h1 className="mt-1 text-xl font-medium text-white">
+                <div className="border-b border-sky-200/80 px-6 py-4 shrink-0 dark:border-slate-800/90">
+                  <p className="text-xs font-medium tracking-wide text-slate-500">AI Lead Assistant</p>
+                  <h1 className="mt-1 text-xl font-medium text-slate-900 dark:text-white">
                     Ask, refine and qualify leads.
                   </h1>
                 </div>
@@ -695,13 +695,13 @@ export default function AIChat() {
                   <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-4 sm:px-8">
                     <div className="flex flex-col gap-5">
                       {!activeSession || activeSession.messages.length === 0 ? (
-                        <div className="grid min-h-[320px] place-items-center rounded-[28px] border border-dashed border-slate-800/90 bg-slate-900/70 p-10 text-center">
+                        <div className="grid min-h-[320px] place-items-center rounded-[28px] border border-dashed border-sky-200/80 bg-white/70 p-10 text-center shadow-sm dark:border-slate-800/90 dark:bg-slate-900/70">
                           <div className="mx-auto max-w-xl space-y-4">
-                            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-800 text-brand">
+                            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-sky-50 text-sky-600 dark:bg-slate-800 dark:text-sky-400">
                               <Search size={32} />
                             </div>
-                            <p className="text-lg font-semibold text-white">No messages yet</p>
-                            <p className="text-sm text-slate-500">
+                            <p className="text-lg font-semibold text-slate-900 dark:text-white">No messages yet</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
                               Start a conversation about property leads, buyer profiles, or neighbourhood search criteria.
                             </p>
                           </div>
@@ -718,7 +718,7 @@ export default function AIChat() {
                       )}
 
                       {isTyping && (
-                        <div className="rounded-[28px] border border-slate-800/90 bg-slate-900/90 p-5 text-sm text-slate-400">
+                        <div className="rounded-[28px] border border-sky-200/80 bg-white/70 p-5 text-sm text-slate-500 shadow-sm dark:border-slate-800/90 dark:bg-slate-900/90 dark:text-slate-400">
                           <div className="flex items-center gap-3">
                             <Loader2 className="h-4 w-4 animate-spin text-brand" />
                             AI is thinking...
@@ -731,10 +731,10 @@ export default function AIChat() {
                   </div>
 
                   {/* Input bar (fixed at the bottom of the chat column) */}
-                  <div className="border-t border-slate-800/90 bg-slate-950/95 px-5 py-4 sm:px-6 shrink-0">
+                  <div className="bg-white/80 px-5 py-4 sm:px-6 shrink-0 dark:bg-slate-950/95">
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 rounded-full bg-slate-900/95 p-2">
-                        <div className="flex items-center gap-3 rounded-full border border-slate-800/80 bg-slate-950 px-4 py-3">
+                      <div className="flex-1 rounded-full bg-slate-100/80 p-2 dark:bg-slate-900/95">
+                        <div className="flex items-center gap-3 rounded-full border border-sky-200/80 bg-white px-4 py-3 shadow-sm dark:border-slate-800/80 dark:bg-slate-950">
                           <input
                             value={messageText}
                             onChange={(e) => setMessageText(e.target.value)}
@@ -745,14 +745,14 @@ export default function AIChat() {
                               }
                             }}
                             placeholder="Type your request for the AI assistant…"
-                            className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none border-none ring-0 focus:outline-none focus:ring-0 focus:border-none appearance-none"
+                            className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 outline-none border-none ring-0 focus:outline-none focus:ring-0 focus:border-none appearance-none dark:text-slate-100 dark:placeholder:text-slate-500"
                             aria-label="Type chat message"
                           />
                           <button
                             type="button"
                             onClick={handleSend}
                             disabled={isTyping || !messageText.trim()}
-                            className="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-brand text-slate-950 transition hover:bg-indigo-500 disabled:opacity-40"
+                            className="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-[0_10px_25px_rgba(14,116,144,0.24)] transition hover:from-sky-400 hover:to-indigo-500 disabled:opacity-40"
                             aria-label="Send message"
                           >
                             <Send size={18} />
