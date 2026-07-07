@@ -4,8 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { authApi } from '@/api/authApi';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Logo } from '@/components/ui/Logo';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle } from 'lucide-react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -27,6 +28,7 @@ export default function SettingsPage() {
 
   // Delete State
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   async function handleProfileSubmit(e: FormEvent) {
     e.preventDefault();
@@ -68,9 +70,7 @@ export default function SettingsPage() {
   }
 
   async function handleDeleteAccount() {
-    if (!window.confirm('Are you absolutely sure? This action cannot be undone and will delete all your data.')) {
-      return;
-    }
+    setShowDeleteConfirm(false);
     setDeleteLoading(true);
     try {
       await authApi.deleteAccount();
@@ -84,98 +84,119 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-900 p-8 text-slate-100">
-      {/* This relative wrapper spans the FULL width of the page (no max-w here) */}
-      <div className="relative">
-        {/* Back button + Logo — pinned to the true left edge of the screen,
-            inset only by the page's own p-8 padding */}
-        <div className="absolute left-0 top-0 flex items-center gap-2">
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="Go back"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 focus:outline-none"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-slate-100">
-              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <Link to="/" className="flex items-center gap-2">
-            <Logo size="sm" showText={false} />
-            <span className="text-white font-bold uppercase tracking-wide">LEADAI</span>
-          </Link>
+    <DashboardLayout>
+      <div className="flex-1 overflow-y-auto bg-slate-900 p-8 text-slate-100">
+        <div className="relative">
+          <div className="mx-auto max-w-2xl space-y-12">
+            <header className="mb-6 flex justify-center">
+              <h1 className="text-3xl font-bold tracking-tight text-white">Settings</h1>
+            </header>
+
+            {/* Profile Section */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+              <h2 className="mb-4 text-xl font-semibold text-white">Profile Information</h2>
+              <form onSubmit={handleProfileSubmit} className="space-y-4">
+                <Input
+                  label="Full Name"
+                  name="full_name"
+                  value={profileForm.full_name}
+                  disabled
+                  readOnly
+                />
+                <Input
+                  label="Email Address"
+                  name="email"
+                  type="email"
+                  value={profileForm.email}
+                  disabled
+                  readOnly
+                />
+              </form>
+            </section>
+
+            {/* Password Section */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+              <h2 className="mb-4 text-xl font-semibold text-white">Change Password</h2>
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <Input
+                  label="Current Password"
+                  name="current_password"
+                  type="password"
+                  value={passwordForm.current_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                  required
+                />
+                <Input
+                  label="New Password"
+                  name="new_password"
+                  type="password"
+                  value={passwordForm.new_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                  required
+                />
+                <div className="pt-2">
+                  <Button type="submit" loading={passwordLoading}>Update Password</Button>
+                </div>
+              </form>
+            </section>
+
+            {/* Danger Zone */}
+            <section className="rounded-2xl border border-red-900/50 bg-red-950/20 p-6">
+              <h2 className="mb-2 text-xl font-semibold text-red-500">Danger Zone</h2>
+              <p className="mb-6 text-sm text-slate-400">
+                Permanently delete your account and all of your data. This action cannot be reversed.
+              </p>
+              <Button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                loading={deleteLoading}
+                style={{ backgroundColor: '#7f1d1d', color: '#fca5a5' }}
+              >
+                Delete Account
+              </Button>
+            </section>
+          </div>
         </div>
 
-        {/* Centered content column — the max-w-2xl now lives in here, NOT around the button above */}
-        <div className="mx-auto max-w-2xl space-y-12">
-          <header className="mb-6 flex justify-center">
-            <h1 className="text-3xl font-bold tracking-tight text-white">Settings</h1>
-          </header>
-
-          {/* Profile Section */}
-          <section className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
-            <h2 className="mb-4 text-xl font-semibold text-white">Profile Information</h2>
-            <form onSubmit={handleProfileSubmit} className="space-y-4">
-              <Input
-                label="Full Name"
-                name="full_name"
-                value={profileForm.full_name}
-                disabled
-                readOnly
-              />
-              <Input
-                label="Email Address"
-                name="email"
-                type="email"
-                value={profileForm.email}
-                disabled
-                readOnly
-              />
-            </form>
-          </section>
-
-          {/* Password Section */}
-          <section className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
-            <h2 className="mb-4 text-xl font-semibold text-white">Change Password</h2>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <Input
-                label="Current Password"
-                name="current_password"
-                type="password"
-                value={passwordForm.current_password}
-                onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
-                required
-              />
-              <Input
-                label="New Password"
-                name="new_password"
-                type="password"
-                value={passwordForm.new_password}
-                onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
-                required
-              />
-              <div className="pt-2">
-                <Button type="submit" loading={passwordLoading}>Update Password</Button>
+        {/* Custom Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <div className="w-full max-w-md rounded-2xl border border-red-900/50 bg-slate-950 p-6 shadow-2xl">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-950">
+                  <AlertTriangle size={20} className="text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Delete Account</h3>
               </div>
-            </form>
-          </section>
-
-          {/* Danger Zone */}
-          <section className="rounded-2xl border border-red-900/50 bg-red-950/20 p-6">
-            <h2 className="mb-2 text-xl font-semibold text-red-500">Danger Zone</h2>
-            <p className="mb-6 text-sm text-slate-400">
-              Permanently delete your account and all of your data. This action cannot be reversed.
-            </p>
-            <Button
-              type="button"
-              onClick={handleDeleteAccount}
-              loading={deleteLoading}
-              style={{ backgroundColor: '#7f1d1d', color: '#fca5a5' }}
-            >
-              Delete Account
-            </Button>
-          </section>
-        </div>
+              <p className="mb-2 text-sm text-slate-300">
+                Are you absolutely sure you want to delete your account?
+              </p>
+              <p className="mb-6 text-sm text-slate-500">
+                This will permanently remove all your data, sessions, and history. This action{' '}
+                <span className="font-semibold text-red-400">cannot be undone</span>.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleteLoading}
+                  className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading}
+                  className="flex-1 rounded-xl bg-red-900 px-4 py-2.5 text-sm font-semibold text-red-200 transition hover:bg-red-800 disabled:opacity-60"
+                >
+                  {deleteLoading ? 'Deleting…' : 'Yes, delete my account'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
