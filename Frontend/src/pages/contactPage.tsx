@@ -116,14 +116,12 @@ export default function ContactPage() {
   }
 
   function setText(id: string, val: string) {
-    // The name field should only ever contain letters, spaces, hyphens and
-    // apostrophes — strip out anything else (digits, symbols) as it's typed
-    // or pasted, so numeric input is never accepted in the first place.
-    // The phone field should only ever contain digits — strip letters,
-    // symbols and spaces as it's typed or pasted.
+    
     let sanitized = val;
     if (id === "name") sanitized = val.replace(/[^A-Za-z\s'-]/g, "");
-    if (id === "phone") sanitized = val.replace(/\D/g, "").slice(0, 10);
+    if (id === "phone") {
+      sanitized = val.replace(/\D/g, "").slice(0, 10);
+    }
     setAnswers((a) => ({ ...a, [id]: sanitized }));
     setErrors((e) => { const n = { ...e }; delete n[id]; return n; });
   }
@@ -139,9 +137,16 @@ export default function ContactPage() {
           newErrors[q.id] = "Name can only contain letters.";
         } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
           newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
-        } else if (q.id === "phone" && !PHONE_PATTERN.test((val as string).trim())) {
-          newErrors[q.id] = "Please enter a valid 10-digit phone number (e.g. 04XX XXX XXX).";
-        }
+        } else if (q.id === "phone") {
+            const phone = (val as string).trim();
+
+            if (!/^\d+$/.test(phone)) {
+              newErrors[q.id] = "Phone number can contain only digits.";
+            } 
+            else if (phone.length !== 10) {
+              newErrors[q.id] = "Phone number must contain exactly 10 digits.";
+            }
+          }
       } else if (q.type === "multi") {
         if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
       } else {
