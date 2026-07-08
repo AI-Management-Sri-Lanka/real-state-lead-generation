@@ -6,6 +6,7 @@ from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .session import Session
+    from .properties import Property
 
 from app.db.base_class import Base
 
@@ -33,4 +34,9 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
         lazy="selectin",
+    )
+    properties = relationship(
+        "Property",
+        back_populates="owner",
+        cascade="all, delete-orphan",
     )

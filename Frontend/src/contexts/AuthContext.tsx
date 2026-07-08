@@ -29,37 +29,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Restore session on mount
   useEffect(() => {
-    // Development helper: auto-sign-in when running locally
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    if (import.meta?.env?.DEV) {
-      const devUser = localStorage.getItem('aimsl_user')
-      if (devUser) {
-        try { setUser(JSON.parse(devUser)) } catch { /* ignore */ }
-      } else {
-        const u: User = { id: 1, full_name: 'Developer', email: 'dev@example.com', is_active: true, created_at: '' }
-        setUser(u)
-        localStorage.setItem('aimsl_user', JSON.stringify(u))
-        localStorage.setItem('aimsl_token', 'dev-token')
-      }
-      setLoading(false)
-      return
-    }
-
     const storedUser = localStorage.getItem('aimsl_user')
     const storedToken = localStorage.getItem('aimsl_token')
 
     if (storedUser && storedToken) {
       try {
         setUser(JSON.parse(storedUser));
-        // Optionally, verify token here by calling authApi.getMe(storedToken)
+        // Verify token in background so we redirect out if refresh token expired
+        authApi.getMe().catch(() => {
+          setUser(null);
+          localStorage.removeItem('aimsl_user');
+          localStorage.removeItem('aimsl_token');
+          localStorage.removeItem('aimsl_refresh_token');
+        });
       } catch {
-        /* ignore */
+        setUser(null);
       }
     } else {
       // Clear potentially mismatched state
       localStorage.removeItem('aimsl_user');
       localStorage.removeItem('aimsl_token');
+      localStorage.removeItem('aimsl_refresh_token');
     }
     setLoading(false);
   }, []);

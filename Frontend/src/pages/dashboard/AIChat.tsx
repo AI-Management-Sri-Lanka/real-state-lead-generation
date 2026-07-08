@@ -709,7 +709,7 @@ export default function AIChat() {
                       ) : (
                         activeSession.messages.map((message) => (
                           <div key={message.id} className="flex flex-col">
-                            <ChatMessage message={{ id: message.id, role: message.role, content: message.content, timestamp: message.timestamp, isTyping: message.isTyping }} userName={userName} />
+                            <ChatMessage message={{ id: message.id, role: message.role, content: message.content, timestamp: message.timestamp, isTyping: message.isTyping }} />
                             {message.leads && message.leads.length > 0 && (
                               <LeadsGrid leads={message.leads} />
                             )}

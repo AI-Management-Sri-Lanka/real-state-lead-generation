@@ -4,8 +4,10 @@ import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
+import { useAuth } from '@/hooks/useAuth'
 
 const LINKS: { label: string; to: string }[] = [
+  { label: 'Properties',   to: '/properties' },
   { label: 'Dashboard',    to: '/dashboard' },
   { label: 'AI Assistant', to: '/dashboard/ai-assistant' },
   { label: 'Contact',      to: '/contact' },
@@ -37,6 +39,7 @@ export function Navbar() {
   const isContact = location.pathname === '/contact'
   const { toggle: toggleSidebar } = useSidebar()
   const [theme, setTheme] = useTheme()
+  const { isAuthenticated } = useAuth()
   const styles = NAVBAR_STYLES[theme]
 
   return (
@@ -97,16 +100,28 @@ export function Navbar() {
                 <Menu size={20} color={styles.secondary} />
               </button>
             )}
-            {showSignIn && !isContact && (
-              <Link
-                to="/auth/signin"
-                className="hidden md:inline-flex"
-                style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
-              >
-                Sign in
-              </Link>
+            {showSignIn && (
+              isAuthenticated ? (
+                <Link
+                  to="/dashboard"
+                  className="hidden md:inline-flex"
+                  style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/auth/signin"
+                  className="hidden md:inline-flex"
+                  style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
+                >
+                  Sign in
+                </Link>
+              )
             )}
           </div>
         </nav>

@@ -5,7 +5,7 @@ import { Button }   from '@/components/ui/Button'
 
 export function HeroSection() {
   return (
-    <section className="hero-section" style={{ background:'var(--color-hero-bg)', padding:'96px 32px 80px', textAlign:'center', position:'relative', overflow:'hidden' }}>
+    <section className="hero-section" style={{ background:'var(--color-hero-bg)', padding:'72px 32px 48px', textAlign:'center', position:'relative', overflow:'hidden' }}>
       {/* Background circles */}
       <div style={{ position:'absolute', width:600, height:600, borderRadius:'50%', background:'var(--color-hero-circle)', top:-200, left:'50%', transform:'translateX(-50%)', pointerEvents:'none' }} />
 
@@ -27,9 +27,6 @@ export function HeroSection() {
         <p style={{ fontSize:19, color:'var(--color-text-secondary)', lineHeight:1.7, maxWidth:560, margin:'0 auto 36px', fontFamily:'var(--font-sans)' }}>
           Automatically discover qualified leads from Facebook and Instagram using conversational AI — no manual searching required.
         </p>
-
-        {/* Button removed per design update */}
-        <div style={{ height: 1, marginTop: 10 }} />
 
       </div>
     </section>

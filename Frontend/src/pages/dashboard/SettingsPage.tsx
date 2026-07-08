@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { AlertTriangle } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
