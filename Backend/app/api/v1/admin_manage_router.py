@@ -79,6 +79,19 @@ async def toggle_user_status(
         raise AppException(error=AppError.AUTH_USER_NOT_FOUND)
     return ok(message=f"User status changed to active={is_active}", item=UserResponse.model_validate(user))
 
+@router.delete("/users/{user_id}", status_code=204)
+async def delete_user(
+    user_id: int = Path(...),
+    _admin: dict = Depends(require_master_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Permanently delete a user account and all their data."""
+    from app.crud.user_crud import get_user_by_id_db, delete_user_db
+    user = await get_user_by_id_db(db, user_id)
+    if not user:
+        raise AppException(error=AppError.AUTH_USER_NOT_FOUND)
+    await delete_user_db(db, user)
+
 from app.services.property_manage.property_service import list_properties
 from app.services.session_service import list_sessions, to_summary
 from app.schemas.properties_schema import PropertyResponse
