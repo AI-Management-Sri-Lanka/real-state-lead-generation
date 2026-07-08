@@ -10,9 +10,9 @@ const ADMIN_PASSWORD = 'admin123'
 
 const PRICE_RANGES = [
   { label: 'Any price', min: 0, max: Infinity },
-  { label: 'Under 25M LKR', min: 0, max: 25_000_000 },
-  { label: '25M - 50M LKR', min: 25_000_000, max: 50_000_000 },
-  { label: '50M+ LKR', min: 50_000_000, max: Infinity },
+  { label: 'Under 25M', min: 0, max: 25_000_000 },
+  { label: '25M - 50M', min: 25_000_000, max: 50_000_000 },
+  { label: '50M+', min: 50_000_000, max: Infinity },
 ]
 
 // Removed AdminLoginModal and DeleteModal
@@ -87,10 +87,10 @@ export default function PropertiesPage() {
       {/* ── Hero / search ───────────────────────────────────────── */}
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">
-          Find your next home in Sri Lanka
+          Find your next home
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          Browse verified apartments, houses and land across Colombo, Kandy and beyond.
+          Browse verified apartments, houses and land in top locations.
         </p>
 
 
@@ -101,7 +101,7 @@ export default function PropertiesPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by location, e.g. Colombo 07"
+              placeholder="Search by location, e.g. Downtown"
               className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none"
             />
           </div>

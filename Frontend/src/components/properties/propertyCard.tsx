@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { BedDouble, Bath, Ruler, MapPin, BadgeCheck, MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { BedDouble, Bath, Ruler, MapPin, BadgeCheck, MoreVertical, Pencil, Trash2, Heart } from 'lucide-react'
 import { Property } from '@/types/property'
 
 interface Props {
@@ -16,7 +16,9 @@ function formatPrice(price: number, currency: string, listingType: string) {
 
 export function PropertyCard({ property, onEdit, onDelete }: Props) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [favorite, setFavorite] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -30,8 +32,8 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
 
   return (
     <div
-      onClick={() => navigate(`/properties/${property.id}`)}
-      className="cursor-pointer overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/90 transition hover:border-indigo-500/60 hover:bg-slate-900 relative"
+      onClick={() => navigate(`/properties/${property.id}`, { state: { from: location.pathname } })}
+      className="group cursor-pointer overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/90 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/60 hover:bg-slate-900 relative"
     >
       {/* ── Three-dot menu ───────────────────────────────────── */}
       {(onEdit || onDelete) && (
@@ -67,16 +69,36 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
         </div>
       )}
 
-      {/* ── Image / placeholder ─────────────────────────────── */}
-      {property.images && property.images.length > 0 ? (
-        <div className="h-36 w-full overflow-hidden bg-slate-900">
-          <img src={property.images[0]} alt={property.title} className="h-full w-full object-cover transition duration-300 hover:scale-105" />
-        </div>
-      ) : (
-        <div className="flex h-36 items-center justify-center bg-slate-900 text-slate-600">
-          <MapPin size={28} />
-        </div>
+      {/* ── Favorite Button (Public View) ───────────────────────── */}
+      {!onEdit && !onDelete && (
+        <button
+          onClick={e => {
+            e.stopPropagation()
+            setFavorite(!favorite)
+          }}
+          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/40 backdrop-blur-md border border-white/20 text-white transition-all hover:scale-110 hover:bg-rose-500/90"
+        >
+          <Heart size={15} fill={favorite ? 'currentColor' : 'none'} className={favorite ? 'text-rose-500 hover:text-white' : ''} />
+        </button>
       )}
+
+      {/* ── Image / placeholder ─────────────────────────────── */}
+      <div className="relative h-44 w-full overflow-hidden bg-slate-900">
+        {property.images && property.images.length > 0 ? (
+          <img src={property.images[0]} alt={property.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-slate-600">
+            <MapPin size={28} />
+          </div>
+        )}
+        
+        {/* View Details Overlay */}
+        <div className="absolute inset-0 bg-slate-950/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center pointer-events-none">
+          <span className="rounded-full bg-indigo-600/90 backdrop-blur-sm px-5 py-2.5 text-sm font-semibold text-white shadow-xl transform translate-y-4 transition-transform duration-300 group-hover:translate-y-0">
+            View Details
+          </span>
+        </div>
+      </div>
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
@@ -89,6 +111,12 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
             </span>
           )}
         </div>
+
+        {property.title && (
+          <p className="mt-1.5 text-sm font-medium text-slate-200 line-clamp-1" title={property.title}>
+            {property.title}
+          </p>
+        )}
 
         <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
           <MapPin size={12} /> {property.location}

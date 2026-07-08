@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { useAuth } from '@/hooks/useAuth'
 
 const LINKS: { label: string; to: string }[] = [
+  { label: 'Properties',   to: '/properties' },
   { label: 'Dashboard',    to: '/dashboard' },
   { label: 'AI Assistant', to: '/dashboard/ai-assistant' },
   { label: 'Contact',      to: '/contact' },
