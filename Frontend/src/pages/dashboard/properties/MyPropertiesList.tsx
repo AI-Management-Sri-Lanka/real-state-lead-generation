@@ -5,6 +5,7 @@ import { propertyApi } from '@/api/propertyApi'
 import { Property } from '@/types/property'
 import { PropertyCard } from '@/components/properties/propertyCard'
 import { useAuth } from '@/hooks/useAuth'
+import { DashboardLayout } from '@/components/layout/DashboardLayout'
 
 export default function MyPropertiesList() {
   const navigate = useNavigate()
@@ -41,8 +42,9 @@ export default function MyPropertiesList() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-slate-950">
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800 px-6">
+    <DashboardLayout activeNav="Properties">
+      <div className="flex flex-1 flex-col bg-slate-950 min-h-full">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800 px-6">
         <h1 className="text-lg font-semibold text-slate-100">My Properties</h1>
         <button
           onClick={() => navigate('/dashboard/properties/add')}
@@ -88,6 +90,7 @@ export default function MyPropertiesList() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   ArrowLeft, BedDouble, Bath, Ruler, MapPin, Building2,
-  CheckCircle2, Loader2,
+  CheckCircle2, Loader2, ShieldCheck, User, Mail, Phone,
 } from 'lucide-react'
 
 import emailjs from '@emailjs/browser'
@@ -40,6 +40,10 @@ const PHONE_PATTERN = /^(0\d{9}|\+94\d{9})$/
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const backUrl = location.state?.from || '/properties'
+  const backLabel = backUrl.includes('/dashboard') ? 'Back to my properties' : 'Back to listings'
+  
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -48,7 +52,9 @@ export default function PropertyDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted]   = useState(false)
   const [error, setError]           = useState<string | null>(null)
-  const { isAuthenticated }         = useAuth()
+  const { isAuthenticated, user }   = useAuth()
+  
+  const isOwner = isAuthenticated && user?.id === property?.owner?.id
 
   useEffect(() => {
     async function fetchProperty() {
@@ -79,10 +85,10 @@ export default function PropertyDetailPage() {
 
   if (loading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-page text-slate-100">
+      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-900">
         <div className="text-center flex flex-col items-center gap-2">
-          <Loader2 className="animate-spin text-brand" size={36} />
-          <p className="text-sm text-slate-400">Loading property details...</p>
+          <Loader2 className="animate-spin text-indigo-600" size={36} />
+          <p className="text-sm text-slate-500">Loading property details...</p>
         </div>
       </div>
     )
@@ -90,10 +96,10 @@ export default function PropertyDetailPage() {
 
   if (fetchError || !property) {
     return (
-      <div className="grid min-h-screen place-items-center bg-page text-slate-100">
+      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-900">
         <div className="text-center">
           <p className="text-lg font-semibold">{fetchError ?? 'Property not found'}</p>
-          <Link to="/properties" className="mt-3 inline-block text-sm text-indigo-400 hover:underline">
+          <Link to="/properties" className="mt-3 inline-block text-sm text-indigo-600 font-medium hover:underline">
             Back to listings
           </Link>
         </div>
@@ -208,24 +214,24 @@ export default function PropertyDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-page text-slate-100">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
 
       {/* ── Top nav ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-slate-950">
-              <Building2 size={16} />
+          <Link to="/" className="flex items-center gap-2 transition hover:opacity-80">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-200">
+              <Building2 size={18} />
             </div>
-            <span className="text-base font-semibold text-white">LeadAI Properties</span>
+            <span className="text-lg font-bold tracking-tight text-slate-900">LeadAI Properties</span>
           </Link>
-          <nav className="flex items-center gap-6 text-sm text-slate-400">
-            <Link to="/"           className="hover:text-white transition">Home</Link>
-            <Link to="/properties" className="hover:text-white transition">Properties</Link>
+          <nav className="flex items-center gap-6 text-sm font-medium text-slate-600">
+            <Link to="/"           className="hover:text-indigo-600 transition">Home</Link>
+            <Link to="/properties" className="hover:text-indigo-600 transition">Properties</Link>
             {isAuthenticated ? (
-              <Link to="/dashboard" className="hover:text-white transition">Dashboard</Link>
+              <Link to="/dashboard" className="hover:text-indigo-600 transition">Dashboard</Link>
             ) : (
-              <Link to="/auth/signin" className="hover:text-white transition">Sign in</Link>
+              <Link to="/auth/signin" className="hover:text-indigo-600 transition">Sign in</Link>
             )}
           </nav>
         </div>
@@ -233,112 +239,165 @@ export default function PropertyDetailPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <button
-          onClick={() => navigate('/properties')}
-          className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition"
+          onClick={() => navigate(backUrl)}
+          className="mb-6 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition"
         >
-          <ArrowLeft size={14} /> Back to listings
+          <ArrowLeft size={16} /> {backLabel}
         </button>
 
         {/* Image placeholder */}
         {property.images && property.images.length > 0 ? (
-          <div className="relative h-56 w-full overflow-hidden rounded-2xl bg-slate-900 sm:h-96">
+          <div className="relative h-56 w-full overflow-hidden rounded-3xl bg-slate-100 sm:h-[420px] shadow-lg border border-slate-200">
             <img
               src={property.images[0]}
               alt={property.title}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
           </div>
         ) : (
-          <div className="flex h-56 items-center justify-center rounded-2xl bg-slate-900 text-slate-600 sm:h-72">
-            <MapPin size={36} />
+          <div className="flex h-56 items-center justify-center rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-300 sm:h-[420px] shadow-sm">
+            <MapPin size={48} />
           </div>
         )}
 
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1.6fr_1fr]">
 
           {/* ── Left: details ──────────────────────────────────── */}
           <div>
-            <p className="flex items-center gap-1 text-xs text-slate-500">
-              <MapPin size={12} /> {property.location}, Australia
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 mb-4 border border-slate-200 shadow-sm">
+              <MapPin size={12} className="text-indigo-500" /> {property.location}, Australia
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
               {formatPrice(property.price, property.currency, property.listingType)}
             </h1>
-            <p className="mt-1 text-sm text-slate-400">{property.title}</p>
+            <p className="mt-2 text-lg text-slate-600 font-medium">{property.title}</p>
 
             {/* Specs */}
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-400">
-              {property.bedrooms        != null && <span className="flex items-center gap-1.5"><BedDouble size={16} /> {property.bedrooms} bedrooms</span>}
-              {property.bathrooms       != null && <span className="flex items-center gap-1.5"><Bath size={16} />      {property.bathrooms} bathrooms</span>}
-              {property.areaSqft        != null && <span className="flex items-center gap-1.5"><Ruler size={16} />    {property.areaSqft} sqft</span>}
-              {property.landSizePerches != null && <span className="flex items-center gap-1.5"><Ruler size={16} />    {property.landSizePerches} perches</span>}
+            <div className="mt-6 flex flex-wrap gap-4 text-sm font-medium text-slate-700">
+              {property.bedrooms        != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"><BedDouble size={18} className="text-indigo-500" /> {property.bedrooms} bedrooms</span>}
+              {property.bathrooms       != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"><Bath size={18} className="text-indigo-500" />      {property.bathrooms} bathrooms</span>}
+              {property.areaSqft        != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"><Ruler size={18} className="text-indigo-500" />    {property.areaSqft} sqft</span>}
+              {property.landSizePerches != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"><Ruler size={18} className="text-indigo-500" />    {property.landSizePerches} perches</span>}
             </div>
 
-            <h3 className="mt-6 text-base font-semibold text-white">Description</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-400">{property.description}</p>
+            <div className="mt-10 rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Description</h3>
+              <p className="text-base leading-relaxed text-slate-600">{property.description || 'No description provided.'}</p>
+              
+              <hr className="my-8 border-slate-100" />
 
-            <h3 className="mt-6 text-base font-semibold text-white">Property details</h3>
-            <div className="mt-2 divide-y divide-slate-800 rounded-2xl border border-slate-800">
-              <Row label="Property type" value={property.type} />
-              <Row label="Listing type"  value={`For ${property.listingType}`} />
-              {property.furnishing && <Row label="Furnishing" value={property.furnishing} />}
-              {property.parking    && <Row label="Parking"    value={property.parking} />}
-              <Row label="Listed by" value={property.listedBy} />
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Property details</h3>
+              <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-slate-50/50">
+                <Row label="Property type" value={property.type} />
+                <Row label="Listing type"  value={`For ${property.listingType}`} />
+                {property.furnishing && <Row label="Furnishing" value={property.furnishing} />}
+                {property.parking    && <Row label="Parking"    value={property.parking} />}
+                <Row label="Listed by" value={property.listedBy} />
+              </div>
             </div>
           </div>
 
-          {/* ── Right: contact form ────────────────────────────── */}
-          <div className="lg:sticky lg:top-6 lg:self-start">
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/90 p-5">
-              {submitted ? (
+          {/* ── Right: owner + contact form ──────────────────── */}
+          <div className="lg:sticky lg:top-24 lg:self-start space-y-6">
+
+            {/* Owner contact card */}
+            {property.owner && (
+              <div className="rounded-3xl border border-indigo-100 bg-white p-6 shadow-md shadow-indigo-100/50">
+                <p className="mb-4 text-xs font-bold uppercase tracking-widest text-indigo-500">Listed by</p>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                    <User size={24} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-base font-bold text-slate-900">{property.owner.full_name}</p>
+                      {property.verified && (
+                        <span title="Verified listing" className="shrink-0 flex items-center">
+                          <ShieldCheck size={16} className="text-emerald-500" />
+                        </span>
+                      )}
+                    </div>
+                    <a
+                      href={`mailto:${property.owner.email}`}
+                      className="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition truncate"
+                    >
+                      <Mail size={14} />
+                      {property.owner.email}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Inquiry / contact form */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/40">
+              {isOwner ? (
                 <div className="flex flex-col items-center gap-3 py-6 text-center">
-                  <CheckCircle2 size={32} className="text-emerald-400" />
-                  <p className="text-sm font-semibold text-white">Inquiry sent!</p>
-                  <p className="text-xs text-slate-500">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 mb-2">
+                    <ShieldCheck size={32} />
+                  </div>
+                  <p className="text-lg font-bold text-slate-900">This is your listing</p>
+                  <p className="text-sm text-slate-500 px-4">
+                    You are viewing this property as the owner. Switch to edit mode to make changes.
+                  </p>
+                  <button
+                    onClick={() => navigate(`/dashboard/properties/add?id=${property.id}`)}
+                    className="mt-4 w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5"
+                  >
+                    Edit property
+                  </button>
+                </div>
+              ) : submitted ? (
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 mb-2">
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <p className="text-lg font-bold text-slate-900">Inquiry sent!</p>
+                  <p className="text-sm text-slate-600">
                     Thanks {form.name.split(' ')[0]}! The listing agent will get back to you shortly.
                   </p>
-                  <p className="text-xs text-indigo-400">
+                  <p className="text-sm font-medium text-indigo-600 mt-2 bg-indigo-50 px-4 py-2 rounded-lg">
                     A confirmation email has been sent to {form.email}
                   </p>
                 </div>
               ) : (
                 <>
-                  <p className="text-sm font-semibold text-white">Interested in this property?</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="text-xl font-bold tracking-tight text-slate-900">Interested in this property?</p>
+                  <p className="mt-1.5 text-sm text-slate-500">
                     Send a message and the listing agent will get back to you.
                   </p>
 
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-6 space-y-4">
                     <Field label="Name"  placeholder="Your name"       value={form.name}    onChange={v => update('name', v)} />
                     <Field label="Email" placeholder="you@email.com"   value={form.email}   onChange={v => update('email', v)} type="email" />
                     <Field label="Phone" placeholder="+94 7X XXX XXXX" value={form.phone}   onChange={v => update('phone', v)} />
                     <div>
-                      <label className="mb-1 block text-xs text-slate-500">Message</label>
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Message</label>
                       <textarea
                         value={form.message}
                         onChange={e => update('message', e.target.value)}
                         placeholder="I'm interested in this property and would like to schedule a viewing."
-                        rows={3}
-                        className="w-full resize-none rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-indigo-500"
+                        rows={4}
+                        className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
                       />
                     </div>
 
-                    {error && <p className="text-xs text-red-400">{error}</p>}
+                    {error && <p className="text-sm font-medium text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
 
                     <button
                       onClick={handleSubmit}
                       disabled={submitting}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-indigo-500 disabled:opacity-60"
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
                     >
-                      {submitting && <Loader2 size={14} className="animate-spin" />}
-                      {submitting ? 'Sending…' : 'Send inquiry'}
+                      {submitting && <Loader2 size={16} className="animate-spin" />}
+                      {submitting ? 'Sending inquiry…' : 'Send inquiry'}
                     </button>
                   </div>
                 </>
               )}
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -349,9 +408,9 @@ export default function PropertyDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-slate-200">{value}</span>
+    <div className="flex items-center justify-between px-6 py-4 text-sm">
+      <span className="font-semibold text-slate-500">{label}</span>
+      <span className="font-bold text-slate-900">{value}</span>
     </div>
   )
 }
@@ -367,13 +426,13 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-slate-500">{label}</label>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</label>
       <input
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-indigo-500"
+        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
       />
     </div>
   )

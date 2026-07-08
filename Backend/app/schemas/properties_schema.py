@@ -45,6 +45,7 @@ class PropertyCreate(PropertyBase):
 
 
 class PropertyUpdate(BaseModel):
+    title: Optional[str] = Field(None, max_length=255)
     price: Optional[float] = Field(None, gt=0)
     currency: Optional[str] = Field(None, max_length=10)
     location: Optional[str] = Field(None, max_length=255)

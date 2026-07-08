@@ -1,7 +1,15 @@
 // src/types/property.ts
 
+export interface OwnerProfile {
+  id: number
+  full_name: string
+  email: string
+}
+
 export interface Property {
   id: string
+  ownerId?: number
+  owner?: OwnerProfile
   title: string
   price: number
   currency: string

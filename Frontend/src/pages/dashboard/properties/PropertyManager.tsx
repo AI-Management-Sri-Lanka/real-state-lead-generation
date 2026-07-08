@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Building2, Loader2, CheckCircle2, Plus, X, UploadCloud } from 'lucide-react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { propertyApi, PropertyPayload } from '@/api/propertyApi'
+import { propertyApi, adminPropertyApi, PropertyPayload } from '@/api/propertyApi'
+import { Select as CustomSelect } from '@/components/ui/Select'
 
 type FormState = {
   title: string
@@ -24,7 +25,6 @@ type FormState = {
 
 const EMPTY: FormState = {
   title: '', price: '', currency: 'AUD', location: '',
-  title: '', price: '', currency: 'AUD', location: '',
   bedrooms: '', bathrooms: '', areaSqft: '', landSizePerches: '',
   type: 'Apartment', listingType: 'Sale', verified: false,
   furnishing: '', parking: '', listedBy: '', description: '', images: [],
@@ -38,9 +38,15 @@ export default function PropertyManager() {
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('id')
   const isEditMode = Boolean(editId)
+  const isAdminMode = window.location.pathname.startsWith('/admin')
 
 
   const [form, setForm] = useState<FormState>(EMPTY)
+  const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null)
+  
+  const actualEditId = editId || createdPropertyId
+  const isActuallyEditMode = Boolean(actualEditId)
+
   const [imageInput, setImageInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -57,11 +63,12 @@ export default function PropertyManager() {
     async function load() {
       setLoadingProperty(true)
       try {
-        const p = await propertyApi.getProperty(editId!)
+        const p = isAdminMode
+          ? await adminPropertyApi.getOne(editId!)
+          : await propertyApi.getProperty(editId!)
         setForm({
           title: p.title ?? '',
           price: p.price != null ? String(p.price) : '',
-          currency: p.currency ?? 'AUD',
           currency: p.currency ?? 'AUD',
           location: p.location ?? '',
           bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',
@@ -212,22 +219,40 @@ export default function PropertyManager() {
 
     try {
       let propertyId: string
-      if (isEditMode) {
-        await propertyApi.editProperty(editId!, payload)
-        propertyId = editId!
+      if (isActuallyEditMode) {
+        if (isAdminMode) {
+          await adminPropertyApi.edit(actualEditId!, payload)
+        } else {
+          await propertyApi.editProperty(actualEditId!, payload)
+        }
+        propertyId = actualEditId!
       } else {
-        const created = await propertyApi.addProperty(payload)
-        propertyId = String(created.id)
+        if (isAdminMode) {
+          const created = await adminPropertyApi.create(payload)
+          propertyId = String(created.id)
+        } else {
+          const created = await propertyApi.addProperty(payload)
+          propertyId = String(created.id)
+        }
+        setCreatedPropertyId(propertyId)
       }
 
       const newImageUrls = allImages.filter(url => !originalImageUrls.includes(url))
       const startIndex = originalImageUrls.length
       for (let i = 0; i < newImageUrls.length; i++) {
-        await propertyApi.addPropertyImage(propertyId, {
-          url: newImageUrls[i],
-          isPrimary: startIndex + i === 0,
-          sortOrder: startIndex + i,
-        })
+        if (isAdminMode) {
+          await adminPropertyApi.addPropertyImage(propertyId, {
+            url: newImageUrls[i],
+            isPrimary: startIndex + i === 0,
+            sortOrder: startIndex + i,
+          })
+        } else {
+          await propertyApi.addPropertyImage(propertyId, {
+            url: newImageUrls[i],
+            isPrimary: startIndex + i === 0,
+            sortOrder: startIndex + i,
+          })
+        }
       }
 
       setSubmitted(true)
@@ -251,19 +276,19 @@ export default function PropertyManager() {
             {isEditMode ? 'Your changes have been saved.' : 'It will appear in the listings shortly.'}
           </p>
           <div className="mt-2 flex gap-3">
-            {!isEditMode && (
+            {!isActuallyEditMode && (
               <button
-                onClick={() => { setForm(EMPTY); setSubmitted(false) }}
+                onClick={() => { setForm(EMPTY); setCreatedPropertyId(null); setSubmitted(false) }}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
               >
                 Add another
               </button>
             )}
             <button
-              onClick={() => navigate('/properties')}
+              onClick={() => navigate(isAdminMode ? '/admin/properties' : '/dashboard/properties')}
               className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition shadow-sm"
             >
-              View listings
+              {isAdminMode ? 'Back to Property Management' : 'Back to My Properties'}
             </button>
           </div>
         </div>
@@ -283,10 +308,10 @@ export default function PropertyManager() {
             <span className="text-sm font-semibold text-slate-900">LeadAI Admin</span>
           </Link>
           <button
-            onClick={() => navigate('/dashboard/properties')}
+            onClick={() => navigate(isAdminMode ? '/admin/properties' : '/dashboard/properties')}
             className="flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-900"
           >
-            <ArrowLeft size={14} /> Back to my properties
+            <ArrowLeft size={14} /> Back
           </button>
         </div>
       </header>
@@ -307,7 +332,7 @@ export default function PropertyManager() {
               <TextInput label="Title *" placeholder="e.g. Spacious 3BR House in Sydney" value={form.title} onChange={v => set('title', v)} />
               <div className="grid grid-cols-2 gap-4">
                 <TextInput label="Price *" placeholder="e.g. 1500000" type="number" value={form.price} onChange={v => set('price', v)} />
-                <SelectInput label="Currency" value={form.currency} onChange={v => set('currency', v)} options={['AUD', 'USD', 'LKR']} />
+                <CustomSelect label="Currency" value={form.currency} onChange={v => set('currency', v)} options={['AUD', 'USD', 'LKR']} />
               </div>
               <TextInput label="Location *" placeholder="e.g. Sydney CBD" value={form.location} onChange={v => set('location', v)} />
             </FieldGroup>
@@ -317,8 +342,8 @@ export default function PropertyManager() {
           <Section title="Listing type">
             <FieldGroup>
               <div className="grid grid-cols-2 gap-4">
-                <SelectInput label="Property type" value={form.type} onChange={v => set('type', v)} options={['Apartment', 'House', 'Land', 'Commercial']} />
-                <SelectInput label="For" value={form.listingType} onChange={v => set('listingType', v)} options={['Sale', 'Rent']} />
+                <CustomSelect label="Property type" value={form.type} onChange={v => set('type', v)} options={['Apartment', 'House', 'Land', 'Commercial']} />
+                <CustomSelect label="For" value={form.listingType} onChange={v => set('listingType', v)} options={['Sale', 'Rent']} />
               </div>
               <label className="flex cursor-pointer select-none items-center gap-2">
                 <div onClick={() => set('verified', !form.verified)} className={`relative h-5 w-9 rounded-full transition ${form.verified ? 'bg-emerald-500' : 'bg-slate-200 shadow-inner'}`}>
@@ -345,7 +370,7 @@ export default function PropertyManager() {
           <Section title="Details">
             <FieldGroup>
               <div className="grid grid-cols-2 gap-4">
-                <SelectInput label="Furnishing" value={form.furnishing} onChange={v => set('furnishing', v)} options={['', 'Fully-Furnished', 'Semi-Furnished', 'Unfurnished']} placeholder="Select (optional)" />
+                <CustomSelect label="Furnishing" value={form.furnishing} onChange={v => set('furnishing', v)} options={['Fully-Furnished', 'Semi-Furnished', 'Unfurnished']} placeholder="Select (optional)" />
                 <TextInput label="Parking" placeholder="e.g. 1 Covered Parking" value={form.parking} onChange={v => set('parking', v)} />
               </div>
               <TextInput label="Listed by *" placeholder="Agent or owner name" value={form.listedBy} onChange={v => set('listedBy', v)} />
@@ -477,18 +502,4 @@ function TextInput({ label, value, onChange, placeholder, type = 'text' }: {
         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm" />
     </div>
   )
-}
-function SelectInput({ label, value, onChange, options, placeholder }: {
-  label: string; value: string; onChange: (v: string) => void; options: string[]; placeholder?: string
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm">
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.filter(Boolean).map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </div>
-  )
-}
+}
