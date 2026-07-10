@@ -6,7 +6,6 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuth } from '@/hooks/useAuth'
 
-
 const PUBLIC_LINKS: { label: string; to: string }[] = [
   { label: 'Properties',   to: '/properties' },
   { label: 'Contact',      to: '/contact' },
@@ -45,8 +44,12 @@ export function Navbar() {
   const [theme, setTheme] = useTheme()
   const { isAuthenticated } = useAuth()
   const styles = NAVBAR_STYLES[theme]
+  const links = isAuthenticated ? [...PUBLIC_LINKS, ...AUTH_ONLY_LINKS] : PUBLIC_LINKS
 
-  const links = isAuthenticated ? [...PUBLIC_LINKS, ...AUTH_ONLY_LINKS] : PUBLIC_LINKS   // ← new line
+  const activeTo = links
+    .map(l => l.to)
+    .filter(to => location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to + '/')))
+    .sort((a, b) => b.length - a.length)[0]
 
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
@@ -59,7 +62,7 @@ export function Navbar() {
         <nav className="flex items-center gap-4" style={{ marginLeft: 'auto' }}>
           <div className="hidden md:flex" style={{ gap: 4, alignItems: 'center' }}>
             {links.map(({ label, to }) => {
-              const active = location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to))
+              const active = to === activeTo
               return (
                 <Link
                   key={label}
@@ -94,6 +97,29 @@ export function Navbar() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
+            <Link
+              to="/properties"
+              className="hidden md:inline-flex"
+              style={{
+                padding: '10px 18px',
+                borderRadius: 999,
+                fontSize: 14,
+                fontWeight: 700,
+                color: styles.text,
+                background: 'transparent',
+                border: `1px solid ${styles.border}`,
+                textDecoration: 'none',
+                transition: 'background 0.12s, border-color 0.12s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = styles.muted
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
+            >
+              Browse Properties
+            </Link>
             <ThemeToggle theme={theme} setTheme={setTheme} />
             {isDashboard && (
               <button
