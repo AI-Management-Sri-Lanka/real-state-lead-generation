@@ -592,21 +592,27 @@ export default function AIChat() {
   }
 
   async function submitDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      const res = await fetchWithAuth(`${BASE_URL}/sessions/${deleteTarget.id}`, { method: "DELETE" });
-      if (!res.ok) return;
-      const remaining = sessions.filter((s) => s.id !== deleteTarget.id);
-      setSessions(remaining);
-      if (activeSessionId === deleteTarget.id) setActiveSessionId(remaining[0]?.id ?? "");
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error("Error deleting:", err);
-    } finally {
-      setDeleting(false);
+  if (!deleteTarget) return;
+  const { id } = deleteTarget;
+  setDeleting(true);
+
+  const remaining = sessions.filter((s) => s.id !== id);
+  setSessions(remaining);
+  if (activeSessionId === id) setActiveSessionId(remaining[0]?.id ?? "");
+  setDeleteTarget(null);
+
+  try {
+    const res = await fetchWithAuth(`${BASE_URL}/sessions/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      toast.error("Deleted here, but couldn't sync to the server. It may reappear on reload.", { id: "delete-sync-error" });
     }
+  } catch (err) {
+    console.error("Error deleting:", err);
+    toast.error("Deleted here, but couldn't sync to the server. It may reappear on reload.", { id: "delete-sync-error" });
+  } finally {
+    setDeleting(false);
   }
+}
 
   function openMenu(e: MouseEvent<HTMLButtonElement>, sessionId: string) {
     e.stopPropagation();
