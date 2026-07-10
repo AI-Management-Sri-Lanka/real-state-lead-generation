@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { useAuth } from '@/hooks/useAuth'
 
 const PUBLIC_LINKS: { label: string; to: string }[] = [
+  { label: 'Home',         to: '/' },
   { label: 'Properties',   to: '/properties' },
   { label: 'Contact',      to: '/contact' },
 ]
