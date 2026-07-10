@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo, useState, useCallback, type MouseEvent } from "react";
 import { Loader2, Plus, Search, Send, MoreVertical, Trash2, Edit2, ExternalLink, MapPin, Calendar, Tag, User } from "lucide-react";
+import toast from "react-hot-toast";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ChatMessage } from "./components/ChatMessage";
 import { useAuth } from "@/hooks/useAuth";
@@ -556,26 +557,32 @@ export default function AIChat() {
   }
 
   async function submitRename() {
-    if (!renameTarget) return;
-    const title = renameTarget.value.trim();
-    if (!title) return;
-    setRenaming(true);
-    try {
-      const res = await fetchWithAuth(
-        `${BASE_URL}/sessions/${renameTarget.id}?title=${encodeURIComponent(title)}`,
-        { method: "PATCH" },
-      );
-      if (!res.ok) return;
-      setSessions((prev) =>
-        prev.map((s) => s.id === renameTarget.id ? { ...s, title } : s),
-      );
-      setRenameTarget(null);
-    } catch (err) {
-      console.error("Error renaming:", err);
-    } finally {
-      setRenaming(false);
+  if (!renameTarget) return;
+  const title = renameTarget.value.trim();
+  if (!title) return;
+  const { id } = renameTarget;
+  setRenaming(true);
+
+  setSessions((prev) =>
+    prev.map((s) => (s.id === id ? { ...s, title } : s)),
+  );
+  setRenameTarget(null);
+
+  try {
+    const res = await fetchWithAuth(
+      `${BASE_URL}/sessions/${id}?title=${encodeURIComponent(title)}`,
+      { method: "PATCH" },
+    );
+    if (!res.ok) {
+      toast.error("Renamed here, but couldn't sync to the server. It may revert on reload.", { id: "rename-sync-error" });
     }
+  } catch (err) {
+    console.error("Error renaming:", err);
+    toast.error("Renamed here, but couldn't sync to the server. It may revert on reload.", { id: "rename-sync-error" });
+  } finally {
+    setRenaming(false);
   }
+}
 
   // ── Delete ──────────────────────────────────────────────────────────────
   function handleDelete(sessionId: string) {
