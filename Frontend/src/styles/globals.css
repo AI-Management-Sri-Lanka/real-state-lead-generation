@@ -250,7 +250,7 @@ body {
 
 @media (min-width: 1025px) {
   .dashboard-sidebar-toggle { display: none !important; }
-  .navbar-sidebar-toggle { display: none !important; }
+  .navbar-sidebar-toggle { display: flex !important; }
   .dashboard-sidebar-desktop { display: block !important; }
   .dashboard-sidebar-mobile { display: none !important; }
 }

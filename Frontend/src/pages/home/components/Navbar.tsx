@@ -40,7 +40,7 @@ export function Navbar() {
   const showSignIn = !location.pathname.startsWith('/dashboard')
   const isDashboard = location.pathname.startsWith('/dashboard')
   const isContact = location.pathname === '/contact'
-  const { toggle: toggleSidebar } = useSidebar()
+  const { toggle: toggleSidebar, toggleCollapse } = useSidebar()
   const [theme, setTheme] = useTheme()
   const { isAuthenticated } = useAuth()
   const styles = NAVBAR_STYLES[theme]
@@ -50,6 +50,14 @@ export function Navbar() {
     .map(l => l.to)
     .filter(to => location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to + '/')))
     .sort((a, b) => b.length - a.length)[0]
+
+  // The mobile drawer and desktop sidebar are separate layout mechanisms
+  // (overlay vs. in-flow width), so pick which one this click should control.
+  function handleSidebarToggleClick() {
+    const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 1025px)').matches
+    if (isDesktop) toggleCollapse()
+    else toggleSidebar()
+  }
 
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
@@ -124,7 +132,7 @@ export function Navbar() {
             {isDashboard && (
               <button
                 className="navbar-sidebar-toggle"
-                onClick={toggleSidebar}
+                onClick={handleSidebarToggleClick}
                 style={{ background:styles.muted, border:`1px solid ${styles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = styles.subtle)}
                 onMouseLeave={e => (e.currentTarget.style.background = styles.muted)}
