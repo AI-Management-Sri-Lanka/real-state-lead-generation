@@ -6,11 +6,15 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuth } from '@/hooks/useAuth'
 
-const LINKS: { label: string; to: string }[] = [
+
+const PUBLIC_LINKS: { label: string; to: string }[] = [
   { label: 'Properties',   to: '/properties' },
+  { label: 'Contact',      to: '/contact' },
+]
+
+const AUTH_ONLY_LINKS: { label: string; to: string }[] = [
   { label: 'Dashboard',    to: '/dashboard' },
   { label: 'AI Assistant', to: '/dashboard/ai-assistant' },
-  { label: 'Contact',      to: '/contact' },
 ]
 
 const NAVBAR_STYLES = {
@@ -42,6 +46,8 @@ export function Navbar() {
   const { isAuthenticated } = useAuth()
   const styles = NAVBAR_STYLES[theme]
 
+  const links = isAuthenticated ? [...PUBLIC_LINKS, ...AUTH_ONLY_LINKS] : PUBLIC_LINKS   // ← new line
+
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
       <div style={{ width:'100%', padding:'0 20px', height:72, display:'flex', alignItems:'center', gap:32, boxSizing:'border-box' }}>
@@ -52,7 +58,7 @@ export function Navbar() {
 
         <nav className="flex items-center gap-4" style={{ marginLeft: 'auto' }}>
           <div className="hidden md:flex" style={{ gap: 4, alignItems: 'center' }}>
-            {LINKS.map(({ label, to }) => {
+            {links.map(({ label, to }) => {
               const active = location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to))
               return (
                 <Link
