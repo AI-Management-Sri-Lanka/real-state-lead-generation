@@ -1,8 +1,10 @@
 // src/pages/contactPage.tsx
 import { useState, type FormEvent } from "react";
 import emailjs from "@emailjs/browser";
+import { load as parseYaml } from "js-yaml";
 import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { Navbar } from "@/pages/home/components/Navbar";
+import recipientsRaw from "@/config/recipients.yaml?raw";
 
 type Answer = string | string[];
 
@@ -89,6 +91,42 @@ const questions = [
 const EMAILJS_SERVICE_ID = "service_j04bg14";
 const EMAILJS_TEMPLATE_ID = "template_hqwgj6x";
 const EMAILJS_PUBLIC_KEY = "a86EnkBTiFCWDxu1F";
+
+// Fallback used only if recipients.yaml is missing, empty, or malformed,
+// so a bad YAML edit can never silently break lead notifications.
+const FALLBACK_RECIPIENT = "olkevin099@gmail.com";
+
+interface RecipientsConfig {
+  recipients: string[];
+}
+
+// Loads and validates the recipient list from src/config/recipients.yaml.
+// Returns a comma-separated string, which is the format EmailJS expects
+// in a "To email" template field for sending to multiple addresses.
+function loadRecipients(): string {
+  try {
+    const parsed = parseYaml(recipientsRaw) as RecipientsConfig;
+    const list = parsed?.recipients;
+
+    if (!Array.isArray(list) || list.length === 0) {
+      throw new Error("recipients.yaml must contain a non-empty 'recipients' list");
+    }
+
+    const cleaned = list
+      .map((addr) => (typeof addr === "string" ? addr.trim() : ""))
+      .filter((addr) => EMAIL_PATTERN.test(addr));
+
+    if (cleaned.length === 0) {
+      throw new Error("recipients.yaml contained no valid email addresses");
+    }
+
+    return cleaned.join(",");
+  } catch (err) {
+    console.error("Failed to load recipients.yaml, falling back to default recipient:", err);
+    return FALLBACK_RECIPIENT;
+  }
+}
+
 // Only letters, spaces, hyphens and apostrophes are valid in a name
 // (covers names like "Anne-Marie" or "O'Brien").
 const NAME_PATTERN = /^[A-Za-z\s'-]*$/;
@@ -99,6 +137,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Australian phone numbers: 10 digits starting with 0 (e.g. 04XX XXX XXX).
 const PHONE_PATTERN = /^0\d{9}$/;
+
+// Resolved once per page load from recipients.yaml.
+const TO_EMAILS = loadRecipients();
 
 export default function ContactPage() {
     const [answers, setAnswers] = useState<Record<string, Answer>>({});
@@ -214,7 +255,7 @@ export default function ContactPage() {
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
         {
-          to_email: "olkevin099@gmail.com",
+          to_email: TO_EMAILS,
           lead_name: answers.name,
           lead_email: answers.email,
           lead_phone: answers.phone,
