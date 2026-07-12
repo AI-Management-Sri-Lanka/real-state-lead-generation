@@ -1,10 +1,12 @@
 // src/pages/contactPage.tsx
 import { useState, type FormEvent } from "react";
+import { useFormik } from "formik";
 import emailjs from "@emailjs/browser";
 import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { Navbar } from "@/pages/home/components/Navbar";
 
 type Answer = string | string[];
+type FormValues = Record<string, Answer>;
 
 const STATES = [
   "New South Wales", "Victoria", "Queensland", "South Australia",
@@ -89,44 +91,115 @@ const questions = [
 const EMAILJS_SERVICE_ID = "service_j04bg14";
 const EMAILJS_TEMPLATE_ID = "template_hqwgj6x";
 const EMAILJS_PUBLIC_KEY = "a86EnkBTiFCWDxu1F";
-// Only letters, spaces, hyphens and apostrophes are valid in a name
-// (covers names like "Anne-Marie" or "O'Brien").
+
 const NAME_PATTERN = /^[A-Za-z\s'-]*$/;
 
-// Basic but solid email shape check: something@something.tld
-// (rejects plain numbers, missing @, missing domain, etc.)
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Australian phone numbers: 10 digits starting with 0 (e.g. 04XX XXX XXX).
 const PHONE_PATTERN = /^0\d{9}$/;
 
+const initialValues: FormValues = questions.reduce((acc, q) => {
+  acc[q.id] = q.type === "multi" ? [] : "";
+  return acc;
+}, {} as FormValues);
+
+function validate(values: FormValues) {
+  const newErrors: Record<string, string> = {};
+  for (const q of questions) {
+    const val = values[q.id];
+    if (q.type === "text") {
+      if (!val || !(val as string).trim()) {
+        newErrors[q.id] = "This field is required.";
+      } else if (q.id === "name" && !NAME_PATTERN.test(val as string)) {
+        newErrors[q.id] = "Name can only contain letters.";
+      } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
+        newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
+      } else if (q.id === "phone" && !PHONE_PATTERN.test((val as string).trim())) {
+        newErrors[q.id] = "Please enter a valid 10-digit phone number (e.g. 04XX XXX XXX).";
+      }
+    } else if (q.type === "multi") {
+      if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
+    } else {
+      if (!val) newErrors[q.id] = "Please select an option.";
+    }
+  }
+  return newErrors;
+}
+
+function buildDetailsHtml(answers: FormValues) {
+  const rows = questions
+    .map((q) => {
+      const val = answers[q.id];
+      const display = Array.isArray(val) ? val.join(", ") : val || "-";
+      return `
+        <tr>
+          <td style="padding:10px 14px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;font-size:13px;font-weight:600;color:#475569;width:40%;">
+            ${q.label}
+          </td>
+          <td style="padding:10px 14px;background:#ffffff;border-bottom:1px solid #E2E8F0;font-size:13px;color:#1E293B;">
+            ${display}
+          </td>
+        </tr>`;
+    })
+    .join("");
+
+  return `<table style="width:100%;border-collapse:collapse;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;">${rows}</table>`;
+}
+
 export default function ContactPage() {
-    const [answers, setAnswers] = useState<Record<string, Answer>>({});
-    const [submitted, setSubmitted] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [sending, setSending] = useState(false);
-    const [sendError, setSendError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const formik = useFormik<FormValues>({
+    initialValues,
+    validate,
+    validateOnChange: true,
+    validateOnBlur: true,
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      setSendError(null);
+      try {
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          {
+            to_email: "olkevin099@gmail.com",
+            lead_name: values.name,
+            lead_email: values.email,
+            lead_phone: values.phone,
+            submitted_at: new Date().toLocaleString("en-AU", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }),
+            details_html: buildDetailsHtml(values),
+          },
+          EMAILJS_PUBLIC_KEY
+        );
+        setSubmitted(true);
+        resetForm();
+      } catch (err) {
+        console.error("Email send failed:", err);
+        setSendError("Something went wrong sending your details. Please try again.");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
+
+  const { values, errors, touched, setFieldValue, setFieldTouched, setFieldError, handleSubmit, isSubmitting, submitCount } = formik;
 
   function setSingle(id: string, val: string) {
-    setAnswers((a) => ({ ...a, [id]: val }));
-    setErrors((e) => { const n = { ...e }; delete n[id]; return n; });
+    setFieldValue(id, val);
+    setFieldTouched(id, true, false);
   }
 
   function toggleMulti(id: string, val: string) {
-    setAnswers((a) => {
-      const cur = (a[id] as string[]) || [];
-      const next = cur.includes(val) ? cur.filter((v) => v !== val) : [...cur, val];
-      return { ...a, [id]: next };
-    });
-    setErrors((e) => { const n = { ...e }; delete n[id]; return n; });
+    const cur = (values[id] as string[]) || [];
+    const next = cur.includes(val) ? cur.filter((v) => v !== val) : [...cur, val];
+    setFieldValue(id, next);
+    setFieldTouched(id, true, false);
   }
 
   function setText(id: string, val: string) {
-    // The name field should only ever contain letters, spaces, hyphens and
-    // apostrophes — strip out anything else (digits, symbols) as it's typed
-    // or pasted, so numeric input is never accepted in the first place.
-    // The phone field should only ever contain digits — strip letters,
-    // symbols and spaces as it's typed or pasted.
     let sanitized = val;
     let rejected = false;
 
@@ -136,102 +209,26 @@ export default function ContactPage() {
     }
     if (id === "phone") {
       const digitsOnly = val.replace(/\D/g, "");
-      rejected = digitsOnly !== val; // true only if a non-digit was typed/pasted
+      rejected = digitsOnly !== val; 
       sanitized = digitsOnly.slice(0, 10);
     }
 
-    setAnswers((a) => ({ ...a, [id]: sanitized }));
-    setErrors((e) => {
-      const n = { ...e };
-      if (rejected && id === "name") {
-        n[id] = "Name can only contain letters.";
-      } else if (rejected && id === "phone") {
-        n[id] = "Phone number can only contain digits.";
-      } else {
-        delete n[id];
-      }
-      return n;
-    });
-  }
+    setFieldValue(id, sanitized);
+    setFieldTouched(id, true, false);
 
-  function validate() {
-    const newErrors: Record<string, string> = {};
-    for (const q of questions) {
-      const val = answers[q.id];
-      if (q.type === "text") {
-        if (!val || !(val as string).trim()) {
-          newErrors[q.id] = "This field is required.";
-        } else if (q.id === "name" && !NAME_PATTERN.test(val as string)) {
-          newErrors[q.id] = "Name can only contain letters.";
-        } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
-          newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
-        } else if (q.id === "phone" && !PHONE_PATTERN.test((val as string).trim())) {
-          newErrors[q.id] = "Please enter a valid 10-digit phone number (e.g. 04XX XXX XXX).";
-        }
-      } else if (q.type === "multi") {
-        if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
-      } else {
-        if (!val) newErrors[q.id] = "Please select an option.";
-      }
+    if (rejected && id === "name") {
+      setFieldError(id, "Name can only contain letters.");
+    } else if (rejected && id === "phone") {
+      setFieldError(id, "Phone number can only contain digits.");
     }
-    return newErrors;
   }
 
-  function buildDetailsHtml() {
-    const rows = questions
-      .map((q) => {
-        const val = answers[q.id];
-        const display = Array.isArray(val) ? val.join(", ") : val || "-";
-        return `
-          <tr>
-            <td style="padding:10px 14px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;font-size:13px;font-weight:600;color:#475569;width:40%;">
-              ${q.label}
-            </td>
-            <td style="padding:10px 14px;background:#ffffff;border-bottom:1px solid #E2E8F0;font-size:13px;color:#1E293B;">
-              ${display}
-            </td>
-          </tr>`;
-      })
-      .join("");
-
-    return `<table style="width:100%;border-collapse:collapse;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;">${rows}</table>`;
-  }
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const errs = validate();
+  function onFormSubmit(e: FormEvent<HTMLFormElement>) {
+    handleSubmit(e);
+    const errs = validate(values);
     if (Object.keys(errs).length > 0) {
-      setErrors(errs);
       const firstError = document.getElementById(`q-${Object.keys(errs)[0]}`);
       firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-    setSending(true);
-    setSendError(null);
-
-    try {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          to_email: "olkevin099@gmail.com",
-          lead_name: answers.name,
-          lead_email: answers.email,
-          lead_phone: answers.phone,
-          submitted_at: new Date().toLocaleString("en-AU", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }),
-          details_html: buildDetailsHtml(),
-        },
-        EMAILJS_PUBLIC_KEY
-      );
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Email send failed:", err);
-      setSendError("Something went wrong sending your details. Please try again.");
-    } finally {
-      setSending(false);
     }
   }
 
@@ -251,7 +248,7 @@ export default function ContactPage() {
               We've received your details and will be in touch at your preferred time. One of our property specialists will review your profile and contact you shortly.
             </p>
             <button
-              onClick={() => { setSubmitted(false); setAnswers({}); }}
+              onClick={() => setSubmitted(false)}
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
             >
               Submit another response
@@ -287,121 +284,130 @@ export default function ContactPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={onFormSubmit} noValidate>
           <div className="mx-auto max-w-4xl px-4 sm:px-6 py-10 space-y-8">
 
-            {questions.map((q, idx) => (
-              <div
-                key={q.id}
-                id={`q-${q.id}`}
-                className="rounded-[24px] border border-slate-200/80 bg-gradient-to-br from-white via-sky-50/80 to-indigo-50/90 p-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-slate-100/80 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900/90 dark:shadow-[0_18px_45px_rgba(2,6,23,0.45)] dark:ring-slate-800/70 sm:p-6"
-              >
-                {/* Question label */}
-                <div className="mb-4">
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                      {idx + 1}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">
-                        {q.label}
-                      </p>
-                      {"sub" in q && q.sub && (
-                        <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{q.sub}</p>
-                      )}
+            {questions.map((q, idx) => {
+              // Only show an error once the field has been touched, or
+              // after a submit attempt has been made — same UX as before,
+              // where errors only appeared after validate() ran on submit
+              // or a value was set.
+              const showError = (touched[q.id] || submitCount > 0) && errors[q.id];
+
+              return (
+                <div
+                  key={q.id}
+                  id={`q-${q.id}`}
+                  className="rounded-[24px] border border-slate-200/80 bg-gradient-to-br from-white via-sky-50/80 to-indigo-50/90 p-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-slate-100/80 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900/90 dark:shadow-[0_18px_45px_rgba(2,6,23,0.45)] dark:ring-slate-800/70 sm:p-6"
+                >
+                  {/* Question label */}
+                  <div className="mb-4">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">
+                          {q.label}
+                        </p>
+                        {"sub" in q && q.sub && (
+                          <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{q.sub}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Single select */}
-                {q.type === "single" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:ml-9">
-                    {q.options!.map((opt) => {
-                      const selected = answers[q.id] === opt;
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setSingle(q.id, opt)}
-                          className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
-                            selected
-                              ? "border-sky-500 bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-500/25"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-sky-500 dark:hover:bg-slate-700"
-                          }`}
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                              selected ? "border-indigo-500 bg-indigo-500" : "border-slate-300 dark:border-slate-600"
-                            }`}>
-                              {selected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  {/* Single select */}
+                  {q.type === "single" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:ml-9">
+                      {q.options!.map((opt) => {
+                        const selected = values[q.id] === opt;
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setSingle(q.id, opt)}
+                            className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
+                              selected
+                                ? "border-sky-500 bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-500/25"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-sky-500 dark:hover:bg-slate-700"
+                            }`}
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                selected ? "border-indigo-500 bg-indigo-500" : "border-slate-300 dark:border-slate-600"
+                              }`}>
+                                {selected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                              </span>
+                              {opt}
                             </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Multi select */}
+                  {q.type === "multi" && (
+                    <div className="flex flex-wrap gap-2 sm:ml-9">
+                      {q.options!.map((opt) => {
+                        const selected = ((values[q.id] as string[]) || []).includes(opt);
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => toggleMulti(q.id, opt)}
+                            className={`rounded-full border px-4 py-2 text-xs font-semibold transition-all ${
+                              selected
+                                ? "border-sky-500 bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-sm shadow-sky-500/25"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-sky-500 dark:hover:bg-slate-700"
+                            }`}
+                          >
                             {opt}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                {/* Multi select */}
-                {q.type === "multi" && (
-                  <div className="flex flex-wrap gap-2 sm:ml-9">
-                    {q.options!.map((opt) => {
-                      const selected = ((answers[q.id] as string[]) || []).includes(opt);
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => toggleMulti(q.id, opt)}
-                          className={`rounded-full border px-4 py-2 text-xs font-semibold transition-all ${
-                            selected
-                              ? "border-sky-500 bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-sm shadow-sky-500/25"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-sky-500 dark:hover:bg-slate-700"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                  {/* Dropdown */}
+                  {q.type === "dropdown" && (
+                    <div className="sm:ml-9 relative">
+                      <select
+                        value={(values[q.id] as string) || ""}
+                        onChange={(e) => setSingle(q.id, e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm text-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      >
+                        <option value="" disabled>Select your state…</option>
+                        {q.options!.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  )}
 
-                {/* Dropdown */}
-                {q.type === "dropdown" && (
-                  <div className="sm:ml-9 relative">
-                    <select
-                      value={(answers[q.id] as string) || ""}
-                      onChange={(e) => setSingle(q.id, e.target.value)}
-                      className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm text-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    >
-                      <option value="" disabled>Select your state…</option>
-                      {q.options!.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  </div>
-                )}
+                  {/* Text input */}
+                  {q.type === "text" && (
+                    <div className="sm:ml-9">
+                      <input
+                        type={q.id === "email" ? "email" : q.id === "phone" ? "tel" : "text"}
+                        value={(values[q.id] as string) || ""}
+                        onChange={(e) => setText(q.id, e.target.value)}
+                        onBlur={() => setFieldTouched(q.id, true)}
+                        placeholder={"placeholder" in q ? q.placeholder : ""}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition-colors placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder:text-slate-500"
+                      />
+                    </div>
+                  )}
 
-                {/* Text input */}
-                {q.type === "text" && (
-                  <div className="sm:ml-9">
-                    <input
-                      type={q.id === "email" ? "email" : q.id === "phone" ? "tel" : "text"}
-                      value={(answers[q.id] as string) || ""}
-                      onChange={(e) => setText(q.id, e.target.value)}
-                      placeholder={"placeholder" in q ? q.placeholder : ""}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition-colors placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder:text-slate-500"
-                    />
-                  </div>
-                )}
-
-                {/* Error */}
-                {errors[q.id] && (
-                  <p className="sm:ml-9 mt-2 text-xs text-red-500 dark:text-red-400">{errors[q.id]}</p>
-                )}
-              </div>
-            ))}
+                  {/* Error */}
+                  {showError && (
+                    <p className="sm:ml-9 mt-2 text-xs text-red-500 dark:text-red-400">{errors[q.id]}</p>
+                  )}
+                </div>
+              );
+            })}
 
             {/* Submit */}
             <div className="pb-10">
@@ -410,10 +416,10 @@ export default function ContactPage() {
               )}
               <button
                 type="submit"
-                disabled={sending}
+                disabled={isSubmitting}
                 className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 via-cyan-500 to-indigo-600 px-8 py-4 text-sm font-bold text-white shadow-[0_16px_35px_rgba(14,116,144,0.28)] transition-all hover:scale-[1.01] hover:from-sky-500 hover:via-cyan-400 hover:to-indigo-500 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {sending ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
                     Sending…
