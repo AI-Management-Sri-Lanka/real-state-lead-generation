@@ -1,5 +1,5 @@
 // src/pages/dashboard/components/ChatSessionList.tsx
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Plus, MoreHorizontal, Pencil, Trash2, MessageSquare } from 'lucide-react'
 import { ChatSession } from '@/hooks/useChat'
 
@@ -19,7 +19,22 @@ const PLACEHOLDER_SESSIONS = [
 
 export function ChatSessionList({ sessions, onNew, onLoad }: Props) {
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
+  const openMenuRef = useRef<HTMLDivElement | null>(null)
   const hasRealSessions = sessions.length > 0
+
+  // Close the Rename/Delete menu when the user clicks anywhere outside it
+  useEffect(() => {
+    if (!menuOpen) return
+
+    function handleClickOutside(event: MouseEvent) {
+      if (openMenuRef.current && !openMenuRef.current.contains(event.target as Node)) {
+        setMenuOpen(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
 
   return (
     /*
@@ -120,8 +135,8 @@ export function ChatSessionList({ sessions, onNew, onLoad }: Props) {
           : sessions.map(s => (
               <div
                 key={s.id}
+                ref={menuOpen === s.id ? openMenuRef : undefined}
                 style={{ position: 'relative' }}
-                onMouseLeave={() => setMenuOpen(null)}
               >
                 <button
                   onClick={() => onLoad(s)}
