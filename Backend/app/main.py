@@ -132,6 +132,14 @@ app.include_router(session_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(property_router,  prefix="/api/v1")
 
+from app.api.v1.inquiry_router import router as inquiry_router
+from app.api.v1.owner_dashboard_router import router as owner_dashboard_router
+from app.api.v1.dashboard_router import router as dashboard_router
+
+app.include_router(inquiry_router, prefix="/api/v1")
+app.include_router(owner_dashboard_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
+
 from app.api.v1.admin_auth_router import router as admin_auth_router
 from app.api.v1.admin_manage_router import router as admin_manage_router
 from app.api.v1.admin_dashboard_router import router as admin_dashboard_router
