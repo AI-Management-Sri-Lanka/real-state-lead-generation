@@ -1,9 +1,12 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
+
+const DESKTOP_BREAKPOINT = 1024
 
 const LINKS: { label: string; to: string; authOnly?: boolean }[] = [
   { label: 'Home',         to: '/' },
@@ -39,6 +42,21 @@ export function Navbar() {
   const { toggle: toggleSidebar } = useSidebar()
   const [theme, setTheme] = useTheme()
   const styles = NAVBAR_STYLES[theme]
+
+  // Track desktop width in JS so the hamburger can be fully unrendered above
+  // the breakpoint — this can't be silently overridden by any conflicting
+  // global CSS the way a "lg:hidden" class could be.
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth >= DESKTOP_BREAKPOINT
+  )
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT}px)`)
+    const handleChange = () => setIsDesktop(mql.matches)
+    handleChange()
+    mql.addEventListener('change', handleChange)
+    return () => mql.removeEventListener('change', handleChange)
+  }, [])
 
   // Dashboard / AI Assistant only show up while you're actually inside the
   // dashboard section — public pages (Home, Properties, Contact) always show
@@ -105,7 +123,7 @@ export function Navbar() {
 
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle theme={theme} setTheme={setTheme} />
-            {isDashboard && (
+            {isDashboard && !isDesktop && (
               <button
                 className="navbar-sidebar-toggle"
                 onClick={toggleSidebar}
