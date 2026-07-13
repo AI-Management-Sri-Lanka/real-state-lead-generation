@@ -1,4 +1,8 @@
+import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { fetchOwnerDashboardStats, OwnerDashboardStats } from '@/api/dashboardApi'
+import { useAuth } from '@/hooks/useAuth'
+import { Loader2 } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -11,115 +15,16 @@ interface StatCard {
   accent: string;
 }
 
-interface Lead {
-  id: string;
-  initials: string;
-  name: string;
-  location: string;
-  amount: string;
-  score: "High" | "Medium" | "Low";
-  color: string;
-}
-
-interface SourceBar {
-  source: string;
-  percentage: number;
-  color: string;
-}
-
-interface ScoreBreakdown {
-  label: "High" | "Medium" | "Low";
-  percentage: number;
-  color: string;
-}
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const statCards: StatCard[] = [
-  {
-    value: 248,
-    label: "Total leads",
-    trend: "+12 this week",
-    trendPositive: true,
-    accent: "#e8f0fe",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4f7df3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ),
-  },
-  {
-    value: 34,
-    label: "Qualified leads",
-    trend: "+5 this week",
-    trendPositive: true,
-    accent: "#fef9e7",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5a623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-    ),
-  },
-  {
-    value: 12,
-    label: "New today",
-    trend: "+3 vs yesterday",
-    trendPositive: true,
-    accent: "#eaf7fb",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2dc8e0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-      </svg>
-    ),
-  },
-  {
-    value: "87%",
-    label: "AI match rate",
-    trend: "+2% this month",
-    trendPositive: true,
-    accent: "#edfaf3",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-        <polyline points="16 7 22 7 22 13"/>
-      </svg>
-    ),
-  },
-];
-
-const sourceBars: SourceBar[] = [
-  { source: "Facebook", percentage: 60, color: "#4f7df3" },
-  { source: "Instagram", percentage: 30, color: "#f5a623" },
-  { source: "TikTok", percentage: 10, color: "#a78bfa" },
-];
-
-const scoreBreakdown: ScoreBreakdown[] = [
-  { label: "High", percentage: 14, color: "#27ae60" },
-  { label: "Medium", percentage: 36, color: "#f5a623" },
-  { label: "Low", percentage: 50, color: "#e74c3c" },
-];
-
-const recentLeads: Lead[] = [
-  { id: "1", initials: "DK", name: "Dilanka K.", location: "Colombo 7", amount: "$150k", score: "High", color: "#4f7df3" },
-  { id: "2", initials: "NP", name: "Nadia P.", location: "Nugegoda", amount: "$120k", score: "Medium", color: "#27ae60" },
-  { id: "3", initials: "RS", name: "Roshan S.", location: "Mt. Lavinia", amount: "$90k", score: "Low", color: "#e74c3c" },
-  { id: "4", initials: "KM", name: "Kumari M.", location: "Colombo 3", amount: "$180k", score: "High", color: "#f5a623" },
-  { id: "5", initials: "AP", name: "Ashan P.", location: "Battaramulla", amount: "$110k", score: "Medium", color: "#9b59b6" },
-];
-
 // ─── Score Badge ──────────────────────────────────────────────────────────────
 
-const scoreBadgeStyle = (score: Lead["score"]): React.CSSProperties => {
-  const map = {
+const scoreBadgeStyle = (score: string): React.CSSProperties => {
+  const map: Record<string, { background: string; color: string }> = {
     High: { background: "#edfaf3", color: "#27ae60" },
     Medium: { background: "#fef9e7", color: "#d4890a" },
     Low: { background: "#fdecea", color: "#e74c3c" },
   };
   return {
-    ...map[score],
+    ...(map[score] || map.Low),
     padding: "3px 12px",
     borderRadius: 20,
     fontSize: 12,
@@ -131,13 +36,108 @@ const scoreBadgeStyle = (score: Lead["score"]): React.CSSProperties => {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { user } = useAuth()
+  const [stats, setStats] = useState<OwnerDashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchOwnerDashboardStats()
+      .then(setStats)
+      .catch(err => {
+        console.error(err)
+        setError('Failed to load owner statistics')
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const greetingName = user?.full_name ? user.full_name.split(' ')[0] : 'Owner'
+
+  const statCardsData: StatCard[] = [
+    {
+      value: stats?.total_leads ?? 0,
+      label: "Total leads",
+      trend: "All properties",
+      trendPositive: true,
+      accent: "#e8f0fe",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4f7df3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      ),
+    },
+    {
+      value: stats?.qualified_leads ?? 0,
+      label: "Qualified leads",
+      trend: "High & Medium match",
+      trendPositive: true,
+      accent: "#fef9e7",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5a623" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      ),
+    },
+    {
+      value: stats?.new_leads_today ?? 0,
+      label: "New today",
+      trend: "Last 24 hours",
+      trendPositive: (stats?.new_leads_today ?? 0) > 0,
+      accent: "#eaf7fb",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2dc8e0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      ),
+    },
+    {
+      value: stats?.ai_match_rate ?? "0%",
+      label: "AI match rate",
+      trend: "Priority confidence",
+      trendPositive: true,
+      accent: "#edfaf3",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+          <polyline points="16 7 22 7 22 13"/>
+        </svg>
+      ),
+    },
+  ];
+
+  if (loading) {
+    return (
+      <DashboardLayout activeNav="Dashboard">
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-center flex flex-col items-center gap-2">
+            <Loader2 className="animate-spin text-indigo-600" size={36} />
+            <p className="text-sm text-slate-500">Loading your dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout activeNav="Dashboard">
+        <div className="flex h-screen items-center justify-center text-red-500 font-semibold">
+          {error}
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout activeNav="Dashboard">
       <div style={{ padding: 24, paddingBottom: 36, minHeight: '100%', boxSizing: 'border-box' }}>
         {/* Greeting */}
           <div style={{ marginBottom: 20 }}>
             <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text-heading)', margin: 0, letterSpacing: '-0.01em' }}>
-              Good morning, Asanka 👋
+              Good morning, {greetingName} 👋
             </h1>
             <p style={{ marginTop: 6, color: 'var(--color-text-secondary)', fontSize: 14 }}>
               Here's what's happening with your leads today.
@@ -146,7 +146,7 @@ export default function DashboardPage() {
 
           {/* Stat Cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, marginBottom: 28 }}>
-            {statCards.map((card) => (
+            {statCardsData.map((card) => (
               <StatCardItem key={card.label} card={card} />
             ))}
           </div>
@@ -168,11 +168,11 @@ export default function DashboardPage() {
               <div>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Leads by source</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {sourceBars.map((bar) => (
+                  {(stats?.leads_by_source || []).map((bar) => (
                     <div key={bar.source}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, color: 'var(--color-text-secondary)' }}>
                         <span>{bar.source}</span>
-                        <span style={{ fontWeight: 600 }}>{bar.percentage}%</span>
+                        <span style={{ fontWeight: 600 }}>{bar.percentage}% ({bar.amount})</span>
                       </div>
                       <div style={{ height: 8, background: 'var(--color-bg-muted)', borderRadius: 999, overflow: "hidden" }}>
                         <div style={{
@@ -192,7 +192,7 @@ export default function DashboardPage() {
               <div>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Match score breakdown</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {scoreBreakdown.map((row) => (
+                  {(stats?.score_breakdown || []).map((row) => (
                     <div key={row.label}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, color: 'var(--color-text-secondary)' }}>
                         <span>{row.label}</span>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
             }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Recent leads</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {recentLeads.map((lead) => (
+                {(stats?.recent_leads || []).map((lead) => (
                   <div key={lead.id} style={{
                     display: "flex",
                     alignItems: "center",
@@ -252,6 +252,11 @@ export default function DashboardPage() {
                     <span style={scoreBadgeStyle(lead.score)}>{lead.score}</span>
                   </div>
                 ))}
+                {(stats?.recent_leads || []).length === 0 && (
+                  <div style={{ textAlign: 'center', fontSize: 14, color: 'var(--color-text-secondary)', padding: '20px 0' }}>
+                    No leads received yet.
+                  </div>
+                )}
               </div>
 
               {/* <div style={{ marginTop: 22, textAlign: "right" }}>

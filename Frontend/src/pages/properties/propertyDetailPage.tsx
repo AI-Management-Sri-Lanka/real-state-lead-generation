@@ -110,24 +110,25 @@ export default function PropertyDetailPage() {
           EMAILJS_PUBLIC_KEY
         )
 
-        const payload: InquiryPayload = {
+        const rawPropertyId = typeof property.id === 'string' && property.id.startsWith('prop-')
+          ? parseInt(property.id.split('-')[1], 10)
+          : Number(property.id)
+
+        const payload = {
           name:    values.name.trim(),
           email:   values.email.trim(),
           phone:   values.phone.trim() || undefined,
           message: values.message.trim(),
-          propertyId: property.id,
+          propertyId: rawPropertyId,
+          source: 'property_page'
         }
 
-        try {
-          const res = await fetch(`${BASE_URL}/inquiries`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          })
-          if (!res.ok) throw new Error('Request failed')
-        } catch {
-          console.warn('Inquiry endpoint not available — showing mock success.')
-        }
+        const res = await fetch(`${BASE_URL}/inquiries`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error('Failed to save inquiry to database')
 
         setSubmitted(true)
       } catch (err) {
