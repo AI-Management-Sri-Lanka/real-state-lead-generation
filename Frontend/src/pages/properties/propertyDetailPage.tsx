@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
-  ArrowLeft, BedDouble, Bath, Ruler, MapPin, Building2,
-  CheckCircle2, Loader2, ShieldCheck, User, Mail, Phone,
+  ArrowLeft, BedDouble, Bath, Ruler, MapPin,
+  CheckCircle2, Loader2, ShieldCheck, User, Mail,
 } from 'lucide-react'
 
 import emailjs from '@emailjs/browser'
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
+
+import { Navbar } from '@/pages/home/components/Navbar'
+import { Footer } from '@/pages/home/components/Footer'
 
 const EMAILJS_SERVICE_ID          = 'service_zx94q0s'
 const EMAILJS_TEMPLATE_ID         = 'template_s0pzf6g'   // inquiry → agent
@@ -25,17 +30,30 @@ function formatPrice(price: number, currency: string, listingType: string) {
     : `${formatted} ${currency}`
 }
 
-// Only letters, spaces, hyphens and apostrophes are valid in a name
-// (covers names like "Anne-Marie" or "O'Brien").
-const NAME_PATTERN = /^[A-Za-z\s'-]*$/
+const NAME_REGEX  = /^[A-Za-z\s'-]+$/
+const PHONE_REGEX = /^(0\d{9}|\+94\d{9})$/
 
-// Basic but solid email shape check: something@something.tld
-// (rejects missing @, missing domain, etc.)
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-// Sri Lankan phone numbers: either local (0 + 9 digits, e.g. 0771234567)
-// or international (+94 + 9 digits, e.g. +94771234567).
-const PHONE_PATTERN = /^(0\d{9}|\+94\d{9})$/
+const inquiryValidationSchema = Yup.object({
+  name: Yup.string()
+    .trim()
+    .required('Name is required.')
+    .matches(NAME_REGEX, 'Name can only contain letters, spaces, apostrophes and hyphens.')
+    .min(2, 'Name must be at least 2 characters.'),
+  email: Yup.string()
+    .trim()
+    .required('Email is required.')
+    .email('Please enter a valid email address.'),
+  phone: Yup.string()
+    .trim()
+    .test(
+      'valid-phone',
+      'Please enter a valid phone number (e.g. 07X XXX XXXX or +94 7X XXX XXXX).',
+      (value) => !value || PHONE_REGEX.test(value)
+    ),
+  message: Yup.string()
+    .trim()
+    .required('Message is required.'),
+})
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -43,18 +61,83 @@ export default function PropertyDetailPage() {
   const location = useLocation()
   const backUrl = location.state?.from || '/properties'
   const backLabel = backUrl.includes('/dashboard') ? 'Back to my properties' : 'Back to listings'
-  
+
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
 
-  const [form, setForm]             = useState({ name: '', email: '', phone: '', message: '' })
-  const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted]   = useState(false)
-  const [error, setError]           = useState<string | null>(null)
-  const { isAuthenticated, user }   = useAuth()
-  
+  const [submitted, setSubmitted] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
+  const { isAuthenticated, user }  = useAuth()
+
   const isOwner = isAuthenticated && user?.id === property?.owner?.id
+
+  const formik = useFormik({
+    initialValues: { name: '', email: '', phone: '', message: '' },
+    validationSchema: inquiryValidationSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
+    onSubmit: async (values, { setSubmitting }) => {
+      if (!property) return
+      setSendError(null)
+
+      try {
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          {
+            from_name:         values.name.trim(),
+            from_email:        values.email.trim(),
+            phone:             values.phone.trim() || 'Not provided',
+            message:           values.message.trim(),
+            property_title:    property.title,
+            property_price:    `${property.price.toLocaleString()} ${property.currency}`,
+            property_location: property.location,
+          },
+          EMAILJS_PUBLIC_KEY
+        )
+
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_CONFIRM_TEMPLATE_ID,
+          {
+            to_name:           values.name.trim(),
+            to_email:          values.email.trim(),
+            property_title:    property.title,
+            property_price:    `${property.price.toLocaleString()} ${property.currency}`,
+            property_location: property.location,
+          },
+          EMAILJS_PUBLIC_KEY
+        )
+
+        const payload: InquiryPayload = {
+          name:    values.name.trim(),
+          email:   values.email.trim(),
+          phone:   values.phone.trim() || undefined,
+          message: values.message.trim(),
+          propertyId: property.id,
+        }
+
+        try {
+          const res = await fetch(`${BASE_URL}/inquiries`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+          if (!res.ok) throw new Error('Request failed')
+        } catch {
+          console.warn('Inquiry endpoint not available — showing mock success.')
+        }
+
+        setSubmitted(true)
+      } catch (err) {
+        console.error('EmailJS error:', err)
+        setSendError('Failed to send inquiry. Please try again.')
+      } finally {
+        setSubmitting(false)
+      }
+    },
+  })
 
   useEffect(() => {
     async function fetchProperty() {
@@ -85,159 +168,56 @@ export default function PropertyDetailPage() {
 
   if (loading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-900">
-        <div className="text-center flex flex-col items-center gap-2">
-          <Loader2 className="animate-spin text-indigo-600" size={36} />
-          <p className="text-sm text-slate-500">Loading property details...</p>
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+        <Navbar />
+        <div className="grid flex-1 place-items-center">
+          <div className="text-center flex flex-col items-center gap-2">
+            <Loader2 className="animate-spin text-indigo-600" size={36} />
+            <p className="text-sm text-slate-500">Loading property details...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   if (fetchError || !property) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-900">
-        <div className="text-center">
-          <p className="text-lg font-semibold">{fetchError ?? 'Property not found'}</p>
-          <Link to="/properties" className="mt-3 inline-block text-sm text-indigo-600 font-medium hover:underline">
-            Back to listings
-          </Link>
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+        <Navbar />
+        <div className="grid flex-1 place-items-center">
+          <div className="text-center">
+            <p className="text-lg font-semibold">{fetchError ?? 'Property not found'}</p>
+            <Link to="/properties" className="mt-3 inline-block text-sm text-indigo-600 font-medium hover:underline">
+              Back to listings
+            </Link>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
-  function update<K extends keyof typeof form>(key: K, value: string) {
-    // The name field should only ever contain letters, spaces, hyphens and
-    // apostrophes — strip out anything else (digits, symbols) as it's typed
-    // or pasted, so numeric input is never accepted in the first place.
-    // The phone field should only ever contain digits, with an optional
-    // leading "+" for the country code — strip letters and other symbols.
-    let sanitized = value
-    if (key === 'name') sanitized = value.replace(/[^A-Za-z\s'-]/g, '')
-    if (key === 'phone') {
-      const hasPlus = value.trim().startsWith('+')
-      const digits = value.replace(/\D/g, '').slice(0, 11)
-      sanitized = (hasPlus ? '+' : '') + digits
-    }
-    setForm(prev => ({ ...prev, [key]: sanitized }))
+  // Block invalid characters as the user types, on top of Formik/Yup validation
+  // on blur & submit. This stops digits from ever landing in the Name field,
+  // and stops letters/extra digits from landing in the Phone field.
+  function handleNameChange(raw: string) {
+    const sanitized = raw.replace(/[^A-Za-z\s'-]/g, '')
+    formik.setFieldValue('name', sanitized)
   }
 
-  async function handleSubmit() {
-    if (!property) return
-
-    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
-      setError('Please fill in your name, email and message.')
-      return
-    }
-
-    if (!NAME_PATTERN.test(form.name.trim())) {
-      setError('Name can only contain letters.')
-      return
-    }
-
-    if (!EMAIL_PATTERN.test(form.email.trim())) {
-      setError('Please enter a valid email address.')
-      return
-    }
-
-    if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
-      setError('Please enter a valid phone number (e.g. 07X XXX XXXX or +94 7X XXX XXXX).')
-      return
-    }
-
-    setError(null)
-    setSubmitting(true)
-
-    try {
-      // ① Inquiry notification → agent only
-      //    (make sure Auto-Reply is OFF on template_s0pzf6g in EmailJS dashboard)
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          from_name:         form.name.trim(),
-          from_email:        form.email.trim(),
-          phone:             form.phone.trim() || 'Not provided',
-          message:           form.message.trim(),
-          property_title:    property.title,
-          property_price:    `${property.price.toLocaleString()} ${property.currency}`,
-          property_location: property.location,
-        },
-        EMAILJS_PUBLIC_KEY
-      )
-
-      // ② Confirmation receipt → user's typed email
-      //    (To Email in template_v2ux0ph must be {{to_email}})
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_CONFIRM_TEMPLATE_ID,
-        {
-          to_name:           form.name.trim(),
-          to_email:          form.email.trim(),
-          property_title:    property.title,
-          property_price:    `${property.price.toLocaleString()} ${property.currency}`,
-          property_location: property.location,
-        },
-        EMAILJS_PUBLIC_KEY
-      )
-
-      // ③ Optionally log the inquiry to our own backend.
-      //    This endpoint may not exist yet — a failure here shouldn't block
-      //    the success UI, since the emails above are what actually matters.
-      const payload: InquiryPayload = {
-        name:    form.name.trim(),
-        email:   form.email.trim(),
-        phone:   form.phone.trim() || undefined,
-        message: form.message.trim(),
-        propertyId: property.id,
-      }
-
-      try {
-        const res = await fetch(`${BASE_URL}/inquiries`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        if (!res.ok) throw new Error('Request failed')
-      } catch {
-        console.warn('Inquiry endpoint not available — showing mock success.')
-      }
-
-      setSubmitted(true)
-    } catch (err) {
-      console.error('EmailJS error:', err)
-      setError('Failed to send inquiry. Please try again.')
-    } finally {
-      setSubmitting(false)
-    }
+  function handlePhoneChange(raw: string) {
+    const hasPlus = raw.trim().startsWith('+')
+    const digits = raw.replace(/\D/g, '').slice(0, 11)
+    const sanitized = (hasPlus ? '+' : '') + digits
+    formik.setFieldValue('phone', sanitized)
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      <Navbar />
 
-      {/* ── Top nav ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center gap-2 transition hover:opacity-80">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-200">
-              <Building2 size={18} />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900">LeadAI Properties</span>
-          </Link>
-          <nav className="flex items-center gap-6 text-sm font-medium text-slate-600">
-            <Link to="/"           className="hover:text-indigo-600 transition">Home</Link>
-            <Link to="/properties" className="hover:text-indigo-600 transition">Properties</Link>
-            {isAuthenticated ? (
-              <Link to="/dashboard" className="hover:text-indigo-600 transition">Dashboard</Link>
-            ) : (
-              <Link to="/auth/signin" className="hover:text-indigo-600 transition">Sign in</Link>
-            )}
-          </nav>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <button
           onClick={() => navigate(backUrl)}
           className="mb-6 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition"
@@ -284,7 +264,7 @@ export default function PropertyDetailPage() {
             <div className="mt-10 rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Description</h3>
               <p className="text-base leading-relaxed text-slate-600">{property.description || 'No description provided.'}</p>
-              
+
               <hr className="my-8 border-slate-100" />
 
               <h3 className="text-lg font-bold text-slate-900 mb-4">Property details</h3>
@@ -355,10 +335,10 @@ export default function PropertyDetailPage() {
                   </div>
                   <p className="text-lg font-bold text-slate-900">Inquiry sent!</p>
                   <p className="text-sm text-slate-600">
-                    Thanks {form.name.split(' ')[0]}! The listing agent will get back to you shortly.
+                    Thanks {formik.values.name.split(' ')[0]}! The listing agent will get back to you shortly.
                   </p>
                   <p className="text-sm font-medium text-indigo-600 mt-2 bg-indigo-50 px-4 py-2 rounded-lg">
-                    A confirmation email has been sent to {form.email}
+                    A confirmation email has been sent to {formik.values.email}
                   </p>
                 </div>
               ) : (
@@ -368,38 +348,72 @@ export default function PropertyDetailPage() {
                     Send a message and the listing agent will get back to you.
                   </p>
 
-                  <div className="mt-6 space-y-4">
-                    <Field label="Name"  placeholder="Your name"       value={form.name}    onChange={v => update('name', v)} />
-                    <Field label="Email" placeholder="you@email.com"   value={form.email}   onChange={v => update('email', v)} type="email" />
-                    <Field label="Phone" placeholder="+94 7X XXX XXXX" value={form.phone}   onChange={v => update('phone', v)} />
+                  <form onSubmit={formik.handleSubmit} noValidate className="mt-6 space-y-4">
+                    <Field
+                      label="Name"
+                      placeholder="Your name"
+                      value={formik.values.name}
+                      onChange={handleNameChange}
+                      onBlur={formik.handleBlur}
+                      name="name"
+                      error={formik.touched.name ? formik.errors.name : undefined}
+                    />
+                    <Field
+                      label="Email"
+                      placeholder="you@email.com"
+                      value={formik.values.email}
+                      onChange={v => formik.setFieldValue('email', v)}
+                      onBlur={formik.handleBlur}
+                      name="email"
+                      type="email"
+                      error={formik.touched.email ? formik.errors.email : undefined}
+                    />
+                    <Field
+                      label="Phone"
+                      placeholder="+94 7X XXX XXXX"
+                      value={formik.values.phone}
+                      onChange={handlePhoneChange}
+                      onBlur={formik.handleBlur}
+                      name="phone"
+                      error={formik.touched.phone ? formik.errors.phone : undefined}
+                    />
                     <div>
                       <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Message</label>
                       <textarea
-                        value={form.message}
-                        onChange={e => update('message', e.target.value)}
+                        name="message"
+                        value={formik.values.message}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         placeholder="I'm interested in this property and would like to schedule a viewing."
                         rows={4}
                         className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
                       />
+                      {formik.touched.message && formik.errors.message && (
+                        <p className="mt-1.5 text-xs font-medium text-red-500">{formik.errors.message}</p>
+                      )}
                     </div>
 
-                    {error && <p className="text-sm font-medium text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
+                    {sendError && (
+                      <p className="text-sm font-medium text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{sendError}</p>
+                    )}
 
                     <button
-                      onClick={handleSubmit}
-                      disabled={submitting}
+                      type="submit"
+                      disabled={formik.isSubmitting}
                       className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
                     >
-                      {submitting && <Loader2 size={16} className="animate-spin" />}
-                      {submitting ? 'Sending inquiry…' : 'Send inquiry'}
+                      {formik.isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                      {formik.isSubmitting ? 'Sending inquiry…' : 'Send inquiry'}
                     </button>
-                  </div>
+                  </form>
                 </>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   )
 }
@@ -416,24 +430,34 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function Field({
-  label, value, onChange, placeholder, type = 'text',
+  label, value, onChange, onBlur, placeholder, name, type = 'text', error,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void
   placeholder: string
+  name: string
   type?: string
+  error?: string
 }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</label>
       <input
         type={type}
+        name={name}
         value={value}
         onChange={e => onChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
+        className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-sm ${
+          error
+            ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+            : 'border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+        }`}
       />
+      {error && <p className="mt-1.5 text-xs font-medium text-red-500">{error}</p>}
     </div>
   )
 }

@@ -84,7 +84,7 @@ const questions = [
     id: "phone",
     label: "Your phone number",
     type: "text",
-    placeholder: "e.g. 04XX XXX XXX",
+    placeholder: "e.g. 0412345678",
   },
 ];
 
@@ -92,11 +92,14 @@ const EMAILJS_SERVICE_ID = "service_j04bg14";
 const EMAILJS_TEMPLATE_ID = "template_hqwgj6x";
 const EMAILJS_PUBLIC_KEY = "a86EnkBTiFCWDxu1F";
 
-const NAME_PATTERN = /^[A-Za-z\s'-]*$/;
+// Must start with a letter, then 1–49 more letters/spaces/hyphens/apostrophes
+// (2–50 chars total). Rejects digit-only, symbol-only, or blank-ish values.
+const NAME_PATTERN = /^[A-Za-z][A-Za-z\s'-]{1,49}$/;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const PHONE_PATTERN = /^0\d{9}$/;
+// 1–10 digits, numeric only
+const PHONE_PATTERN = /^\d{1,10}$/;
 
 const initialValues: FormValues = questions.reduce((acc, q) => {
   acc[q.id] = q.type === "multi" ? [] : "";
@@ -110,12 +113,12 @@ function validate(values: FormValues) {
     if (q.type === "text") {
       if (!val || !(val as string).trim()) {
         newErrors[q.id] = "This field is required.";
-      } else if (q.id === "name" && !NAME_PATTERN.test(val as string)) {
-        newErrors[q.id] = "Name can only contain letters.";
+      } else if (q.id === "name" && !NAME_PATTERN.test((val as string).trim())) {
+        newErrors[q.id] = "Please enter a valid name (letters only, 2–50 characters).";
       } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
         newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
       } else if (q.id === "phone" && !PHONE_PATTERN.test((val as string).trim())) {
-        newErrors[q.id] = "Please enter a valid 10-digit phone number (e.g. 04XX XXX XXX).";
+        newErrors[q.id] = "Please enter a valid phone number (numeric values only, 1–10 digits).";
       }
     } else if (q.type === "multi") {
       if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
@@ -185,7 +188,7 @@ export default function ContactPage() {
     },
   });
 
-  const { values, errors, touched, setFieldValue, setFieldTouched, setFieldError, handleSubmit, isSubmitting, submitCount } = formik;
+  const { values, errors, touched, setFieldValue, setFieldTouched, handleSubmit, isSubmitting, submitCount } = formik;
 
   function setSingle(id: string, val: string) {
     setFieldValue(id, val);
@@ -198,29 +201,9 @@ export default function ContactPage() {
     setFieldValue(id, next);
     setFieldTouched(id, true, false);
   }
-
   function setText(id: string, val: string) {
-    let sanitized = val;
-    let rejected = false;
-
-    if (id === "name") {
-      sanitized = val.replace(/[^A-Za-z\s'-]/g, "");
-      rejected = sanitized !== val;
-    }
-    if (id === "phone") {
-      const digitsOnly = val.replace(/\D/g, "");
-      rejected = digitsOnly !== val; 
-      sanitized = digitsOnly.slice(0, 10);
-    }
-
-    setFieldValue(id, sanitized);
+    setFieldValue(id, val);
     setFieldTouched(id, true, false);
-
-    if (rejected && id === "name") {
-      setFieldError(id, "Name can only contain letters.");
-    } else if (rejected && id === "phone") {
-      setFieldError(id, "Phone number can only contain digits.");
-    }
   }
 
   function onFormSubmit(e: FormEvent<HTMLFormElement>) {
@@ -288,10 +271,6 @@ export default function ContactPage() {
           <div className="mx-auto max-w-4xl px-4 sm:px-6 py-10 space-y-8">
 
             {questions.map((q, idx) => {
-              // Only show an error once the field has been touched, or
-              // after a submit attempt has been made — same UX as before,
-              // where errors only appeared after validate() ran on submit
-              // or a value was set.
               const showError = (touched[q.id] || submitCount > 0) && errors[q.id];
 
               return (
@@ -392,6 +371,18 @@ export default function ContactPage() {
                     <div className="sm:ml-9">
                       <input
                         type={q.id === "email" ? "email" : q.id === "phone" ? "tel" : "text"}
+                        inputMode={q.id === "phone" ? "numeric" : undefined}
+                        pattern={
+                          q.id === "phone"
+                            ? "\\d{1,10}"
+                            : q.id === "name"
+                            ? "[A-Za-z\\s'-]+"
+                            : undefined
+                        }
+                        maxLength={q.id === "phone" ? 10 : q.id === "name" ? 50 : undefined}
+                        autoComplete={
+                          q.id === "name" ? "name" : q.id === "email" ? "email" : q.id === "phone" ? "tel" : "off"
+                        }
                         value={(values[q.id] as string) || ""}
                         onChange={(e) => setText(q.id, e.target.value)}
                         onBlur={() => setFieldTouched(q.id, true)}

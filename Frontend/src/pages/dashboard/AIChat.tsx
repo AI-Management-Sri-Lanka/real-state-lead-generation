@@ -148,9 +148,6 @@ function LeadsGrid({ leads }: { leads: Lead[] }) {
   );
 }
 
-// Decide whether the backend's message text is just a generic/empty
-// placeholder (so we should replace it with an honest "no leads" message)
-// vs. a specific error/explanation we should preserve as-is.
 function isGenericNoResultsMessage(content: string): boolean {
   const trimmed = content.trim();
   if (!trimmed) return true;
@@ -210,7 +207,6 @@ export default function AIChat() {
     } catch { return []; }
   });
 
-  // Persist sessions to localStorage whenever they change
   useEffect(() => {
     try {
       localStorage.setItem("leadai_sessions", JSON.stringify(sessions));
@@ -623,6 +619,14 @@ export default function AIChat() {
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Chat history</h2>
                   </div>
                   <div className="flex items-center gap-2">
+
+                    <button
+                      type="button"
+                      onClick={handleNewChat}
+                      className="inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 text-sm font-semibold !text-white shadow-[0_10px_25px_rgba(14,116,144,0.24)] transition hover:from-sky-400 hover:to-indigo-500"
+                    >
+                      <Plus size={16} /> 
+                    </button>
                     <button
                       type="button"
                       onClick={() => setSidebarOpen(false)}
@@ -630,13 +634,6 @@ export default function AIChat() {
                       aria-label="Close sidebar"
                     >
                       <PanelLeftClose size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleNewChat}
-                      className="inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 text-sm font-semibold !text-white shadow-[0_10px_25px_rgba(14,116,144,0.24)] transition hover:from-sky-400 hover:to-indigo-500"
-                    >
-                      <Plus size={16} /> New chat
                     </button>
                   </div>
                 </div>
@@ -669,22 +666,32 @@ export default function AIChat() {
                         </button>
 
                         {activeMenu === session.id && (
-                          <div className="absolute right-4 top-full z-20 mt-2 w-44 rounded-3xl border border-sky-200/80 bg-white/95 p-2 shadow-[0_10px_25px_rgba(15,23,42,0.08)] dark:border-slate-800/80 dark:bg-slate-950 dark:shadow-panel">
-                            <button
-                              type="button"
-                              onClick={() => handleRename(session.id)}
-                              className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-900"
-                            >
-                              <Edit2 size={16} /> Rename
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(session.id)}
-                              className="mt-1 flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-red-400 transition hover:bg-slate-900"
-                            >
-                              <Trash2 size={16} /> Delete
-                            </button>
-                          </div>
+                          <>
+                            {/* Invisible click-catcher: closes the menu on any outside click.
+                                z-10 sits below the menu's z-20, so the menu itself still
+                                receives its own clicks normally. Same fixed-inset-0 pattern
+                                already used by the Rename/Delete modals below. */}
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setActiveMenu(null)}
+                            />
+                            <div className="absolute right-4 top-full z-20 mt-2 w-44 rounded-3xl border border-sky-200/80 bg-white/95 p-2 shadow-[0_10px_25px_rgba(15,23,42,0.08)] dark:border-slate-800/80 dark:bg-slate-950 dark:shadow-panel">
+                              <button
+                                type="button"
+                                onClick={() => handleRename(session.id)}
+                                className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-900"
+                              >
+                                <Edit2 size={16} /> Rename
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(session.id)}
+                                className="mt-1 flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-red-400 transition hover:bg-slate-900"
+                              >
+                                <Trash2 size={16} /> Delete
+                              </button>
+                            </div>
+                          </>
                         )}
                       </div>
                     );

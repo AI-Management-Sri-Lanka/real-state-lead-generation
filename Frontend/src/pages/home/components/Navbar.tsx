@@ -4,12 +4,12 @@ import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
-import { useAuth } from '@/hooks/useAuth'
 
-const LINKS: { label: string; to: string }[] = [
+const LINKS: { label: string; to: string; authOnly?: boolean }[] = [
+  { label: 'Home',         to: '/' },
   { label: 'Properties',   to: '/properties' },
-  { label: 'Dashboard',    to: '/dashboard' },
-  { label: 'AI Assistant', to: '/dashboard/ai-assistant' },
+  { label: 'Dashboard',    to: '/dashboard',              authOnly: true },
+  { label: 'AI Assistant', to: '/dashboard/ai-assistant', authOnly: true },
   { label: 'Contact',      to: '/contact' },
 ]
 
@@ -36,11 +36,21 @@ export function Navbar() {
   const location = useLocation()
   const showSignIn = !location.pathname.startsWith('/dashboard')
   const isDashboard = location.pathname.startsWith('/dashboard')
-  const isContact = location.pathname === '/contact'
   const { toggle: toggleSidebar } = useSidebar()
   const [theme, setTheme] = useTheme()
-  const { isAuthenticated } = useAuth()
   const styles = NAVBAR_STYLES[theme]
+
+  const visibleLinks = LINKS.filter(link => !link.authOnly || isDashboard)
+
+  const activeLabel = visibleLinks.reduce<string | null>((best, link) => {
+    const isMatch =
+      link.to === '/'
+        ? location.pathname === '/'
+        : location.pathname === link.to || location.pathname.startsWith(link.to + '/')
+    if (!isMatch) return best
+    const bestTo = visibleLinks.find(l => l.label === best)?.to ?? ''
+    return link.to.length > bestTo.length ? link.label : best
+  }, null)
 
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
@@ -52,8 +62,8 @@ export function Navbar() {
 
         <nav className="flex items-center gap-4" style={{ marginLeft: 'auto' }}>
           <div className="hidden md:flex" style={{ gap: 4, alignItems: 'center' }}>
-            {LINKS.map(({ label, to }) => {
-              const active = location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to))
+            {visibleLinks.map(({ label, to }) => {
+              const active = label === activeLabel
               return (
                 <Link
                   key={label}
@@ -101,27 +111,15 @@ export function Navbar() {
               </button>
             )}
             {showSignIn && (
-              isAuthenticated ? (
-                <Link
-                  to="/dashboard"
-                  className="hidden md:inline-flex"
-                  style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <Link
-                  to="/auth/signin"
-                  className="hidden md:inline-flex"
-                  style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
-                >
-                  Sign in
-                </Link>
-              )
+              <Link
+                to="/auth/signin"
+                className="hidden md:inline-flex"
+                style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
+              >
+                Sign in
+              </Link>
             )}
           </div>
         </nav>
