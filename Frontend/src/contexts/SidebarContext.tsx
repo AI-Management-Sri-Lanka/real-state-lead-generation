@@ -14,6 +14,8 @@ const COLLAPSE_STORAGE_KEY = 'sidebar:collapsed'
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
+  // Desktop sidebar — expanded by default, collapses in place
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -34,7 +36,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     </SidebarContext.Provider>
   )
 }
-
 export function useSidebar() {
   const context = useContext(SidebarContext)
   if (!context) {

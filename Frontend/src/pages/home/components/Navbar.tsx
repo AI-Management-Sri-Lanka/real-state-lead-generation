@@ -40,8 +40,14 @@ export function Navbar() {
   const [theme, setTheme] = useTheme()
   const styles = NAVBAR_STYLES[theme]
 
+  // Dashboard / AI Assistant only show up while you're actually inside the
+  // dashboard section — public pages (Home, Properties, Contact) always show
+  // the simple nav, even for a signed-in user.
   const visibleLinks = LINKS.filter(link => !link.authOnly || isDashboard)
 
+  // Pick the single most specific matching link (longest "to"), so nested
+  // routes like /dashboard/ai-assistant only highlight "AI Assistant" and
+  // not also "Dashboard".
   const activeLabel = visibleLinks.reduce<string | null>((best, link) => {
     const isMatch =
       link.to === '/'

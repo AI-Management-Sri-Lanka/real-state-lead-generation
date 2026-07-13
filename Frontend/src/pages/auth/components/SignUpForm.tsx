@@ -38,7 +38,7 @@ export function SignUpForm() {
     try {
       await signUp(form.values.name, form.values.email, form.values.password);
       toast.success("Account created! Welcome.");
-      navigate("/dashboard/ai-assistant");
+      navigate("/dashboard");
     } catch (err: unknown) {
       toast.error((err as Error).message ?? "Sign up failed", { id: "signup-error" });
     } finally {
