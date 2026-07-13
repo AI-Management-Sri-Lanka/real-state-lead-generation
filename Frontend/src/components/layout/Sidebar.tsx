@@ -1,13 +1,13 @@
 // src/components/layout/Sidebar.tsx
 import PropTypes from 'prop-types'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, Settings, LogOut, Home } from 'lucide-react'
+import { LayoutDashboard, History, Settings, LogOut, Home } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/hooks/useAuth'
 
 const MAIN_NAV = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/dashboard/ai-assistant', icon: MessageSquare, label: 'AI Chat' },
+  { to: '/dashboard/ai-assistant', icon: History, label: 'AI Chat' },
   { to: '/dashboard/properties', icon: Home, label: 'My Properties' },
 ]
 const ACCOUNT_NAV = [
