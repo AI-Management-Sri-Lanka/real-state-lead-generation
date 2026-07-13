@@ -1,9 +1,9 @@
 // src/components/ui/Logo.tsx
-interface LogoProps { size?: 'sm'|'md'|'lg'; showText?: boolean }
+interface LogoProps { size?: 'sm'|'md'|'lg'; showText?: boolean; whiteText?: boolean }
 const px  = { sm:24, md:30, lg:38 }
 const tx  = { sm:16, md:19, lg:24 }
 
-export function Logo({ size='md', showText=true }: LogoProps) {
+export function Logo({ size='md', showText=true, whiteText=false }: LogoProps) {
   const s = px[size]; const t = tx[size]
   return (
     <div style={{ display:'flex', alignItems:'center', gap:9, userSelect:'none' }}>
@@ -16,7 +16,7 @@ export function Logo({ size='md', showText=true }: LogoProps) {
         </svg>
       </div>
       {showText && (
-        <span style={{ fontFamily:'var(--font-sans)', fontSize:t, fontWeight:700, letterSpacing:'-0.02em', color:'var(--color-text-heading)' }}>
+        <span style={{ fontFamily:'var(--font-sans)', fontSize:t, fontWeight:700, letterSpacing:'-0.02em', color: whiteText ? '#ffffff' : 'var(--color-text-heading)' }}>
           Lead<span style={{ color:'var(--color-brand)' }}>AI</span>
         </span>
       )}

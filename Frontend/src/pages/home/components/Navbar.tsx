@@ -46,6 +46,16 @@ export function Navbar() {
   const { isAuthenticated } = useAuth()
   const styles = NAVBAR_STYLES[theme]
   const links = isAuthenticated ? [...PUBLIC_LINKS, ...AUTH_ONLY_LINKS] : PUBLIC_LINKS
+  
+  const isHome = location.pathname === '/'
+  const activeStyles = isHome ? {
+    surface: 'transparent',
+    border: 'transparent',
+    text: '#ffffff',
+    secondary: 'rgba(255,255,255,0.9)',
+    muted: 'rgba(255,255,255,0.15)',
+    subtle: 'rgba(255,255,255,0.25)',
+  } : styles
 
   const activeTo = links
     .map(l => l.to)
@@ -61,11 +71,11 @@ export function Navbar() {
   }
 
   return (
-    <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
+    <header style={{ position: isHome ? 'absolute' : 'sticky', width: '100%', top:0, left:0, zIndex:100, background:activeStyles.surface, backdropFilter: isHome ? 'none' : 'blur(12px)', borderBottom: isHome ? 'none' : `1px solid ${activeStyles.border}`, fontFamily:'var(--font-sans)' }}>
       <div style={{ width:'100%', padding:'0 20px', height:72, display:'flex', alignItems:'center', gap:32, boxSizing:'border-box' }}>
 
         <Link to="/" style={{ textDecoration:'none', flexShrink:0 }}>
-          <Logo size="md" />
+          <Logo size="md" whiteText={isHome} />
         </Link>
 
         <nav className="flex items-center gap-4" style={{ marginLeft: 'auto' }}>
@@ -81,20 +91,20 @@ export function Navbar() {
                     borderRadius: 8,
                     fontSize: 14,
                     fontWeight: active ? 600 : 500,
-                    color: active ? styles.text : styles.secondary,
-                    background: active ? styles.muted : 'transparent',
+                    color: active ? activeStyles.text : activeStyles.secondary,
+                    background: active ? activeStyles.muted : 'transparent',
                     textDecoration: 'none',
                     transition: 'all 0.12s',
                   }}
                   onMouseEnter={e => {
                     if (!active) {
-                      (e.currentTarget as HTMLElement).style.color = styles.text
-                      ;(e.currentTarget as HTMLElement).style.background = styles.muted
+                      (e.currentTarget as HTMLElement).style.color = activeStyles.text
+                      ;(e.currentTarget as HTMLElement).style.background = activeStyles.muted
                     }
                   }}
                   onMouseLeave={e => {
                     if (!active) {
-                      (e.currentTarget as HTMLElement).style.color = styles.secondary
+                      (e.currentTarget as HTMLElement).style.color = activeStyles.secondary
                       ;(e.currentTarget as HTMLElement).style.background = 'transparent'
                     }
                   }}
@@ -114,14 +124,14 @@ export function Navbar() {
                 borderRadius: 999,
                 fontSize: 14,
                 fontWeight: 700,
-                color: styles.text,
-                background: 'transparent',
-                border: `1px solid ${styles.border}`,
+                color: activeStyles.text,
+                background: isHome ? 'rgba(0,0,0,0.25)' : 'transparent',
+                border: isHome ? '1px solid rgba(0,0,0,0.6)' : `1px solid ${activeStyles.border}`,
                 textDecoration: 'none',
                 transition: 'background 0.12s, border-color 0.12s',
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = styles.muted
+                (e.currentTarget as HTMLElement).style.background = activeStyles.muted
               }}
               onMouseLeave={e => {
                 (e.currentTarget as HTMLElement).style.background = 'transparent'
@@ -129,16 +139,16 @@ export function Navbar() {
             >
               Browse Properties
             </Link>
-            <ThemeToggle theme={theme} setTheme={setTheme} />
+            <ThemeToggle theme={theme} setTheme={setTheme} whiteIcon={isHome} />
             {isDashboard && (
               <button
                 className="navbar-sidebar-toggle"
                 onClick={handleSidebarToggleClick}
-                style={{ background:styles.muted, border:`1px solid ${styles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.background = styles.subtle)}
-                onMouseLeave={e => (e.currentTarget.style.background = styles.muted)}
+                style={{ background:activeStyles.muted, border:`1px solid ${activeStyles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = activeStyles.subtle)}
+                onMouseLeave={e => (e.currentTarget.style.background = activeStyles.muted)}
               >
-                <Menu size={20} color={styles.secondary} />
+                <Menu size={20} color={activeStyles.secondary} />
               </button>
             )}
             {showSignIn && (
