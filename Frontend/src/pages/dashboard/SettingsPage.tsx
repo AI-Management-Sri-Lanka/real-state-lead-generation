@@ -148,7 +148,7 @@ export default function SettingsPage() {
               </p>
               <Button
                 type="button"
-                onClick={handleDeleteAccount}
+                onClick={() => setShowDeleteConfirm(true)}
                 loading={deleteLoading}
                 style={{ backgroundColor: '#7f1d1d', color: '#fca5a5' }}
               >

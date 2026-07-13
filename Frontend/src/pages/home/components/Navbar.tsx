@@ -6,11 +6,15 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuth } from '@/hooks/useAuth'
 
-const LINKS: { label: string; to: string }[] = [
+const PUBLIC_LINKS: { label: string; to: string }[] = [
+  { label: 'Home',         to: '/' },
   { label: 'Properties',   to: '/properties' },
+  { label: 'Contact',      to: '/contact' },
+]
+
+const AUTH_ONLY_LINKS: { label: string; to: string }[] = [
   { label: 'Dashboard',    to: '/dashboard' },
   { label: 'AI Assistant', to: '/dashboard/ai-assistant' },
-  { label: 'Contact',      to: '/contact' },
 ]
 
 const NAVBAR_STYLES = {
@@ -37,10 +41,24 @@ export function Navbar() {
   const showSignIn = !location.pathname.startsWith('/dashboard')
   const isDashboard = location.pathname.startsWith('/dashboard')
   const isContact = location.pathname === '/contact'
-  const { toggle: toggleSidebar } = useSidebar()
+  const { toggle: toggleSidebar, toggleCollapse } = useSidebar()
   const [theme, setTheme] = useTheme()
   const { isAuthenticated } = useAuth()
   const styles = NAVBAR_STYLES[theme]
+  const links = isAuthenticated ? [...PUBLIC_LINKS, ...AUTH_ONLY_LINKS] : PUBLIC_LINKS
+
+  const activeTo = links
+    .map(l => l.to)
+    .filter(to => location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to + '/')))
+    .sort((a, b) => b.length - a.length)[0]
+
+  // The mobile drawer and desktop sidebar are separate layout mechanisms
+  // (overlay vs. in-flow width), so pick which one this click should control.
+  function handleSidebarToggleClick() {
+    const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 1025px)').matches
+    if (isDesktop) toggleCollapse()
+    else toggleSidebar()
+  }
 
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
@@ -52,8 +70,8 @@ export function Navbar() {
 
         <nav className="flex items-center gap-4" style={{ marginLeft: 'auto' }}>
           <div className="hidden md:flex" style={{ gap: 4, alignItems: 'center' }}>
-            {LINKS.map(({ label, to }) => {
-              const active = location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to))
+            {links.map(({ label, to }) => {
+              const active = to === activeTo
               return (
                 <Link
                   key={label}
@@ -88,11 +106,34 @@ export function Navbar() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
+            <Link
+              to="/properties"
+              className="hidden md:inline-flex"
+              style={{
+                padding: '10px 18px',
+                borderRadius: 999,
+                fontSize: 14,
+                fontWeight: 700,
+                color: styles.text,
+                background: 'transparent',
+                border: `1px solid ${styles.border}`,
+                textDecoration: 'none',
+                transition: 'background 0.12s, border-color 0.12s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = styles.muted
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
+            >
+              Browse Properties
+            </Link>
             <ThemeToggle theme={theme} setTheme={setTheme} />
             {isDashboard && (
               <button
                 className="navbar-sidebar-toggle"
-                onClick={toggleSidebar}
+                onClick={handleSidebarToggleClick}
                 style={{ background:styles.muted, border:`1px solid ${styles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = styles.subtle)}
                 onMouseLeave={e => (e.currentTarget.style.background = styles.muted)}

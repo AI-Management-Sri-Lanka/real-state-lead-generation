@@ -7,7 +7,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 interface Props { children: React.ReactNode; activeNav?: string }
 
 export function DashboardLayout({ children }: Props) {
-  const { isOpen: sidebarOpen, close: closeSidebar } = useSidebar()
+  const { isOpen: sidebarOpen, close: closeSidebar, isCollapsed } = useSidebar()
 
   return (
     <div className="h-screen flex min-w-full flex-col bg-page overflow-hidden" style={{ color: 'var(--color-text-primary)' }}>
@@ -27,7 +27,10 @@ export function DashboardLayout({ children }: Props) {
           <Sidebar />
         </aside>
 
-        <aside className="dashboard-sidebar-desktop hidden h-full w-[260px] flex-shrink-0 overflow-hidden lg:block">
+        <aside
+          className="dashboard-sidebar-desktop hidden h-full flex-shrink-0 overflow-hidden transition-all duration-300 ease-out lg:block"
+          style={{ width: isCollapsed ? 0 : 260 }}
+        >
           <Sidebar />
         </aside>
 

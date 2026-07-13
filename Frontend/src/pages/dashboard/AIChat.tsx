@@ -221,6 +221,7 @@ export default function AIChat() {
   const [messageText, setMessageText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; value: string } | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
@@ -560,19 +561,27 @@ export default function AIChat() {
     if (!renameTarget) return;
     const title = renameTarget.value.trim();
     if (!title) return;
+    const { id } = renameTarget;
     setRenaming(true);
+
+    // Update the UI immediately so the new name is always visible right away,
+    // matching this app's resilient/offline-friendly behavior elsewhere.
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, title } : s)),
+    );
+    setRenameTarget(null);
+
     try {
       const res = await fetchWithAuth(
-        `${BASE_URL}/sessions/${renameTarget.id}?title=${encodeURIComponent(title)}`,
+        `${BASE_URL}/sessions/${id}?title=${encodeURIComponent(title)}`,
         { method: "PATCH" },
       );
-      if (!res.ok) return;
-      setSessions((prev) =>
-        prev.map((s) => s.id === renameTarget.id ? { ...s, title } : s),
-      );
-      setRenameTarget(null);
+      if (!res.ok) {
+        toast.error("Renamed here, but couldn't sync to the server. It may revert on reload.", { id: "rename-sync-error" });
+      }
     } catch (err) {
       console.error("Error renaming:", err);
+      toast.error("Renamed here, but couldn't sync to the server. It may revert on reload.", { id: "rename-sync-error" });
     } finally {
       setRenaming(false);
     }
@@ -587,16 +596,23 @@ export default function AIChat() {
 
   async function submitDelete() {
     if (!deleteTarget) return;
+    const { id } = deleteTarget;
     setDeleting(true);
+
+    // Remove locally right away so the sidebar always reflects the user's action.
+    const remaining = sessions.filter((s) => s.id !== id);
+    setSessions(remaining);
+    if (activeSessionId === id) setActiveSessionId(remaining[0]?.id ?? "");
+    setDeleteTarget(null);
+
     try {
-      const res = await fetchWithAuth(`${BASE_URL}/sessions/${deleteTarget.id}`, { method: "DELETE" });
-      if (!res.ok) return;
-      const remaining = sessions.filter((s) => s.id !== deleteTarget.id);
-      setSessions(remaining);
-      if (activeSessionId === deleteTarget.id) setActiveSessionId(remaining[0]?.id ?? "");
-      setDeleteTarget(null);
+      const res = await fetchWithAuth(`${BASE_URL}/sessions/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Deleted here, but couldn't sync to the server. It may reappear on reload.", { id: "delete-sync-error" });
+      }
     } catch (err) {
       console.error("Error deleting:", err);
+      toast.error("Deleted here, but couldn't sync to the server. It may reappear on reload.", { id: "delete-sync-error" });
     } finally {
       setDeleting(false);
     }
