@@ -1,6 +1,5 @@
 import { useEffect, useRef, useMemo, useState, useCallback, type MouseEvent } from "react";
-import { Loader2, Plus, Search, Send, MoreVertical, Trash2, Edit2, ExternalLink, MapPin, Calendar, Tag, User, ChevronLeft, ChevronRight } from "lucide-react";
-import toast from "react-hot-toast";
+import { Loader2, Plus, Search, Send, MoreVertical, Trash2, Edit2, ExternalLink, MapPin, Calendar, Tag, User, PanelLeftClose, PanelLeft, History, Menu, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ChatMessage } from "./components/ChatMessage";
 import { useAuth } from "@/hooks/useAuth";
@@ -149,9 +148,6 @@ function LeadsGrid({ leads }: { leads: Lead[] }) {
   );
 }
 
-// Decide whether the backend's message text is just a generic/empty
-// placeholder (so we should replace it with an honest "no leads" message)
-// vs. a specific error/explanation we should preserve as-is.
 function isGenericNoResultsMessage(content: string): boolean {
   const trimmed = content.trim();
   if (!trimmed) return true;
@@ -211,7 +207,6 @@ export default function AIChat() {
     } catch { return []; }
   });
 
-  // Persist sessions to localStorage whenever they change
   useEffect(() => {
     try {
       localStorage.setItem("leadai_sessions", JSON.stringify(sessions));
@@ -222,11 +217,11 @@ export default function AIChat() {
   const [messageText, setMessageText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; value: string } | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -561,27 +556,19 @@ export default function AIChat() {
     if (!renameTarget) return;
     const title = renameTarget.value.trim();
     if (!title) return;
-    const { id } = renameTarget;
     setRenaming(true);
-
-    // Update the UI immediately so the new name is always visible right away,
-    // matching this app's resilient/offline-friendly behavior elsewhere.
-    setSessions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, title } : s)),
-    );
-    setRenameTarget(null);
-
     try {
       const res = await fetchWithAuth(
-        `${BASE_URL}/sessions/${id}?title=${encodeURIComponent(title)}`,
+        `${BASE_URL}/sessions/${renameTarget.id}?title=${encodeURIComponent(title)}`,
         { method: "PATCH" },
       );
-      if (!res.ok) {
-        toast.error("Renamed here, but couldn't sync to the server. It may revert on reload.", { id: "rename-sync-error" });
-      }
+      if (!res.ok) return;
+      setSessions((prev) =>
+        prev.map((s) => s.id === renameTarget.id ? { ...s, title } : s),
+      );
+      setRenameTarget(null);
     } catch (err) {
       console.error("Error renaming:", err);
-      toast.error("Renamed here, but couldn't sync to the server. It may revert on reload.", { id: "rename-sync-error" });
     } finally {
       setRenaming(false);
     }
@@ -596,23 +583,16 @@ export default function AIChat() {
 
   async function submitDelete() {
     if (!deleteTarget) return;
-    const { id } = deleteTarget;
     setDeleting(true);
-
-    // Remove locally right away so the sidebar always reflects the user's action.
-    const remaining = sessions.filter((s) => s.id !== id);
-    setSessions(remaining);
-    if (activeSessionId === id) setActiveSessionId(remaining[0]?.id ?? "");
-    setDeleteTarget(null);
-
     try {
-      const res = await fetchWithAuth(`${BASE_URL}/sessions/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        toast.error("Deleted here, but couldn't sync to the server. It may reappear on reload.", { id: "delete-sync-error" });
-      }
+      const res = await fetchWithAuth(`${BASE_URL}/sessions/${deleteTarget.id}`, { method: "DELETE" });
+      if (!res.ok) return;
+      const remaining = sessions.filter((s) => s.id !== deleteTarget.id);
+      setSessions(remaining);
+      if (activeSessionId === deleteTarget.id) setActiveSessionId(remaining[0]?.id ?? "");
+      setDeleteTarget(null);
     } catch (err) {
       console.error("Error deleting:", err);
-      toast.error("Deleted here, but couldn't sync to the server. It may reappear on reload.", { id: "delete-sync-error" });
     } finally {
       setDeleting(false);
     }
@@ -632,21 +612,30 @@ export default function AIChat() {
             <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
               {/* ── Sidebar (fixed, never scrolls/resizes with chat) ── */}
-              <div
-                className={`w-full ${historyCollapsed ? "lg:w-0 lg:overflow-hidden lg:border-r-0 lg:p-0" : "lg:w-80 lg:p-5"} lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col h-full overflow-hidden transition-all duration-300 ease-out dark:border-sky-800/40 dark:bg-slate-950/70`}
-              >
+              <div className={`${sidebarOpen ? "w-full lg:w-80" : "hidden lg:hidden"} lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/70 transition-all duration-300`}>
                 <div className="flex items-center justify-between gap-3 shrink-0">
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.28em] text-slate-500">AI Assistant</p>
-                    <h2 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">Chat history</h2>
+                  <div className="flex items-center gap-2">
+                    <History size={20} className="text-indigo-600 dark:text-sky-400 shrink-0" />
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Chat history</h2>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleNewChat}
-                    className="inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 text-sm font-semibold !text-white shadow-[0_10px_25px_rgba(14,116,144,0.24)] transition hover:from-sky-400 hover:to-indigo-500"
-                  >
-                    <Plus size={16} /> New chat
-                  </button>
+                  <div className="flex items-center gap-2">
+
+                    <button
+                      type="button"
+                      onClick={handleNewChat}
+                      className="inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 text-sm font-semibold !text-white shadow-[0_10px_25px_rgba(14,116,144,0.24)] transition hover:from-sky-400 hover:to-indigo-500"
+                    >
+                      <Plus size={16} /> 
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSidebarOpen(false)}
+                      className="inline-flex items-center justify-center h-9 w-9 rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 hover:text-slate-700 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
+                      aria-label="Close sidebar"
+                    >
+                      <PanelLeftClose size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-6 flex-1 min-h-0 overflow-y-auto space-y-3">
@@ -677,22 +666,32 @@ export default function AIChat() {
                         </button>
 
                         {activeMenu === session.id && (
-                          <div className="absolute right-4 top-full z-20 mt-2 w-44 rounded-3xl border border-sky-200/80 bg-white/95 p-2 shadow-[0_10px_25px_rgba(15,23,42,0.08)] dark:border-slate-800/80 dark:bg-slate-950 dark:shadow-panel">
-                            <button
-                              type="button"
-                              onClick={() => handleRename(session.id)}
-                              className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-900"
-                            >
-                              <Edit2 size={16} /> Rename
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(session.id)}
-                              className="mt-1 flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-red-400 transition hover:bg-slate-900"
-                            >
-                              <Trash2 size={16} /> Delete
-                            </button>
-                          </div>
+                          <>
+                            {/* Invisible click-catcher: closes the menu on any outside click.
+                                z-10 sits below the menu's z-20, so the menu itself still
+                                receives its own clicks normally. Same fixed-inset-0 pattern
+                                already used by the Rename/Delete modals below. */}
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setActiveMenu(null)}
+                            />
+                            <div className="absolute right-4 top-full z-20 mt-2 w-44 rounded-3xl border border-sky-200/80 bg-white/95 p-2 shadow-[0_10px_25px_rgba(15,23,42,0.08)] dark:border-slate-800/80 dark:bg-slate-950 dark:shadow-panel">
+                              <button
+                                type="button"
+                                onClick={() => handleRename(session.id)}
+                                className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-900"
+                              >
+                                <Edit2 size={16} /> Rename
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(session.id)}
+                                className="mt-1 flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm text-red-400 transition hover:bg-slate-900"
+                              >
+                                <Trash2 size={16} /> Delete
+                              </button>
+                            </div>
+                          </>
                         )}
                       </div>
                     );
@@ -702,21 +701,35 @@ export default function AIChat() {
 
               {/* ── Main chat area (only this part scrolls) ── */}
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div className="flex items-center gap-3 border-b border-sky-200/80 px-6 py-4 shrink-0 dark:border-slate-800/90">
-                  <button
-                    type="button"
-                    onClick={() => setHistoryCollapsed((prev) => !prev)}
-                    aria-label={historyCollapsed ? "Show chat history" : "Hide chat history"}
-                    title={historyCollapsed ? "Show chat history" : "Hide chat history"}
-                    className="hidden lg:inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 transition hover:border-sky-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-white"
-                  >
-                    {historyCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-                  </button>
-                  <div className="min-w-0">
+                <div className="border-b border-sky-200/80 px-6 py-4 shrink-0 dark:border-slate-800/90 flex items-center justify-between">
+                  <div>
                     <p className="text-xs font-medium tracking-wide text-slate-500">AI Lead Assistant</p>
                     <h1 className="mt-1 text-xl font-medium text-slate-900 dark:text-white">
                       Ask, refine and qualify leads.
                     </h1>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* Mobile hamburger menu */}
+                    <button
+                      type="button"
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      className="lg:hidden inline-flex items-center justify-center h-10 w-10 rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 hover:text-slate-700 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
+                      aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+                    >
+                      {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+                    </button>
+                    {/* Desktop expand button */}
+                    {!sidebarOpen && (
+                      <button
+                        type="button"
+                        onClick={() => setSidebarOpen(true)}
+                        className="hidden lg:inline-flex items-center justify-center h-10 w-10 rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 hover:text-slate-700 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
+                        aria-label="Open sidebar"
+                        title="Open chat history"
+                      >
+                        <PanelLeft size={18} />
+                      </button>
+                    )}
                   </div>
                 </div>
 

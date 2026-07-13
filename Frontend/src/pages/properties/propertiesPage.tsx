@@ -1,12 +1,12 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, Building2, Loader2, Plus, Trash2, ShieldCheck, X } from 'lucide-react'
+import { Search, Loader2 } from 'lucide-react'
 import { Property } from '@/types/property'
 import { PropertyCard } from '@/components/properties/propertyCard'
 import { propertyApi } from '@/api/propertyApi'
-import { useAuth } from '@/hooks/useAuth'
 
-const ADMIN_PASSWORD = 'admin123'
+import { Navbar } from '@/pages/home/components/Navbar'
+import { Footer } from '@/pages/home/components/Footer'
 
 const PRICE_RANGES = [
   { label: 'Any price', min: 0, max: Infinity },
@@ -14,8 +14,6 @@ const PRICE_RANGES = [
   { label: '25M - 50M', min: 25_000_000, max: 50_000_000 },
   { label: '50M+', min: 50_000_000, max: Infinity },
 ]
-
-// Removed AdminLoginModal and DeleteModal
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function PropertiesPage() {
@@ -25,9 +23,6 @@ export default function PropertiesPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [priceRange, setPriceRange] = useState(0)
-  const { isAuthenticated } = useAuth()
-
-  // No admin state needed here
 
   useEffect(() => { fetchProperties() }, [])
 
@@ -44,8 +39,6 @@ export default function PropertiesPage() {
     }
   }
 
-  // Removed admin handlers
-
   const filtered = useMemo(() => {
     const range = PRICE_RANGES[priceRange]
     const term = search.trim().toLowerCase()
@@ -61,39 +54,17 @@ export default function PropertiesPage() {
   }, [properties, search, priceRange])
 
   return (
-    <div className="min-h-screen bg-page text-slate-100">
-
-      {/* ── Top nav ─────────────────────────────────────────────── */}
-      <header className="border-b border-slate-800/80 bg-slate-950/95">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-slate-950">
-              <Building2 size={16} />
-            </div>
-            <span className="text-base font-semibold text-white">LeadAI Properties</span>
-          </Link>
-          <nav className="flex items-center gap-6 text-sm text-slate-400">
-            <Link to="/" className="hover:text-white transition">Home</Link>
-            <Link to="/properties" className="text-white">Properties</Link>
-            {isAuthenticated ? (
-              <Link to="/dashboard" className="hover:text-white transition">Dashboard</Link>
-            ) : (
-              <Link to="/auth/signin" className="hover:text-white transition">Sign in</Link>
-            )}
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-page text-slate-100 flex flex-col">
+      <Navbar />
 
       {/* ── Hero / search ───────────────────────────────────────── */}
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">
           Find your next home
         </h1>
         <p className="mt-2 text-sm text-slate-500">
           Browse verified apartments, houses and land in top locations.
         </p>
-
-
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <div className="flex flex-1 items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3">
@@ -145,6 +116,7 @@ export default function PropertiesPage() {
         )}
       </div>
 
+      <Footer />
     </div>
   )
 }

@@ -1,26 +1,37 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 interface SidebarContextType {
   isOpen: boolean
   toggle: () => void
   close: () => void
-  isCollapsed: boolean
-  toggleCollapse: () => void
+  collapsed: boolean
+  toggleCollapsed: () => void
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
+
+const COLLAPSE_STORAGE_KEY = 'sidebar:collapsed'
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   // Desktop sidebar — expanded by default, collapses in place
   const [isCollapsed, setIsCollapsed] = useState(false)
 
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem(COLLAPSE_STORAGE_KEY) === '1'
+  })
+
+  useEffect(() => {
+    window.localStorage.setItem(COLLAPSE_STORAGE_KEY, collapsed ? '1' : '0')
+  }, [collapsed])
+
   const toggle = () => setIsOpen(!isOpen)
   const close = () => setIsOpen(false)
-  const toggleCollapse = () => setIsCollapsed(prev => !prev)
+  const toggleCollapsed = () => setCollapsed((prev) => !prev)
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggle, close, isCollapsed, toggleCollapse }}>
+    <SidebarContext.Provider value={{ isOpen, toggle, close, collapsed, toggleCollapsed }}>
       {children}
     </SidebarContext.Provider>
   )

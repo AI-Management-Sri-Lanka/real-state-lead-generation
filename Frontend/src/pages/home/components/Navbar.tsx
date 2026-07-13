@@ -1,20 +1,19 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
-import { useAuth } from '@/hooks/useAuth'
 
-const PUBLIC_LINKS: { label: string; to: string }[] = [
+const DESKTOP_BREAKPOINT = 1024
+
+const LINKS: { label: string; to: string; authOnly?: boolean }[] = [
   { label: 'Home',         to: '/' },
   { label: 'Properties',   to: '/properties' },
+  { label: 'Dashboard',    to: '/dashboard',              authOnly: true },
+  { label: 'AI Assistant', to: '/dashboard/ai-assistant', authOnly: true },
   { label: 'Contact',      to: '/contact' },
-]
-
-const AUTH_ONLY_LINKS: { label: string; to: string }[] = [
-  { label: 'Dashboard',    to: '/dashboard' },
-  { label: 'AI Assistant', to: '/dashboard/ai-assistant' },
 ]
 
 const NAVBAR_STYLES = {
@@ -40,13 +39,9 @@ export function Navbar() {
   const location = useLocation()
   const showSignIn = !location.pathname.startsWith('/dashboard')
   const isDashboard = location.pathname.startsWith('/dashboard')
-  const isContact = location.pathname === '/contact'
-  const { toggle: toggleSidebar, toggleCollapse } = useSidebar()
+  const { toggle: toggleSidebar } = useSidebar()
   const [theme, setTheme] = useTheme()
-  const { isAuthenticated } = useAuth()
   const styles = NAVBAR_STYLES[theme]
-  const links = isAuthenticated ? [...PUBLIC_LINKS, ...AUTH_ONLY_LINKS] : PUBLIC_LINKS
-  
   const isHome = location.pathname === '/'
   const activeStyles = isHome ? {
     surface: 'transparent',
@@ -57,18 +52,38 @@ export function Navbar() {
     subtle: 'rgba(255,255,255,0.25)',
   } : styles
 
-  const activeTo = links
-    .map(l => l.to)
-    .filter(to => location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to + '/')))
-    .sort((a, b) => b.length - a.length)[0]
+  // Track desktop width in JS so the hamburger can be fully unrendered above
+  // the breakpoint — this can't be silently overridden by any conflicting
+  // global CSS the way a "lg:hidden" class could be.
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth >= DESKTOP_BREAKPOINT
+  )
 
-  // The mobile drawer and desktop sidebar are separate layout mechanisms
-  // (overlay vs. in-flow width), so pick which one this click should control.
-  function handleSidebarToggleClick() {
-    const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 1025px)').matches
-    if (isDesktop) toggleCollapse()
-    else toggleSidebar()
-  }
+  useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT}px)`)
+    const handleChange = () => setIsDesktop(mql.matches)
+    handleChange()
+    mql.addEventListener('change', handleChange)
+    return () => mql.removeEventListener('change', handleChange)
+  }, [])
+
+  // Dashboard / AI Assistant only show up while you're actually inside the
+  // dashboard section — public pages (Home, Properties, Contact) always show
+  // the simple nav, even for a signed-in user.
+  const visibleLinks = LINKS.filter(link => !link.authOnly || isDashboard)
+
+  // Pick the single most specific matching link (longest "to"), so nested
+  // routes like /dashboard/ai-assistant only highlight "AI Assistant" and
+  // not also "Dashboard".
+  const activeLabel = visibleLinks.reduce<string | null>((best, link) => {
+    const isMatch =
+      link.to === '/'
+        ? location.pathname === '/'
+        : location.pathname === link.to || location.pathname.startsWith(link.to + '/')
+    if (!isMatch) return best
+    const bestTo = visibleLinks.find(l => l.label === best)?.to ?? ''
+    return link.to.length > bestTo.length ? link.label : best
+  }, null)
 
   return (
     <header style={{ position: isHome ? 'absolute' : 'sticky', width: '100%', top:0, left:0, zIndex:100, background:activeStyles.surface, backdropFilter: isHome ? 'none' : 'blur(12px)', borderBottom: isHome ? 'none' : `1px solid ${activeStyles.border}`, fontFamily:'var(--font-sans)' }}>
@@ -80,8 +95,8 @@ export function Navbar() {
 
         <nav className="flex items-center gap-4" style={{ marginLeft: 'auto' }}>
           <div className="hidden md:flex" style={{ gap: 4, alignItems: 'center' }}>
-            {links.map(({ label, to }) => {
-              const active = to === activeTo
+            {visibleLinks.map(({ label, to }) => {
+              const active = label === activeLabel
               return (
                 <Link
                   key={label}
@@ -140,10 +155,10 @@ export function Navbar() {
               Browse Properties
             </Link>
             <ThemeToggle theme={theme} setTheme={setTheme} whiteIcon={isHome} />
-            {isDashboard && (
+            {isDashboard && !isDesktop && (
               <button
                 className="navbar-sidebar-toggle"
-                onClick={handleSidebarToggleClick}
+                onClick={toggleSidebar}
                 style={{ background:activeStyles.muted, border:`1px solid ${activeStyles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = activeStyles.subtle)}
                 onMouseLeave={e => (e.currentTarget.style.background = activeStyles.muted)}
@@ -152,27 +167,15 @@ export function Navbar() {
               </button>
             )}
             {showSignIn && (
-              isAuthenticated ? (
-                <Link
-                  to="/dashboard"
-                  className="hidden md:inline-flex"
-                  style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <Link
-                  to="/auth/signin"
-                  className="hidden md:inline-flex"
-                  style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
-                >
-                  Sign in
-                </Link>
-              )
+              <Link
+                to="/auth/signin"
+                className="hidden md:inline-flex"
+                style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
+              >
+                Sign in
+              </Link>
             )}
           </div>
         </nav>
