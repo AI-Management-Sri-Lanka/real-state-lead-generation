@@ -537,3 +537,17 @@ if __name__ == "__main__":
         json.dump([lead.model_dump(mode="json") for lead in results], f, indent=2, ensure_ascii=False)
 
     print(f"\nResults saved → leads_output.json")
+
+# ---------------------------------------------------------------------------
+# Public API – Apify scraper wrapper
+# ---------------------------------------------------------------------------
+
+def run_apify_scraper(input_data: dict) -> List[ScrapedLead]:
+    """Thin wrapper that forwards to the existing ``run_scraper`` implementation.
+    This function is imported by the backend orchestrator and provides a stable
+    public entry point while keeping the original ``run_scraper`` name for any
+    external scripts that may still rely on it.
+    """
+    return run_scraper(input_data)
+
+__all__ = ["run_apify_scraper"]
