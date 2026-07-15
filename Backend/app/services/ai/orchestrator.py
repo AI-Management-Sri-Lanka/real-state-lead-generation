@@ -12,7 +12,8 @@ from app.schemas.router_schema import RouterOutput
 from app.services.ai.router import Router
 from app.services.ai.simple_chat import DirectChatTool
 from app.services.ai.rank_leads import RankLeads
-from app.services.apify.apify_scraper import run_scraper
+from app.services.apify.apify_scraper import run_apify_scraper
+from app.services.tavily.tavily_scraper import run_tavily_scraper
 
 
 logger = logging.getLogger(__name__)
@@ -91,10 +92,13 @@ class Orchestrator:
 
         logger.info("Scraper input: %s", scraper_input)
 
-        # Social Media Scrape
-        scraped_leads: List[ScrapedLead] = run_scraper(scraper_input)
-
-        # Rank leads
+        # Try Apify first
+        scraped_leads: List[ScrapedLead] = run_apify_scraper(scraper_input)
+        # If Apify returned no leads, fall back to Tavily
+        if not scraped_leads:
+            logger.warning("[Orchestrator] Apify returned no leads – falling back to Tavily scraper")
+            scraped_leads = await run_tavily_scraper(scraper_input)
+        # Rank leads (whether from Apify or Tavily)
         ranked_leads: List[ScrapedLead] = RankLeads().rank_leads(query=user_query, leads=scraped_leads)
 
         message = self._format_leads_as_markdown(ranked_leads)
