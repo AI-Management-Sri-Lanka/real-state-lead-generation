@@ -6,6 +6,7 @@ from .message import Message
 from .token import RefreshToken
 from .properties import Property, PropertyImage
 from .master_admin import MasterAdmin
+from .inquiry import Inquiry
 
-__all__ = ["Base", "User", "Session", "Message", "RefreshToken", "Property", "PropertyImage", "MasterAdmin"]
+__all__ = ["Base", "User", "Session", "Message", "RefreshToken", "Property", "PropertyImage", "MasterAdmin", "Inquiry"]
 

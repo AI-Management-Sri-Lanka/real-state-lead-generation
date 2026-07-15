@@ -4,6 +4,7 @@ import { useFormik } from "formik";
 import emailjs from "@emailjs/browser";
 import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { Navbar } from "@/pages/home/components/Navbar";
+import { BASE_URL } from "@/api/config";
 
 type Answer = string | string[];
 type FormValues = Record<string, Answer>;
@@ -177,6 +178,32 @@ export default function ContactPage() {
           },
           EMAILJS_PUBLIC_KEY
         );
+
+        // Build a text summary of answers for the DB message field
+        const answersSummary = questions
+          .filter(q => q.id !== 'name' && q.id !== 'email' && q.id !== 'phone')
+          .map(q => {
+            const val = values[q.id];
+            const display = Array.isArray(val) ? val.join(", ") : val || "-";
+            return `${q.label}: ${display}`;
+          })
+          .join("\n");
+
+        const inquiryPayload = {
+          name: values.name.trim(),
+          email: values.email.trim(),
+          phone: values.phone.trim() || undefined,
+          message: answersSummary,
+          source: "contact_page"
+        };
+
+        const res = await fetch(`${BASE_URL}/inquiries`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(inquiryPayload),
+        });
+        if (!res.ok) throw new Error("Failed to save contact inquiry to database");
+
         setSubmitted(true);
         resetForm();
       } catch (err) {

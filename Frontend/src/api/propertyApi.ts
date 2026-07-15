@@ -40,14 +40,16 @@ export const propertyApi = {
     if (params?.ownerId) url.searchParams.append('ownerId', String(params.ownerId))
     const res = await fetchWithAuth(url.toString())
     if (!res.ok) throw new Error(`Failed to load properties: ${res.statusText}`)
-    return res.json()
+    const body = await res.json()
+    return body.data
   },
 
   // Fetch single property (public — includes nested owner profile)
   async getProperty(id: string): Promise<Property> {
     const res = await fetchWithAuth(`${BASE_URL}/properties/${id}`)
     if (!res.ok) throw new Error(`Could not load property: ${res.statusText}`)
-    return res.json()
+    const body = await res.json()
+    return body.data
   },
 
   // Create a new property (owner)
@@ -57,11 +59,11 @@ export const propertyApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
+    const body = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
       throw new Error(body?.message ?? `Server error: ${res.statusText}`)
     }
-    return res.json()
+    return body.data
   },
 
   // Edit own property
@@ -71,11 +73,11 @@ export const propertyApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
+    const body = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
       throw new Error(body?.message ?? `Server error: ${res.statusText}`)
     }
-    return res.json()
+    return body.data
   },
 
   // Add image to own property
@@ -125,14 +127,16 @@ export const adminPropertyApi = {
     if (params?.ownerId) url.searchParams.append('ownerId', String(params.ownerId))
     const res = await adminFetch(url.toString())
     if (!res.ok) throw new Error(`Failed to load properties: ${res.statusText}`)
-    return res.json()
+    const body = await res.json()
+    return body.data
   },
 
   // Get single property
   async getOne(id: string): Promise<Property> {
     const res = await adminFetch(`${ADMIN_BASE}/${id}`)
     if (!res.ok) throw new Error(`Property not found`)
-    return res.json()
+    const body = await res.json()
+    return body.data
   },
 
   // Create property (optionally on behalf of an owner)
@@ -143,11 +147,11 @@ export const adminPropertyApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     })
+    const body = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
       throw new Error(body?.message ?? `Create failed: ${res.statusText}`)
     }
-    return res.json()
+    return body.data
   },
 
   // Edit any property
@@ -156,11 +160,11 @@ export const adminPropertyApi = {
       method: 'PATCH',
       body: JSON.stringify(payload),
     })
+    const body = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
       throw new Error(body?.message ?? `Update failed: ${res.statusText}`)
     }
-    return res.json()
+    return body.data
   },
 
   // Delete any property
@@ -177,11 +181,11 @@ export const adminPropertyApi = {
     const res = await adminFetch(`${ADMIN_BASE}/${id}/verify?verified=${verified}`, {
       method: 'POST',
     })
+    const body = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
       throw new Error(body?.message ?? `Verify failed: ${res.statusText}`)
     }
-    return res.json()
+    return body.data
   },
 
   // Add image to any property

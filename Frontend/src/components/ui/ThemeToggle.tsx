@@ -4,9 +4,10 @@ import { ThemeMode, useTheme } from '@/hooks/useTheme'
 type ThemeToggleProps = {
   theme?: ThemeMode
   setTheme?: (theme: ThemeMode) => void
+  whiteIcon?: boolean
 }
 
-export function ThemeToggle({ theme: propTheme, setTheme: propSetTheme }: ThemeToggleProps) {
+export function ThemeToggle({ theme: propTheme, setTheme: propSetTheme, whiteIcon = false }: ThemeToggleProps) {
   const hasPropTheme = propTheme !== undefined && propSetTheme !== undefined
   const [internalTheme, internalSetTheme] = useTheme()
   const activeTheme = hasPropTheme ? propTheme : internalTheme
@@ -25,9 +26,9 @@ export function ThemeToggle({ theme: propTheme, setTheme: propSetTheme }: ThemeT
         width: 40,
         height: 40,
         borderRadius: 999,
-        border: `1px solid ${isDark ? '#334155' : '#E2E2F0'}`,
-        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(61,59,243,0.08)',
-        color: isDark ? '#f8fafc' : '#3D3BF3',
+        border: whiteIcon ? '1px solid rgba(0,0,0,0.6)' : `1px solid ${isDark ? '#334155' : '#E2E2F0'}`,
+        background: whiteIcon ? 'rgba(0,0,0,0.25)' : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(61,59,243,0.08)'),
+        color: whiteIcon ? '#ffffff' : (isDark ? '#f8fafc' : '#3D3BF3'),
         cursor: 'pointer',
         transition: 'all 0.16s ease',
       }}
