@@ -11,6 +11,7 @@ const LINKS = {
 }
 
 export function Footer() {
+  
   return (
     <footer style={{ background:'var(--color-surface)', color:'var(--color-text-secondary)', fontFamily:'var(--font-sans)', padding:'64px 32px 32px' }}>
       <div style={{ maxWidth:1100, margin:'0 auto' }}>

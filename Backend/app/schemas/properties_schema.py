@@ -23,10 +23,10 @@ class PropertyImageResponse(PropertyImageBase):
 
 
 class PropertyBase(BaseModel):
-    title: str = Field(..., max_length=255, example="Spacious 2 Bedroom Apartment in Colombo 07")
-    price: float = Field(..., gt=0, example=25000000)
-    currency: str = Field(default="LKR", max_length=10)
-    location: str = Field(..., max_length=255, example="Colombo 07")
+    title: str = Field(..., max_length=255, example="Spacious 2 Bedroom Apartment in Sydney")
+    price: float = Field(..., gt=0, example=1250000)
+    currency: str = Field(default="AUD", max_length=10)
+    location: str = Field(..., max_length=255, example="Surry Hills, NSW 2010")
     bedrooms: Optional[int] = Field(None, ge=0, example=2)
     bathrooms: Optional[int] = Field(None, ge=0, example=2)
     area_sqft: Optional[float] = Field(None, gt=0, example=1100, serialization_alias="areaSqft", validation_alias="areaSqft")
@@ -35,9 +35,9 @@ class PropertyBase(BaseModel):
     listing_type: ListingType = Field(..., example=ListingType.sale, serialization_alias="listingType", validation_alias="listingType")
     is_verified: bool = Field(default=False, serialization_alias="verified", validation_alias="verified")
     furnishing: Optional[str] = Field(None, example="Fully-Furnished")
-    parking: Optional[str] = Field(None, max_length=255, example="1 Covered Parking")
-    listed_by: Optional[str] = Field(None, max_length=255, example="John Doe", serialization_alias="listedBy", validation_alias="listedBy")
-    description: Optional[str] = Field(None, max_length=1024, example="An excellent apartment...")
+    parking: Optional[str] = Field(None, max_length=255, example="1 Undercover Car Space")
+    listed_by: Optional[str] = Field(None, max_length=255, example="Jane Smith", serialization_alias="listedBy", validation_alias="listedBy")
+    description: Optional[str] = Field(None, max_length=1024, example="A bright, modern apartment in the heart of Sydney...")
 
 
 class PropertyCreate(PropertyBase):
@@ -45,6 +45,7 @@ class PropertyCreate(PropertyBase):
 
 
 class PropertyUpdate(BaseModel):
+    title: Optional[str] = Field(None, max_length=255)
     price: Optional[float] = Field(None, gt=0)
     currency: Optional[str] = Field(None, max_length=10)
     location: Optional[str] = Field(None, max_length=255)
@@ -61,8 +62,20 @@ class PropertyUpdate(BaseModel):
     description: Optional[str] = None
 
 
+# --- Nested owner profile (shown to public and admin when viewing a property) ---
+class OwnerProfile(BaseModel):
+    id: int
+    full_name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
 class PropertyResponse(PropertyBase):
     id: str
+    owner_id: Optional[int] = Field(None, serialization_alias="ownerId")
+    owner: Optional[OwnerProfile] = None
     images: List[str] = []
 
     @field_validator("id", mode="before")

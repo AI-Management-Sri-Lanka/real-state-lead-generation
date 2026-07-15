@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, Query, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.core.response import ok
+from app.core.errors import AppException, AppError
 from app.services.dependencies.deps import require_master_admin
 from app.crud.user_crud import get_users_db, get_user_by_id_db, toggle_user_active_status_db
-
 from app.crud.master_admin_crud import list_admins, toggle_admin_status
 
 router = APIRouter(prefix="/admin/manage", tags=["Admin Management"])
@@ -79,8 +79,22 @@ async def toggle_user_status(
         raise AppException(error=AppError.AUTH_USER_NOT_FOUND)
     return ok(message=f"User status changed to active={is_active}", item=UserResponse.model_validate(user))
 
+@router.delete("/users/{user_id}", status_code=204)
+async def delete_user(
+    user_id: int = Path(...),
+    _admin: dict = Depends(require_master_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Permanently delete a user account and all their data."""
+    from app.crud.user_crud import get_user_by_id_db, delete_user_db
+    user = await get_user_by_id_db(db, user_id)
+    if not user:
+        raise AppException(error=AppError.AUTH_USER_NOT_FOUND)
+    await delete_user_db(db, user)
+
 from app.services.property_manage.property_service import list_properties
 from app.services.session_service import list_sessions, to_summary
+from app.schemas.properties_schema import PropertyResponse
 
 @router.get("/properties")
 async def list_all_properties(
@@ -89,9 +103,10 @@ async def list_all_properties(
     _admin: dict = Depends(require_master_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """View all properties across all users."""
+    """View all properties across all users (serialized)."""
     properties = await list_properties(db, skip=skip, limit=limit)
-    return ok(item={"properties": properties, "skip": skip, "limit": limit})
+    serialized = [PropertyResponse.model_validate(p).model_dump(by_alias=True) for p in properties]
+    return ok(item={"properties": serialized, "total": len(serialized), "skip": skip, "limit": limit})
 
 @router.get("/sessions")
 async def list_all_sessions(

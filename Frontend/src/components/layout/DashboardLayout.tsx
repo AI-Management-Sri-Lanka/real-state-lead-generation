@@ -1,4 +1,3 @@
-// src/components/layout/DashboardLayout.tsx
 import PropTypes from 'prop-types'
 import { Sidebar } from './Sidebar'
 import { Navbar } from '@/pages/home/components/Navbar'
@@ -6,8 +5,11 @@ import { useSidebar } from '@/contexts/SidebarContext'
 
 interface Props { children: React.ReactNode; activeNav?: string }
 
+const EXPANDED_WIDTH = 260
+const COLLAPSED_WIDTH = 76
+
 export function DashboardLayout({ children }: Props) {
-  const { isOpen: sidebarOpen, close: closeSidebar } = useSidebar()
+  const { isOpen: sidebarOpen, close: closeSidebar, collapsed } = useSidebar()
 
   return (
     <div className="h-screen flex min-w-full flex-col bg-page overflow-hidden" style={{ color: 'var(--color-text-primary)' }}>
@@ -27,7 +29,10 @@ export function DashboardLayout({ children }: Props) {
           <Sidebar />
         </aside>
 
-        <aside className="dashboard-sidebar-desktop hidden h-full w-[260px] flex-shrink-0 overflow-hidden lg:block">
+        <aside
+          className="dashboard-sidebar-desktop hidden h-full flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out lg:block"
+          style={{ width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH }}
+        >
           <Sidebar />
         </aside>
 

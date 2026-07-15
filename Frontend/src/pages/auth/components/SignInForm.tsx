@@ -30,7 +30,7 @@ export function SignInForm() {
     e.preventDefault()
     if (!form.validate()) return
     setLoading(true)
-    try { await signIn(form.values.email, form.values.password); toast.success('Welcome back!'); navigate('/dashboard/ai-assistant') }
+    try { await signIn(form.values.email, form.values.password); toast.success('Welcome back!'); navigate('/dashboard') }
     catch (err: unknown) { toast.error((err as Error).message ?? 'Sign in failed', { id: 'signin-error' }) }
     finally { setLoading(false) }
   }

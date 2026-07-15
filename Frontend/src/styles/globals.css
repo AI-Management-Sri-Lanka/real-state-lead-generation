@@ -120,11 +120,18 @@
 [data-theme='light'] .hover\:border-slate-600:hover { border-color: #CBD5E1 !important; }
 [data-theme='light'] .hover\:text-slate-200:hover { color: #1E293B !important; }
 [data-theme='light'] .hover\:text-white:hover { color: #0F172A !important; }
-[data-theme='light'] .text-white { color: #0F172A !important; }
+/* text-white override for light theme — scoped away from hero and property cards */
+[data-theme='light'] .text-white:not(.hero-no-override):not(.property-card-text) { color: #0F172A !important; }
 
 [data-theme='light'] body {
   background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
   color: #1f2937;
+}
+
+/* Hero section: always preserve white text over dark image backgrounds */
+[data-theme='light'] .hero-text-preserve h1,
+[data-theme='light'] .hero-text-preserve p {
+  color: #ffffff !important;
 }
 
 [data-theme='light'] h1,
@@ -250,7 +257,7 @@ body {
 
 @media (min-width: 1025px) {
   .dashboard-sidebar-toggle { display: none !important; }
-  .navbar-sidebar-toggle { display: none !important; }
+  .navbar-sidebar-toggle { display: flex !important; }
   .dashboard-sidebar-desktop { display: block !important; }
   .dashboard-sidebar-mobile { display: none !important; }
 }

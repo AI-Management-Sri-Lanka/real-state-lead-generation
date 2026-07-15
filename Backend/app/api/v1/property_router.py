@@ -6,7 +6,10 @@ from app.models.properties import Property, PropertyImage, PropertyType, Listing
 from app.schemas.properties_schema import (
     PropertyCreate, PropertyUpdate, PropertyResponse, PropertyImageCreate, PropertyImageResponse
 )
+from app.schemas.response_schema import ResponseSchema
 from app.services.property_manage import property_service
+from app.services.dependencies.deps import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/properties", tags=["Properties"])
 
@@ -23,12 +26,13 @@ def parse_property_id(property_id: str) -> int:
         raise HTTPException(status_code=400, detail="Invalid property ID format")
 
 
-@router.post("", response_model=PropertyResponse, status_code=201)
-async def create_property(payload: PropertyCreate, db: AsyncSession = Depends(get_db)):
-    return await property_service.create_property(db, payload)
+@router.post("", response_model=ResponseSchema[PropertyResponse], status_code=201)
+async def create_property(payload: PropertyCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    data = await property_service.create_property(db, payload, current_user.id)
+    return ResponseSchema(success=True, message="Property created successfully", data=data)
 
 
-@router.get("", response_model=List[PropertyResponse])
+@router.get("", response_model=ResponseSchema[List[PropertyResponse]])
 async def list_properties(
     property_type: Optional[PropertyType] = Query(None, alias="type"),
     listing_type: Optional[ListingType] = Query(None, alias="listingType"),
@@ -36,11 +40,12 @@ async def list_properties(
     max_price: Optional[float] = Query(None),
     min_beds: Optional[int] = Query(None),
     is_verified: Optional[bool] = Query(None, alias="verified"),
+    owner_id: Optional[int] = Query(None, alias="ownerId"),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    return await property_service.list_properties(
+    data = await property_service.list_properties(
         db=db,
         property_type=property_type,
         listing_type=listing_type,
@@ -48,38 +53,43 @@ async def list_properties(
         max_price=max_price,
         min_beds=min_beds,
         is_verified=is_verified,
+        owner_id=owner_id,
         skip=skip,
         limit=limit
     )
+    return ResponseSchema(success=True, message="Properties retrieved successfully", data=data)
 
 
-@router.get("/{property_id}", response_model=PropertyResponse)
+@router.get("/{property_id}", response_model=ResponseSchema[PropertyResponse])
 async def get_property(property_id: str, db: AsyncSession = Depends(get_db)):
     int_id = parse_property_id(property_id)
-    return await property_service.get_property(db, int_id)
+    data = await property_service.get_property(db, int_id)
+    return ResponseSchema(success=True, message="Property retrieved successfully", data=data)
 
 
-@router.patch("/{property_id}", response_model=PropertyResponse)
-async def update_property(property_id: str, payload: PropertyUpdate, db: AsyncSession = Depends(get_db)):
+@router.patch("/{property_id}", response_model=ResponseSchema[PropertyResponse])
+async def update_property(property_id: str, payload: PropertyUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     int_id = parse_property_id(property_id)
-    return await property_service.update_property(db, int_id, payload)
+    data = await property_service.update_property(db, int_id, payload, current_user.id)
+    return ResponseSchema(success=True, message="Property updated successfully", data=data)
 
 
 @router.delete("/{property_id}", status_code=204)
-async def delete_property(property_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_property(property_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     int_id = parse_property_id(property_id)
-    await property_service.delete_property(db, int_id)
+    await property_service.delete_property(db, int_id, current_user.id)
 
 
 # --- Image sub-routes ---
 
-@router.post("/{property_id}/images", response_model=PropertyImageResponse, status_code=201)
-async def add_image(property_id: str, payload: PropertyImageCreate, db: AsyncSession = Depends(get_db)):
+@router.post("/{property_id}/images", response_model=ResponseSchema[PropertyImageResponse], status_code=201)
+async def add_image(property_id: str, payload: PropertyImageCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     int_id = parse_property_id(property_id)
-    return await property_service.add_image(db, int_id, payload)
+    data = await property_service.add_image(db, int_id, payload, current_user.id)
+    return ResponseSchema(success=True, message="Image added successfully", data=data)
 
 
 @router.delete("/{property_id}/images/{image_id}", status_code=204)
-async def delete_image(property_id: str, image_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_image(property_id: str, image_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     int_id = parse_property_id(property_id)
-    await property_service.delete_image(db, int_id, image_id)
+    await property_service.delete_image(db, int_id, image_id, current_user.id)
