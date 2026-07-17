@@ -11,6 +11,7 @@ import PropertiesPage from '@/pages/properties/propertiesPage'
 import PropertyDetailPage from '@/pages/properties/propertyDetailPage'
 import MyPropertiesList from '@/pages/dashboard/properties/MyPropertiesList'
 import PropertyManager from '@/pages/dashboard/properties/PropertyManager'
+import InquiriesList from '@/pages/dashboard/InquiriesList'
 import SettingsPage from './pages/dashboard/SettingsPage'
 import ContactPage from '@/pages/contactPage'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/dashboard/settings" element={<PrivateRoute><ErrorBoundary><SettingsPage /></ErrorBoundary></PrivateRoute>} />
         <Route path="/dashboard/properties" element={<PrivateRoute><ErrorBoundary><MyPropertiesList /></ErrorBoundary></PrivateRoute>} />
         <Route path="/dashboard/properties/add" element={<PrivateRoute><ErrorBoundary><PropertyManager /></ErrorBoundary></PrivateRoute>} />
+        <Route path="/dashboard/requests" element={<PrivateRoute><ErrorBoundary><InquiriesList /></ErrorBoundary></PrivateRoute>} />
 
         {/* ── Master Admin Login ─────────────────────────────────────── */}
         <Route path="/admin/login" element={<AdminLoginPage />} />

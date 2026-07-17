@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   ArrowLeft, BedDouble, Bath, Ruler, MapPin,
-  CheckCircle2, Loader2, ShieldCheck, User, Mail,
+  CheckCircle2, Loader2, ShieldCheck, User, Mail, Phone,
 } from 'lucide-react'
 
 import emailjs from '@emailjs/browser'
@@ -21,6 +21,8 @@ import { Property, InquiryPayload } from '@/types/property'
 import { propertyApi } from '@/api/propertyApi'
 import { useAuth } from '@/hooks/useAuth'
 import { BASE_URL } from '@/api/config'
+import { getOwnerInquiries, Inquiry } from '@/api/inquiryApi'
+import { format } from 'date-fns'
 
 
 function formatPrice(price: number, currency: string, listingType: string) {
@@ -71,6 +73,9 @@ export default function PropertyDetailPage() {
   const { isAuthenticated, user }  = useAuth()
 
   const isOwner = isAuthenticated && user?.id === property?.owner?.id
+
+  const [inquiries, setInquiries] = useState<Inquiry[]>([])
+  const [loadingInquiries, setLoadingInquiries] = useState(false)
 
   const formik = useFormik({
     initialValues: { name: '', email: '', phone: '', message: '' },
@@ -166,6 +171,25 @@ export default function PropertyDetailPage() {
     }
     fetchProperty()
   }, [id])
+
+  useEffect(() => {
+    if (!isOwner || !property) return
+    async function loadInquiries() {
+      setLoadingInquiries(true)
+      try {
+        const rawPropertyId = typeof property.id === 'string' && property.id.startsWith('prop-')
+          ? parseInt(property.id.split('-')[1], 10)
+          : Number(property.id)
+        const data = await getOwnerInquiries(rawPropertyId)
+        setInquiries(data)
+      } catch (err) {
+        console.error("Failed to load inquiries", err)
+      } finally {
+        setLoadingInquiries(false)
+      }
+    }
+    loadInquiries()
+  }, [isOwner, property])
 
   if (loading) {
     return (
@@ -328,6 +352,42 @@ export default function PropertyDetailPage() {
                   >
                     Edit property
                   </button>
+                  
+                  {/* Embedded Inquiries for Owner */}
+                  <div className="mt-8 w-full border-t border-slate-100 pt-6 text-left">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 text-center">Inquiries</h3>
+                    {loadingInquiries ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 size={20} className="animate-spin text-indigo-500" />
+                      </div>
+                    ) : inquiries.length === 0 ? (
+                      <p className="text-sm text-slate-500 text-center">No inquiries yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {inquiries.map(inq => (
+                          <div key={inq.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm text-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="font-bold text-slate-900">{inq.name}</span>
+                              <span className="text-[10px] font-medium text-slate-400">
+                                {format(new Date(inq.createdAt.endsWith('Z') ? inq.createdAt : inq.createdAt + 'Z'), 'MMM d, h:mm a')}
+                              </span>
+                            </div>
+                            <div className="flex flex-col gap-1.5 text-slate-600 mb-3 text-xs font-medium">
+                              <a href={`mailto:${inq.email}`} className="flex items-center gap-1.5 hover:text-indigo-600 transition"><Mail size={12}/> {inq.email}</a>
+                              {inq.phone && (
+                                <a href={`tel:${inq.phone}`} className="flex items-center gap-1.5 hover:text-indigo-600 transition"><Phone size={12}/> {inq.phone}</a>
+                              )}
+                            </div>
+                            {inq.message && (
+                              <p className="text-slate-600 mt-2 bg-white p-3 rounded-lg border border-slate-100 italic text-xs leading-relaxed">
+                                "{inq.message}"
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : submitted ? (
                 <div className="flex flex-col items-center gap-3 py-8 text-center">
