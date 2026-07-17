@@ -7,7 +7,7 @@ from enum import Enum
 class Platform(str, Enum):
     instagram = "instagram"
     facebook = "facebook"
-    tiktok = "tiktok"
+    google = "google"
 
 class PropertyType(str, Enum):
     house = "house"
