@@ -46,12 +46,22 @@ def _format_persisted_message(res: OrchestratorResponse) -> str:
     return "\n".join(lines).rstrip()
 
 
+from fastapi.responses import JSONResponse
+
 @router.post("", response_model=ChatResponse)
 async def post_chat(
     request: ChatRequest,
     db: AsyncSession = Depends(get_db),
     orchestrator: Orchestrator = Depends(Orchestrator)
-) -> ChatResponse:
+):
+    if not request.query or not request.query.strip():
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Validation Error",
+                "message": "Query cannot be empty."
+            }
+        )
 
     await session_service.add_message(
         db=db,
