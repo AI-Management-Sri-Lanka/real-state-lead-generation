@@ -130,12 +130,8 @@ function loadRecipients(): string {
   }
 }
 
-// Only letters, spaces, hyphens and apostrophes are valid in a name
-// (covers names like "Anne-Marie" or "O'Brien").
-const NAME_PATTERN = /^[A-Za-z\s'-]*$/;
-
 // Must start with a letter, then 1–49 more letters/spaces/hyphens/apostrophes
-// (2–50 chars total). Rejects digit-only, symbol-only, or blank-ish values.
+// (covers names like "Anne-Marie" or "O'Brien", 2–50 chars total).
 const NAME_PATTERN = /^[A-Za-z][A-Za-z\s'-]{1,49}$/;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -146,12 +142,7 @@ const PHONE_PATTERN = /^\d{1,10}$/;
 // Resolved once per page load from recipients.yaml.
 const TO_EMAILS = loadRecipients();
 
-export default function ContactPage() {
-    const [answers, setAnswers] = useState<Record<string, Answer>>({});
-    const [submitted, setSubmitted] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [sending, setSending] = useState(false);
-    const [sendError, setSendError] = useState<string | null>(null);
+
 const initialValues: FormValues = questions.reduce((acc, q) => {
   acc[q.id] = q.type === "multi" ? [] : "";
   return acc;
@@ -267,58 +258,24 @@ export default function ContactPage() {
 
   const { values, errors, touched, setFieldValue, setFieldTouched, handleSubmit, isSubmitting, submitCount } = formik;
 
-  function setSingle(id: string, val: string) {
-    setFieldValue(id, val);
+  const setSingle = (id: string, value: string) => {
+    setFieldValue(id, value);
     setFieldTouched(id, true, false);
-  }
+  };
 
-  function toggleMulti(id: string, val: string) {
-    const cur = (values[id] as string[]) || [];
-    const next = cur.includes(val) ? cur.filter((v) => v !== val) : [...cur, val];
-    setFieldValue(id, next);
-    setFieldTouched(id, true, false);
-  }
-  function setText(id: string, val: string) {
-    setFieldValue(id, val);
-    setFieldTouched(id, true, false);
-  }
-
-  function onFormSubmit(e: FormEvent<HTMLFormElement>) {
-    handleSubmit(e);
-    const errs = validate(values);
-    if (Object.keys(errs).length > 0) {
-      const firstError = document.getElementById(`q-${Object.keys(errs)[0]}`);
-      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+  const toggleMulti = (id: string, option: string) => {
+    const current = (values[id] as string[]) || [];
+    if (current.includes(option)) {
+      setFieldValue(id, current.filter(v => v !== option));
+    } else {
+      setFieldValue(id, [...current, option]);
     }
-    setSending(true);
-    setSendError(null);
+    setFieldTouched(id, true, false);
+  };
 
-    try {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          to_email: TO_EMAILS,
-          lead_name: answers.name,
-          lead_email: answers.email,
-          lead_phone: answers.phone,
-          submitted_at: new Date().toLocaleString("en-AU", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }),
-          details_html: buildDetailsHtml(),
-        },
-        EMAILJS_PUBLIC_KEY
-      );
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Email send failed:", err);
-      setSendError("Something went wrong sending your details. Please try again.");
-    } finally {
-      setSending(false);
-    }
-  }
+  const setText = (id: string, value: string) => {
+    setFieldValue(id, value);
+  };
 
   if (submitted) {
     return (
@@ -372,7 +329,7 @@ export default function ContactPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={onFormSubmit} noValidate>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="mx-auto max-w-4xl px-4 sm:px-6 py-10 space-y-8">
 
             {questions.map((q, idx) => {

@@ -5,6 +5,7 @@ import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useTheme } from '@/hooks/useTheme'
+import { useAuth } from '@/hooks/useAuth'
 
 const DESKTOP_BREAKPOINT = 1024
 
@@ -36,8 +37,10 @@ const NAVBAR_STYLES = {
 }
 
 export function Navbar() {
+  const { isAuthenticated } = useAuth()
   const location = useLocation()
-  const showSignIn = !location.pathname.startsWith('/dashboard')
+  const showSignIn = !location.pathname.startsWith('/dashboard') && !isAuthenticated
+  const showDashboardBtn = !location.pathname.startsWith('/dashboard') && isAuthenticated
   const isDashboard = location.pathname.startsWith('/dashboard')
   const { toggle: toggleSidebar } = useSidebar()
   const [theme, setTheme] = useTheme()
@@ -175,6 +178,17 @@ export function Navbar() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
               >
                 Sign in
+              </Link>
+            )}
+            {showDashboardBtn && (
+              <Link
+                to="/dashboard"
+                className="hidden md:inline-flex"
+                style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
+              >
+                Dashboard
               </Link>
             )}
           </div>

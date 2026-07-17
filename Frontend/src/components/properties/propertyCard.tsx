@@ -14,6 +14,22 @@ function formatPrice(price: number, currency: string, listingType: string) {
   return listingType === 'Rent' ? `${formatted} ${currency} / month` : `${formatted} ${currency}`
 }
 
+function getTypeBadgeStyles(type: string) {
+  const t = type?.toLowerCase()
+  if (t === 'apartment') return 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+  if (t === 'house') return 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+  if (t === 'land') return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+  if (t === 'commercial') return 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+  return 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+}
+
+function getListingBadgeStyles(listingType: string) {
+  const lt = listingType?.toLowerCase()
+  if (lt === 'sale' || lt === 'for sale') return 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+  if (lt === 'rent' || lt === 'for rent') return 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+  return 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+}
+
 export function PropertyCard({ property, onEdit, onDelete }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -106,7 +122,7 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
             {formatPrice(property.price, property.currency, property.listingType)}
           </p>
           {property.verified && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/60 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
               <BadgeCheck size={12} /> Verified
             </span>
           )}
@@ -129,9 +145,13 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
           {property.landSizePerches != null && <span className="flex items-center gap-1"><Ruler size={13} /> {property.landSizePerches} perches</span>}
         </div>
 
-        <div className="mt-3 flex gap-2">
-          <span className="rounded-full bg-indigo-950/60 px-2.5 py-1 text-[11px] font-medium text-indigo-300">{property.type}</span>
-          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-300">For {property.listingType}</span>
+        <div className="mt-4 flex gap-2">
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${getTypeBadgeStyles(property.type)}`}>
+            {property.type}
+          </span>
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${getListingBadgeStyles(property.listingType)}`}>
+            For {property.listingType}
+          </span>
         </div>
       </div>
     </div>
