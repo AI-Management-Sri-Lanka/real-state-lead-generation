@@ -120,3 +120,63 @@ async def list_all_sessions(
     # Convert to summary schema to include message count
     session_summaries = [to_summary(session) for session in sessions]
     return ok(item={"sessions": session_summaries, "skip": skip, "limit": limit})
+
+
+from app.schemas.response_schema import ResponseSchema
+from app.schemas.session_schema import MessageOut
+from app.services.session_service import get_session
+from typing import List
+
+@router.get("/sessions/{session_id}/messages", response_model=ResponseSchema[List[MessageOut]])
+async def get_session_messages(
+    session_id: str = Path(...),
+    _admin: dict = Depends(require_master_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """View full transcript of a specific chat session."""
+    session = await get_session(db, session_id)
+    return ok(item=session.messages)
+
+
+from sqlalchemy import select, func, desc
+from sqlalchemy.orm import joinedload
+from app.models.inquiry import Inquiry
+
+@router.get("/inquiries")
+async def list_all_inquiries(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    _admin: dict = Depends(require_master_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """View all inquiries/leads across the entire platform."""
+    # Count total
+    total = await db.scalar(select(func.count(Inquiry.id))) or 0
+    
+    # Get inquiries with property eager loaded
+    query = (
+        select(Inquiry)
+        .options(joinedload(Inquiry.property))
+        .order_by(desc(Inquiry.created_at))
+        .offset(skip)
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    inquiries = result.scalars().all()
+    
+    # Map to schema
+    inquiry_responses = []
+    for inc in inquiries:
+        inquiry_responses.append({
+            "id": inc.id,
+            "property_id": inc.property_id,
+            "property_title": inc.property.title if inc.property else None,
+            "name": inc.name,
+            "email": inc.email,
+            "phone": inc.phone,
+            "message": inc.message,
+            "source": inc.source,
+            "created_at": inc.created_at
+        })
+        
+    return ok(item={"inquiries": inquiry_responses, "total": total, "skip": skip, "limit": limit})

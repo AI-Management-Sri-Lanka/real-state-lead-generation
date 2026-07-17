@@ -16,3 +16,15 @@ async def get_dashboard_stats(
     """Get high-level aggregate statistics across the platform."""
     stats = await get_platform_stats(db)
     return ok(item=stats)
+
+
+from app.crud.dashboard_crud import get_inquiry_analytics
+
+@router.get("/analytics/inquiries")
+async def admin_get_inquiry_analytics(
+    _admin: dict = Depends(require_master_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get advanced lead and inquiry analytics (User-Wise and Property-Wise)."""
+    analytics = await get_inquiry_analytics(db)
+    return ok(item=analytics)

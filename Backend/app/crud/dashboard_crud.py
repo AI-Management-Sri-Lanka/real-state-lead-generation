@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, desc
 from datetime import datetime, timedelta
 
 from app.models.user import User
 from app.models.properties import Property
 from app.models.session import Session
+from app.models.inquiry import Inquiry
 
 
 async def get_platform_stats(db: AsyncSession) -> dict:
@@ -49,4 +50,46 @@ async def get_platform_stats(db: AsyncSession) -> dict:
         "unverified_properties": unverified_properties,
         "properties_by_type": properties_by_type,
         "total_chat_sessions": total_sessions,
+    }
+
+
+async def get_inquiry_analytics(db: AsyncSession) -> dict:
+    """Get advanced inquiry and lead generation analytics for the master admin."""
+    
+    # 1. Total leads
+    total_leads = await db.scalar(select(func.count(Inquiry.id))) or 0
+    
+    # 2. Leads by source
+    source_rows = await db.execute(
+        select(Inquiry.source, func.count(Inquiry.id))
+        .group_by(Inquiry.source)
+    )
+    leads_by_source = {str(row[0]): row[1] for row in source_rows.all()}
+    
+    # 3. Top Properties by leads
+    top_props_rows = await db.execute(
+        select(Property.id, Property.title, func.count(Inquiry.id).label("lead_count"))
+        .join(Inquiry, Inquiry.property_id == Property.id)
+        .group_by(Property.id, Property.title)
+        .order_by(desc("lead_count"))
+        .limit(10)
+    )
+    top_properties = [{"property_id": row[0], "title": row[1], "lead_count": row[2]} for row in top_props_rows.all()]
+    
+    # 4. Top Owners by leads
+    top_owners_rows = await db.execute(
+        select(User.id, User.full_name, func.count(Inquiry.id).label("lead_count"))
+        .join(Property, Property.owner_id == User.id)
+        .join(Inquiry, Inquiry.property_id == Property.id)
+        .group_by(User.id, User.full_name)
+        .order_by(desc("lead_count"))
+        .limit(10)
+    )
+    top_owners = [{"user_id": row[0], "full_name": row[1], "lead_count": row[2]} for row in top_owners_rows.all()]
+
+    return {
+        "total_leads": total_leads,
+        "leads_by_source": leads_by_source,
+        "top_properties": top_properties,
+        "top_owners": top_owners
     }
