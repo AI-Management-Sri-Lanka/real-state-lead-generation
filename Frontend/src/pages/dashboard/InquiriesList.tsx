@@ -26,64 +26,64 @@ export default function InquiriesList() {
 
   return (
     <DashboardLayout activeNav="Requests">
-      <div className="flex flex-1 flex-col bg-slate-950 min-h-full">
-        <header className="flex h-16 shrink-0 items-center border-b border-slate-800 px-6">
-          <h1 className="text-lg font-semibold text-slate-100">My Requests</h1>
+      <div className="flex flex-1 flex-col bg-slate-50 min-h-full">
+        <header className="flex h-16 shrink-0 items-center border-b border-slate-200 bg-white px-6">
+          <h1 className="text-lg font-semibold text-slate-900">My Requests</h1>
         </header>
 
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-20 text-slate-400">
-              <Loader2 size={32} className="animate-spin text-indigo-400" />
+              <Loader2 size={32} className="animate-spin text-indigo-500" />
             </div>
           ) : error ? (
-            <div className="rounded-xl border border-red-900 bg-red-950/20 p-6 text-center text-red-400">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-600">
               {error}
             </div>
           ) : inquiries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-slate-700">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                 <Inbox size={32} />
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-white">No requests yet</h3>
+              <h3 className="mt-4 text-lg font-semibold text-slate-900">No requests yet</h3>
               <p className="mt-1 text-sm text-slate-500">When someone inquires about your properties, they'll appear here.</p>
             </div>
           ) : (
             <div className="space-y-4 max-w-5xl mx-auto">
               {inquiries.map((inquiry) => (
-                <div key={inquiry.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-sm transition hover:border-slate-700">
+                <div key={inquiry.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-indigo-100 hover:shadow-md">
                   <div className="flex flex-col lg:flex-row gap-6 justify-between">
                     <div className="space-y-4 flex-1">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 font-semibold">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-semibold">
                           {inquiry.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-                            <User size={16} className="text-slate-500" />
+                          <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                            <User size={16} className="text-slate-400" />
                             {inquiry.name}
                           </h3>
-                          <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-                            <Calendar size={14} className="text-slate-500" />
+                          <p className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                            <Calendar size={14} className="text-slate-400" />
                             {format(new Date(inquiry.createdAt.endsWith('Z') ? inquiry.createdAt : inquiry.createdAt + 'Z'), 'MMM d, yyyy h:mm a')}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-slate-300">
-                          <Mail size={16} className="text-slate-500" />
-                          <a href={`mailto:${inquiry.email}`} className="hover:text-indigo-400 transition">{inquiry.email}</a>
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <Mail size={16} className="text-slate-400" />
+                          <a href={`mailto:${inquiry.email}`} className="hover:text-indigo-600 transition">{inquiry.email}</a>
                         </div>
                         {inquiry.phone && (
-                          <div className="flex items-center gap-2 text-slate-300">
-                            <Phone size={16} className="text-slate-500" />
-                            <a href={`tel:${inquiry.phone}`} className="hover:text-indigo-400 transition">{inquiry.phone}</a>
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <Phone size={16} className="text-slate-400" />
+                            <a href={`tel:${inquiry.phone}`} className="hover:text-indigo-600 transition">{inquiry.phone}</a>
                           </div>
                         )}
                         {inquiry.propertyTitle && (
-                          <div className="flex items-center gap-2 text-slate-300">
-                            <Home size={16} className="text-slate-500" />
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <Home size={16} className="text-slate-400" />
                             <span className="truncate max-w-[200px] block" title={inquiry.propertyTitle}>{inquiry.propertyTitle}</span>
                           </div>
                         )}
@@ -91,8 +91,10 @@ export default function InquiriesList() {
                     </div>
                     
                     {inquiry.message && (
-                      <div className="lg:w-1/2 rounded-xl bg-slate-950/50 p-4 border border-slate-800/50 text-sm text-slate-300 whitespace-pre-wrap">
-                        {inquiry.message}
+                      <div className="lg:w-1/2 rounded-xl bg-slate-50 p-4 border border-slate-200 text-sm text-slate-700 whitespace-pre-wrap">
+                        <div className="max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                          {inquiry.message}
+                        </div>
                       </div>
                     )}
                   </div>
