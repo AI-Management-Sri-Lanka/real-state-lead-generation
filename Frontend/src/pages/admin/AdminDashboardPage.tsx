@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users, Building2, ShieldCheck, MessageSquare,
-  TrendingUp, UserX, ArrowRight, Loader2, RefreshCw, Shield,
+  TrendingUp, ArrowRight, Loader2, RefreshCw, Shield, BarChart3, Star, Trophy
 } from 'lucide-react'
-import { adminDashboardApi, DashboardStats } from '@/api/adminApi'
+import { adminDashboardApi, adminAnalyticsApi, DashboardStats, InquiryAnalytics } from '@/api/adminApi'
 
 // ── Metric Card ───────────────────────────────────────────────────────────────
 function MetricCard({
@@ -117,6 +117,7 @@ function BarChart({ data }: { data: Record<string, number> }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [analytics, setAnalytics] = useState<InquiryAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -124,8 +125,12 @@ export default function AdminDashboardPage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await adminDashboardApi.getStats()
-      setStats(data)
+      const [statsData, analyticsData] = await Promise.all([
+        adminDashboardApi.getStats(),
+        adminAnalyticsApi.getInquiryAnalytics()
+      ])
+      setStats(statsData)
+      setAnalytics(analyticsData)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load stats')
     } finally {
@@ -172,7 +177,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {stats && !loading && (
+      {stats && analytics && !loading && (
         <>
           {/* ── Metric Cards */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -192,10 +197,10 @@ export default function AdminDashboardPage() {
               color="bg-purple-500"
             />
             <MetricCard
-              icon={ShieldCheck}
-              label="Verified Rate"
-              value={`${verifiedPct}%`}
-              sub={`${stats.unverified_properties} pending review`}
+              icon={BarChart3}
+              label="Total Leads Generated"
+              value={analytics.total_leads}
+              sub="Platform-wide inquiries"
               color="bg-emerald-500"
             />
             <MetricCard
@@ -208,8 +213,8 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* ── Charts */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-white/5 bg-[#13152a] p-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="rounded-2xl border border-white/5 bg-[#13152a] p-6 lg:col-span-1">
               <h2 className="text-base font-bold text-white mb-6">Verification Status</h2>
               <DonutChart
                 verified={stats.verified_properties}
@@ -217,21 +222,87 @@ export default function AdminDashboardPage() {
               />
             </div>
 
-            <div className="rounded-2xl border border-white/5 bg-[#13152a] p-6">
+            <div className="rounded-2xl border border-white/5 bg-[#13152a] p-6 lg:col-span-2">
               <h2 className="text-base font-bold text-white mb-6">Properties by Type</h2>
               <BarChart data={stats.properties_by_type} />
             </div>
           </div>
 
-          {/* ── Quick Actions */}
+          {/* ── Lead Generation Analytics ── */}
           <div>
+            <h2 className="text-lg font-bold text-white mb-4 mt-4">Lead Generation Analytics</h2>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              
+              {/* Top Properties */}
+              <div className="rounded-2xl border border-white/5 bg-[#13152a] overflow-hidden">
+                <div className="border-b border-white/5 bg-white/[0.02] p-4 flex items-center gap-3">
+                  <Star className="text-yellow-500" size={18} />
+                  <h3 className="font-semibold text-white">Top 10 Properties</h3>
+                </div>
+                {analytics.top_properties.length === 0 ? (
+                  <p className="p-6 text-sm text-slate-500 text-center">No leads generated yet.</p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-white/5">
+                      {analytics.top_properties.map((p, idx) => (
+                        <tr key={p.property_id} className="hover:bg-white/[0.02]">
+                          <td className="p-4 w-8 text-slate-500 font-mono text-xs">{idx + 1}</td>
+                          <td className="p-4 text-white font-medium truncate max-w-[200px]">{p.title}</td>
+                          <td className="p-4 text-right">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                              {p.lead_count} Leads
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Top Owners */}
+              <div className="rounded-2xl border border-white/5 bg-[#13152a] overflow-hidden">
+                <div className="border-b border-white/5 bg-white/[0.02] p-4 flex items-center gap-3">
+                  <Trophy className="text-orange-500" size={18} />
+                  <h3 className="font-semibold text-white">Top 10 Owners</h3>
+                </div>
+                {analytics.top_owners.length === 0 ? (
+                  <p className="p-6 text-sm text-slate-500 text-center">No owners have received leads yet.</p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-white/5">
+                      {analytics.top_owners.map((o, idx) => (
+                        <tr key={o.user_id} className="hover:bg-white/[0.02]">
+                          <td className="p-4 w-8 text-slate-500 font-mono text-xs">{idx + 1}</td>
+                          <td className="p-4">
+                            <p className="text-white font-medium">{o.full_name}</p>
+                            <p className="text-[10px] text-slate-500 font-mono">User ID: {o.user_id}</p>
+                          </td>
+                          <td className="p-4 text-right">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2.5 py-1 text-xs font-semibold text-orange-400">
+                              {o.lead_count} Leads
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+            </div>
+          </div>
+
+          {/* ── Quick Actions */}
+          <div className="pt-4">
             <h2 className="text-base font-bold text-white mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
               {[
-                { label: 'Manage Users', to: '/admin/users', icon: Users, color: 'from-indigo-600 to-indigo-700' },
+                { label: 'Users', to: '/admin/users', icon: Users, color: 'from-indigo-600 to-indigo-700' },
                 { label: 'Properties', to: '/admin/properties', icon: Building2, color: 'from-purple-600 to-purple-700' },
-                { label: 'Chat Sessions', to: '/admin/sessions', icon: MessageSquare, color: 'from-cyan-600 to-cyan-700' },
-                { label: 'Admin Accounts', to: '/admin/manage', icon: Shield, color: 'from-emerald-600 to-emerald-700' },
+                { label: 'Sessions', to: '/admin/sessions', icon: MessageSquare, color: 'from-cyan-600 to-cyan-700' },
+                { label: 'Inquiries', to: '/admin/inquiries', icon: Star, color: 'from-emerald-600 to-emerald-700' },
+                { label: 'Admins', to: '/admin/manage', icon: Shield, color: 'from-orange-600 to-orange-700' },
               ].map(({ label, to, icon: Icon, color }) => (
                 <Link
                   key={to}

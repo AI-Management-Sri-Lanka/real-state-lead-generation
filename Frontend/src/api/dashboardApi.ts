@@ -19,19 +19,19 @@ export interface OwnerDashboardStats {
   total_leads: number
   qualified_leads: number
   new_leads_today: number
-  ai_match_rate: string
-  leads_by_source: {
+  aiMatchRate: string
+  leadsBySource: {
     source: string
     percentage: number
     amount: number
     color: string
   }[]
-  score_breakdown: {
+  scoreBreakdown: {
     label: string
     percentage: number
     color: string
   }[]
-  recent_leads: {
+  recentLeads: {
     id: number
     name: string
     email: string
@@ -43,6 +43,10 @@ export interface OwnerDashboardStats {
     color: string
     created_at: string
   }[]
+  totalProperties: number
+  totalInquiries: number
+  totalChats: number
+  scrapedLeads: number
 }
 
 export async function fetchOwnerDashboardStats(): Promise<OwnerDashboardStats> {

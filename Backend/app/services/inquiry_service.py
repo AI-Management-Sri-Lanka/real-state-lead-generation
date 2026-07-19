@@ -3,8 +3,11 @@ from sqlalchemy import select, func, and_
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
+import re
 from app.models.inquiry import Inquiry
 from app.models.properties import Property
+from app.models.session import Session
+from app.models.message import Message
 from app.schemas.inquiry_schema import (
     InquiryCreate, InquiryResponse, OwnerDashboardStats,
     LeadItemSchema, SourceBreakdownItem, ScoreBreakdownItem
@@ -57,6 +60,26 @@ class InquiryService:
         properties = properties_result.scalars().all()
         prop_ids = [p.id for p in properties]
         prop_map = {p.id: p for p in properties}
+        total_properties = len(properties)
+
+        # 2. Get total AI chats count for this owner
+        chats_result = await db.execute(
+            select(func.count(Session.id)).where(Session.user_id == owner_id)
+        )
+        total_chats = chats_result.scalar() or 0
+
+        # 3. Get scraped leads count from assistant messages in owner's sessions
+        messages_result = await db.execute(
+            select(Message.content)
+            .join(Session)
+            .where(and_(Session.user_id == owner_id, Message.role == "assistant"))
+        )
+        assistant_messages = messages_result.scalars().all()
+        scraped_leads = 0
+        for content in assistant_messages:
+            match = re.search(r"Found (\d+) [Pp]otential [Ll]ead", content)
+            if match:
+                scraped_leads += int(match.group(1))
 
         if not prop_ids:
             return OwnerDashboardStats(
@@ -66,7 +89,11 @@ class InquiryService:
                 ai_match_rate="0%",
                 leads_by_source=[],
                 score_breakdown=[],
-                recent_leads=[]
+                recent_leads=[],
+                total_properties=total_properties,
+                total_inquiries=0,
+                total_chats=total_chats,
+                scraped_leads=scraped_leads
             )
 
         # 2. Get inquiries linked to these properties
@@ -159,7 +186,45 @@ class InquiryService:
             ai_match_rate=ai_match_rate,
             leads_by_source=leads_by_source,
             score_breakdown=score_breakdown,
-            recent_leads=recent_leads_list[:5]
+            recent_leads=recent_leads_list[:5],
+            total_properties=total_properties,
+            total_inquiries=total_leads,
+            total_chats=total_chats,
+            scraped_leads=scraped_leads
         )
+
+    async def get_owner_inquiries(self, db: AsyncSession, owner_id: int, property_id: int | None = None) -> List[InquiryResponse]:
+        # Get properties owned by this owner
+        prop_query = select(Property).where(Property.owner_id == owner_id)
+        if property_id:
+            prop_query = prop_query.where(Property.id == property_id)
+            
+        properties_result = await db.execute(prop_query)
+        properties = properties_result.scalars().all()
+        prop_ids = [p.id for p in properties]
+        prop_map = {p.id: p.title for p in properties}
+
+        if not prop_ids:
+            return []
+
+        # Get inquiries linked to these properties
+        inquiries_result = await db.execute(
+            select(Inquiry).where(Inquiry.property_id.in_(prop_ids)).order_by(Inquiry.created_at.desc())
+        )
+        inquiries = inquiries_result.scalars().all()
+
+        return [
+            InquiryResponse(
+                id=i.id,
+                property_id=i.property_id,
+                property_title=prop_map.get(i.property_id),
+                name=i.name,
+                email=i.email,
+                phone=i.phone,
+                message=i.message,
+                source=i.source,
+                created_at=i.created_at
+            ) for i in inquiries
+        ]
 
 inquiry_service = InquiryService()

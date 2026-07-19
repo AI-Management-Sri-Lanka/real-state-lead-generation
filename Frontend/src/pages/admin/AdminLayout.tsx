@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, Users, MessageSquare, Shield,
-  LogOut, Menu, X, ChevronRight, Bell,
+  LogOut, Menu, X, ChevronRight, Bell, Star
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/admin/properties',  icon: Building2,        label: 'Properties'  },
   { to: '/admin/users',       icon: Users,            label: 'Users'       },
   { to: '/admin/sessions',    icon: MessageSquare,    label: 'Sessions'    },
+  { to: '/admin/inquiries',   icon: Star,             label: 'Inquiries'   },
   { to: '/admin/manage',      icon: Shield,           label: 'Admins'      },
 ]
 

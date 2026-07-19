@@ -22,7 +22,7 @@ class InquiryResponse(BaseModel):
     phone: Optional[str] = None
     message: Optional[str] = None
     source: str
-    created_at: datetime
+    created_at: datetime = Field(..., alias="createdAt", serialization_alias="createdAt", validation_alias="createdAt")
 
     class Config:
         from_attributes = True
@@ -59,6 +59,10 @@ class OwnerDashboardStats(BaseModel):
     leads_by_source: List[SourceBreakdownItem] = Field(..., alias="leadsBySource", serialization_alias="leadsBySource", validation_alias="leadsBySource")
     score_breakdown: List[ScoreBreakdownItem] = Field(..., alias="scoreBreakdown", serialization_alias="scoreBreakdown", validation_alias="scoreBreakdown")
     recent_leads: List[LeadItemSchema] = Field(..., alias="recentLeads", serialization_alias="recentLeads", validation_alias="recentLeads")
+    total_properties: int = Field(..., alias="totalProperties", serialization_alias="totalProperties", validation_alias="totalProperties")
+    total_inquiries: int = Field(..., alias="totalInquiries", serialization_alias="totalInquiries", validation_alias="totalInquiries")
+    total_chats: int = Field(..., alias="totalChats", serialization_alias="totalChats", validation_alias="totalChats")
+    scraped_leads: int = Field(..., alias="scrapedLeads", serialization_alias="scrapedLeads", validation_alias="scrapedLeads")
 
     class Config:
         populate_by_name = True

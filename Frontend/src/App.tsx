@@ -11,6 +11,7 @@ import PropertiesPage from '@/pages/properties/propertiesPage'
 import PropertyDetailPage from '@/pages/properties/propertyDetailPage'
 import MyPropertiesList from '@/pages/dashboard/properties/MyPropertiesList'
 import PropertyManager from '@/pages/dashboard/properties/PropertyManager'
+import InquiriesList from '@/pages/dashboard/InquiriesList'
 import SettingsPage from './pages/dashboard/SettingsPage'
 import ContactPage from '@/pages/contactPage'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
@@ -20,6 +21,7 @@ import AdminPropertiesPage from '@/pages/admin/AdminPropertiesPage'
 import AdminUsersPage from '@/pages/admin/AdminUsersPage'
 import AdminSessionsPage from '@/pages/admin/AdminSessionsPage'
 import AdminManagePage from '@/pages/admin/AdminManagePage'
+import AdminInquiriesPage from '@/pages/admin/AdminInquiriesPage'
 
 // ── Route guards ──────────────────────────────────────────────────────────────
 
@@ -55,6 +57,7 @@ export default function App() {
         <Route path="/dashboard/settings" element={<PrivateRoute><ErrorBoundary><SettingsPage /></ErrorBoundary></PrivateRoute>} />
         <Route path="/dashboard/properties" element={<PrivateRoute><ErrorBoundary><MyPropertiesList /></ErrorBoundary></PrivateRoute>} />
         <Route path="/dashboard/properties/add" element={<PrivateRoute><ErrorBoundary><PropertyManager /></ErrorBoundary></PrivateRoute>} />
+        <Route path="/dashboard/requests" element={<PrivateRoute><ErrorBoundary><InquiriesList /></ErrorBoundary></PrivateRoute>} />
 
         {/* ── Master Admin Login ─────────────────────────────────────── */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -67,6 +70,7 @@ export default function App() {
           <Route path="properties/add" element={<ErrorBoundary><PropertyManager /></ErrorBoundary>} />
           <Route path="users"          element={<AdminUsersPage />} />
           <Route path="sessions"       element={<AdminSessionsPage />} />
+          <Route path="inquiries"      element={<AdminInquiriesPage />} />
           <Route path="manage"         element={<AdminManagePage />} />
         </Route>
 

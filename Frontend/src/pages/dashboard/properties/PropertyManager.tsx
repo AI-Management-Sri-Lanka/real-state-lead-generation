@@ -2,7 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Building2, Loader2, CheckCircle2, Plus, X, UploadCloud } from 'lucide-react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { propertyApi, adminPropertyApi, PropertyPayload } from '@/api/propertyApi'
+import { getOwnerInquiries, Inquiry } from '@/api/inquiryApi'
 import { Select as CustomSelect } from '@/components/ui/Select'
+import { Inbox, Calendar, User, Mail, Phone } from 'lucide-react'
+import { format } from 'date-fns'
 
 type FormState = {
   title: string
@@ -57,6 +60,9 @@ export default function PropertyManager() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [inquiries, setInquiries] = useState<Inquiry[]>([])
+  const [loadingInquiries, setLoadingInquiries] = useState(false)
+
   // Load existing property in edit mode
   useEffect(() => {
     if (!editId) return
@@ -92,6 +98,23 @@ export default function PropertyManager() {
       }
     }
     load()
+  }, [editId])
+
+  useEffect(() => {
+    if (!editId) return
+    async function loadInquiries() {
+      setLoadingInquiries(true)
+      try {
+        const idNum = parseInt(editId!.replace('prop-', ''), 10)
+        const data = await getOwnerInquiries(idNum)
+        setInquiries(data)
+      } catch (err) {
+        console.error("Failed to load inquiries", err)
+      } finally {
+        setLoadingInquiries(false)
+      }
+    }
+    loadInquiries()
   }, [editId])
 
   if (loadingProperty) {
@@ -463,6 +486,68 @@ export default function PropertyManager() {
         {error && (
           <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>
         )}
+
+        {isEditMode && (
+          <div className="mt-12">
+            <h2 className="mb-4 text-xl font-bold text-slate-900">Property Inquiries</h2>
+            {loadingInquiries ? (
+               <div className="flex items-center justify-center py-10">
+                 <Loader2 size={24} className="animate-spin text-indigo-500" />
+               </div>
+            ) : inquiries.length === 0 ? (
+               <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+                 <Inbox size={32} className="mx-auto text-slate-400 mb-3" />
+                 <p className="text-slate-500 text-sm">No inquiries received for this property yet.</p>
+               </div>
+            ) : (
+              <div className="space-y-4">
+                {inquiries.map((inquiry) => (
+                  <div key={inquiry.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex flex-col lg:flex-row gap-6 justify-between">
+                      <div className="space-y-4 flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+                            {inquiry.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                              <User size={16} className="text-slate-400" />
+                              {inquiry.name}
+                            </h3>
+                            <p className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                              <Calendar size={14} className="text-slate-400" />
+                              {format(new Date(inquiry.createdAt.endsWith('Z') ? inquiry.createdAt : inquiry.createdAt + 'Z'), 'MMM d, yyyy h:mm a')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-4 text-sm">
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <Mail size={16} className="text-slate-400" />
+                            <a href={`mailto:${inquiry.email}`} className="hover:text-indigo-600 transition">{inquiry.email}</a>
+                          </div>
+                          {inquiry.phone && (
+                            <div className="flex items-center gap-2 text-slate-600">
+                              <Phone size={16} className="text-slate-400" />
+                              <a href={`tel:${inquiry.phone}`} className="hover:text-indigo-600 transition">{inquiry.phone}</a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {inquiry.message && (
+                        <div className="lg:w-1/2 rounded-xl bg-slate-50 p-4 border border-slate-100 text-sm text-slate-600 whitespace-pre-wrap">
+                          {inquiry.message}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mt-8 flex justify-end gap-3 pb-12">
           <button onClick={() => navigate('/dashboard/properties')} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
             Cancel

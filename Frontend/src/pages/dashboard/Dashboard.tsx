@@ -8,7 +8,7 @@ import { useAuth }           from '@/hooks/useAuth'
 import { DashboardLayout }   from '@/components/layout/DashboardLayout'
 import { StatsCard }         from '@/components/dashboard/StatsCard'
 import { LeadItem }          from '@/components/dashboard/LeadItem'
-import { fetchDashboardStats, type DashboardStats } from '@/api/dashboardApi'
+import { fetchOwnerDashboardStats, type OwnerDashboardStats } from '@/api/dashboardApi'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -19,39 +19,39 @@ function getGreeting(): string {
   return 'Good evening'
 }
 
-function buildStatCards(stats: DashboardStats | null) {
+function buildStatCards(stats: OwnerDashboardStats | null) {
   return [
     {
-      label: 'Total leads',
-      value: stats?.total_sessions ?? 0,
-      trend: 'All AI sessions',
+      label: 'Total Inquiries',
+      value: stats?.totalInquiries ?? 0,
+      trend: 'All property requests',
       trendPositive: true,
-      accentLabel: 'Sessions',
+      accentLabel: 'Requests',
       icon: <Users size={20} className="text-brand" />,
     },
     {
-      label: 'Active chats',
-      value: stats?.active_sessions ?? 0,
-      trend: 'Non-expired sessions',
+      label: 'AI Chats',
+      value: stats?.totalChats ?? 0,
+      trend: 'Your assistant chats',
       trendPositive: true,
-      accentLabel: 'Active',
-      icon: <CheckCircle2 size={20} className="text-emerald-400" />,
+      accentLabel: 'Chats',
+      icon: <MessageSquare size={20} className="text-emerald-400" />,
     },
     {
-      label: 'New today',
-      value: stats?.sessions_today ?? 0,
-      trend: 'Sessions started',
-      trendPositive: (stats?.sessions_today ?? 0) > 0,
-      accentLabel: 'Fresh',
+      label: 'Scraped Leads',
+      value: stats?.scrapedLeads ?? 0,
+      trend: 'Extracted from social/chats',
+      trendPositive: (stats?.scrapedLeads ?? 0) > 0,
+      accentLabel: 'Scraped',
       icon: <Sparkles size={20} className="text-brand" />,
     },
     {
-      label: 'AI queries',
-      value: stats?.total_messages ?? 0,
-      trend: 'Messages sent',
+      label: 'Total Properties',
+      value: stats?.totalProperties ?? 0,
+      trend: 'Listed properties',
       trendPositive: true,
-      accentLabel: 'Queries',
-      icon: <MessageSquare size={20} className="text-brand" />,
+      accentLabel: 'Properties',
+      icon: <Users size={20} className="text-brand" />,
     },
   ]
 }
@@ -59,9 +59,8 @@ function buildStatCards(stats: DashboardStats | null) {
 type LeadScore = 'High' | 'Medium' | 'Low'
 type Lead = { id: string; initials: string; name: string; location: string; amount: string; score: LeadScore }
 
-const leadSources = [
-  { source: 'Facebook',  percentage: 68, amount: 170, color: '#6366f1' },
-  { source: 'Instagram', percentage: 32, amount: 80,  color: '#f59e0b' },
+const defaultLeadSources = [
+  { source: 'Direct',  percentage: 100, amount: 0, color: '#6366f1' },
 ]
 
 const scoreLegend = [
@@ -70,13 +69,7 @@ const scoreLegend = [
   { title: 'Low match',    description: 'Low confidence, may need requalification.',   icon: Circle,        tone: 'text-red-400'     },
 ]
 
-const initialLeads: Lead[] = [
-  { id: '1', initials: 'DK', name: 'Dilanka K.',  location: 'Colombo 7',   amount: '150,000', score: 'High'   },
-  { id: '2', initials: 'NP', name: 'Nadia P.',    location: 'Nugegoda',    amount: '120,000', score: 'Medium' },
-  { id: '3', initials: 'RS', name: 'Roshan S.',   location: 'Mt. Lavinia', amount: '90,000',  score: 'Low'    },
-  { id: '4', initials: 'KM', name: 'Kumari M.',   location: 'Colombo 3',   amount: '180,000', score: 'High'   },
-  { id: '5', initials: 'AP', name: 'Ashan P.',    location: 'Battaramulla',amount: '110,000', score: 'Medium' },
-]
+const initialLeads: Lead[] = []
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -84,10 +77,10 @@ export default function Dashboard() {
   const { user }   = useAuth()
   const [query,      setQuery]     = useState('')
   const [isLoading,  setIsLoading] = useState(true)
-  const [stats,      setStats]     = useState<DashboardStats | null>(null)
+  const [stats,      setStats]     = useState<OwnerDashboardStats | null>(null)
 
   useEffect(() => {
-    fetchDashboardStats()
+    fetchOwnerDashboardStats()
       .then(setStats)
       .catch(() => { /* keep null stats; cards show 0 */ })
       .finally(() => setIsLoading(false))
@@ -99,14 +92,19 @@ export default function Dashboard() {
   )
 
   const filteredLeads = useMemo(() => {
+    const leadsToFilter = stats?.recentLeads ?? initialLeads
     const q = query.trim().toLowerCase()
-    if (!q) return initialLeads
-    return initialLeads.filter(l =>
+    if (!q) return leadsToFilter
+    return leadsToFilter.filter(l =>
       l.name.toLowerCase().includes(q) ||
       l.location.toLowerCase().includes(q) ||
       l.score.toLowerCase().includes(q),
     )
-  }, [query])
+  }, [query, stats])
+
+  const currentLeadSources = stats?.leadsBySource && stats.leadsBySource.length > 0 
+    ? stats.leadsBySource 
+    : defaultLeadSources
 
   return (
     <DashboardLayout activeNav="Dashboard">
@@ -180,7 +178,7 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="mt-5 space-y-4">
-                {leadSources.map(src => (
+                {currentLeadSources.map(src => (
                   <div key={src.source}>
                     <div className="mb-2 flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
                       <span>{src.source}</span>

@@ -141,8 +141,7 @@ export const adminPropertiesApi = {
     if (params?.limit != null) url.searchParams.set('limit', String(params.limit))
     if (params?.skip != null) url.searchParams.set('skip', String(params.skip))
     const res = await adminFetch(url.toString())
-    if (!res.ok) throw new Error('Failed to load properties')
-    return res.json()
+    return unwrap<any[]>(res)
   },
 
   async verify(id: string, verified: boolean): Promise<any> {
@@ -157,4 +156,57 @@ export const adminPropertiesApi = {
     const res = await adminFetch(`${BASE_URL}/admin/properties/${id}`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Delete failed')
   },
+}
+
+// ─── Chat Transcripts ─────────────────────────────────────────────────────────
+export interface AdminMessage {
+  id: number
+  role: string
+  content: string
+  timestamp: string
+}
+
+export const adminChatApi = {
+  async getSessionMessages(sessionId: string): Promise<AdminMessage[]> {
+    const res = await adminFetch(`${BASE_URL}/admin/manage/sessions/${sessionId}/messages`)
+    return unwrap<AdminMessage[]>(res)
+  }
+}
+
+// ─── Inquiry Analytics ────────────────────────────────────────────────────────
+export interface InquiryAnalytics {
+  total_leads: number
+  leads_by_source: Record<string, number>
+  top_properties: { property_id: number, title: string, lead_count: number }[]
+  top_owners: { user_id: number, full_name: string, lead_count: number }[]
+}
+
+export const adminAnalyticsApi = {
+  async getInquiryAnalytics(): Promise<InquiryAnalytics> {
+    const res = await adminFetch(`${BASE_URL}/admin/dashboard/analytics/inquiries`)
+    return unwrap<InquiryAnalytics>(res)
+  }
+}
+
+// ─── Global Inquiries ─────────────────────────────────────────────────────────
+export interface AdminInquiry {
+  id: number
+  property_id: number | null
+  property_title: string | null
+  name: string
+  email: string
+  phone: string | null
+  message: string | null
+  source: string
+  created_at: string
+}
+
+export const adminInquiriesApi = {
+  async listAll(params?: { skip?: number; limit?: number }): Promise<{ inquiries: AdminInquiry[], total: number }> {
+    const url = new URL(`${BASE_URL}/admin/manage/inquiries`)
+    if (params?.skip != null) url.searchParams.set('skip', String(params.skip))
+    if (params?.limit != null) url.searchParams.set('limit', String(params.limit))
+    const res = await adminFetch(url.toString())
+    return unwrap<{ inquiries: AdminInquiry[], total: number }>(res)
+  }
 }
