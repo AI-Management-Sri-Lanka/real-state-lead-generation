@@ -54,11 +54,11 @@ export default function PropertiesPage() {
   }, [properties, search, priceRange])
 
   return (
-    <div className="min-h-screen bg-page text-slate-100 flex flex-col">
+    <div className="min-h-screen w-full bg-page text-slate-100 flex flex-col">
       <Navbar />
 
       {/* ── Hero / search ───────────────────────────────────────── */}
-      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl flex-1 box-border px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">
           Find your next home
         </h1>
