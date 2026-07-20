@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -38,6 +39,11 @@ export function Navbar() {
   const { toggle: toggleSidebar } = useSidebar()
   const [theme, setTheme] = useTheme()
   const styles = NAVBAR_STYLES[theme]
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
 
   return (
     <header style={{ position:'sticky', top:0, zIndex:100, background:styles.surface, backdropFilter:'blur(12px)', borderBottom:`1px solid ${styles.border}`, fontFamily:'var(--font-sans)' }}>
@@ -97,6 +103,19 @@ export function Navbar() {
                 <Menu size={20} color={styles.secondary} />
               </button>
             )}
+            {!isDashboard && (
+              <button
+                className="md:hidden"
+                aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isMobileMenuOpen}
+                onClick={() => setMobileMenuOpen(open => !open)}
+                style={{ background:styles.muted, border:`1px solid ${styles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = styles.subtle)}
+                onMouseLeave={e => (e.currentTarget.style.background = styles.muted)}
+              >
+                {isMobileMenuOpen ? <X size={20} color={styles.secondary} /> : <Menu size={20} color={styles.secondary} />}
+              </button>
+            )}
             {showSignIn && !isContact && (
               <Link
                 to="/auth/signin"
@@ -111,6 +130,42 @@ export function Navbar() {
           </div>
         </nav>
       </div>
+
+      {!isDashboard && isMobileMenuOpen && (
+        <div
+          className="md:hidden"
+          style={{ borderTop:`1px solid ${styles.border}`, background:styles.surface, padding:'8px 20px 16px', display:'flex', flexDirection:'column', gap:4 }}
+        >
+          {LINKS.map(({ label, to }) => {
+            const active = location.pathname === to || (to !== '/contact' && location.pathname.startsWith(to))
+            return (
+              <Link
+                key={label}
+                to={to}
+                style={{
+                  padding:'10px 14px',
+                  borderRadius:8,
+                  fontSize:15,
+                  fontWeight: active ? 600 : 500,
+                  color: active ? styles.text : styles.secondary,
+                  background: active ? styles.muted : 'transparent',
+                  textDecoration:'none',
+                }}
+              >
+                {label}
+              </Link>
+            )
+          })}
+          {showSignIn && !isContact && (
+            <Link
+              to="/auth/signin"
+              style={{ marginTop:8, padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', textAlign:'center' }}
+            >
+              Sign in
+            </Link>
+          )}
+        </div>
+      )}
     </header>
   )
 }

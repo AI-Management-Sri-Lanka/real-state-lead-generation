@@ -286,6 +286,27 @@ body {
   min-width: 0;
 }
 
+.auth-brand-logo {
+  position: absolute;
+  top: 36px;
+  left: 48px;
+  z-index: 10;
+}
+
+.auth-brand-logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.auth-brand-logo-text {
+  font-size: 18px;
+}
+
+.auth-brand-content {
+  padding: 48px 56px;
+}
+
 /* Responsive: Stack on tablet and mobile */
 @media (max-width: 1024px) {
   .auth-root {
@@ -300,6 +321,20 @@ body {
     padding: 32px 24px;
   }
 
+  /* .auth-root switching to a column stack breaks the desktop trick of
+     floating the logo top-left and pinning the heading to the bottom via
+     flex-end (there's no leftover vertical space to push into once the
+     panel height is content-driven). Flow the logo in-line above the
+     heading instead so the two can never overlap. */
+  .auth-brand-logo {
+    position: static;
+    margin-bottom: 20px;
+  }
+
+  .auth-brand-content {
+    padding: 0;
+  }
+
   .auth-form-shell {
     min-height: auto;
     padding: 40px 24px;
@@ -310,6 +345,16 @@ body {
   .auth-brand-panel {
     min-height: 250px;
     padding: 24px 16px;
+  }
+
+  .auth-brand-logo-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .auth-brand-logo-text {
+    font-size: 16px;
   }
 
   .auth-brand-panel h1 {
@@ -329,6 +374,20 @@ body {
   .auth-brand-panel {
     min-height: 200px;
     padding: 16px 12px;
+  }
+
+  .auth-brand-logo {
+    margin-bottom: 14px;
+  }
+
+  .auth-brand-logo-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+  }
+
+  .auth-brand-logo-text {
+    font-size: 14px;
   }
 
   .auth-brand-panel h1 {

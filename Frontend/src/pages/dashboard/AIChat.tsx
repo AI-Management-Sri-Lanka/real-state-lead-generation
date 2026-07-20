@@ -615,7 +615,7 @@ export default function AIChat() {
             <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
               {/* ── Sidebar (fixed, never scrolls/resizes with chat) ── */}
-              <div className="w-full lg:w-80 lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/70">
+              <div className="w-full lg:w-80 shrink-0 max-h-[40vh] lg:max-h-none lg:h-full border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/70">
                 <div className="flex items-center justify-between gap-3 shrink-0">
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-slate-500">AI Assistant</p>
