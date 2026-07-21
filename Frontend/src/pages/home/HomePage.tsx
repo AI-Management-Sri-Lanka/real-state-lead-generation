@@ -108,8 +108,8 @@ export default function HomePage() {
 
 
         {/* ── Category Chips ──────────────────────────────────────────── */}
-        <div className="mb-8 mt-4 md:mt-0 overflow-x-auto pb-4 hide-scrollbar">
-          <div className="flex gap-2">
+        <div className="mb-8 mt-4 md:mt-0 pb-4">
+          <div className="flex flex-wrap gap-2">
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
