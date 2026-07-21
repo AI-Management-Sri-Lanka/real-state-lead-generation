@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -70,10 +70,27 @@ export function Navbar() {
     return () => mql.removeEventListener('change', handleChange)
   }, [])
 
+  // Mobile/tablet nav drawer — only relevant on public pages. Inside the
+  // dashboard, the hamburger already opens the real dashboard Sidebar, so we
+  // never render this menu there to avoid two competing toggles.
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const showMobileMenuToggle = !isDesktop && !isDashboard
+
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
+
   // Dashboard / AI Assistant only show up while you're actually inside the
   // dashboard section — public pages (Home, Properties, Contact) always show
   // the simple nav, even for a signed-in user.
   const visibleLinks = LINKS.filter(link => !link.authOnly || isDashboard)
+
+  // The mobile drawer acts as a full site menu (not scoped to "inside
+  // dashboard"), so authed users can jump straight to Dashboard / AI
+  // Assistant from any public page, matching what the hamburger implies.
+  const mobileLinks = LINKS.filter(link => !link.authOnly || isAuthenticated)
+  const isLinkActive = (to: string) =>
+    to === '/' ? location.pathname === '/' : location.pathname === to || location.pathname.startsWith(to + '/')
 
   // Pick the single most specific matching link (longest "to"), so nested
   // routes like /dashboard/ai-assistant only highlight "AI Assistant" and
@@ -158,6 +175,22 @@ export function Navbar() {
               Browse Properties
             </Link>
             <ThemeToggle theme={theme} setTheme={setTheme} whiteIcon={isHome} />
+            {showMobileMenuToggle && (
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(open => !open)}
+                aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-nav-menu"
+                style={{ background:activeStyles.muted, border:`1px solid ${activeStyles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = activeStyles.subtle)}
+                onMouseLeave={e => (e.currentTarget.style.background = activeStyles.muted)}
+              >
+                {mobileMenuOpen
+                  ? <X size={20} color={activeStyles.secondary} />
+                  : <Menu size={20} color={activeStyles.secondary} />}
+              </button>
+            )}
             {isDashboard && !isDesktop && (
               <button
                 className="navbar-sidebar-toggle"
@@ -194,6 +227,80 @@ export function Navbar() {
           </div>
         </nav>
       </div>
+
+      {showMobileMenuToggle && mobileMenuOpen && (
+        <>
+          <div
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+            style={{ position: 'fixed', top: 72, left: 0, right: 0, bottom: 0, zIndex: 99 }}
+          />
+          <div
+            id="mobile-nav-menu"
+            role="menu"
+            style={{
+              position: 'absolute',
+              top: 72,
+              left: 0,
+              width: '100%',
+              zIndex: 100,
+              background: styles.surface,
+              borderBottom: `1px solid ${styles.border}`,
+              boxShadow: '0 16px 32px rgba(15,23,42,0.14)',
+              padding: '12px 20px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            }}
+          >
+            {mobileLinks.map(({ label, to }) => {
+              const active = isLinkActive(to)
+              return (
+                <Link
+                  key={label}
+                  to={to}
+                  role="menuitem"
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 10,
+                    fontSize: 15,
+                    fontWeight: active ? 600 : 500,
+                    color: active ? styles.text : styles.secondary,
+                    background: active ? styles.muted : 'transparent',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {label}
+                </Link>
+              )
+            })}
+
+            <div style={{ marginTop: 8, paddingTop: 12, borderTop: `1px solid ${styles.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {showSignIn && (
+                <Link
+                  to="/auth/signin"
+                  role="menuitem"
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{ padding: '12px 14px', borderRadius: 10, fontSize: 15, fontWeight: 700, color: 'white', background: 'var(--color-brand)', textDecoration: 'none', textAlign: 'center' }}
+                >
+                  Sign in
+                </Link>
+              )}
+              {showDashboardBtn && (
+                <Link
+                  to="/dashboard"
+                  role="menuitem"
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{ padding: '12px 14px', borderRadius: 10, fontSize: 15, fontWeight: 700, color: 'white', background: 'var(--color-brand)', textDecoration: 'none', textAlign: 'center' }}
+                >
+                  Dashboard
+                </Link>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </header>
   )
 }

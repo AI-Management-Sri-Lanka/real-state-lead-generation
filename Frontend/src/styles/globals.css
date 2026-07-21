@@ -262,6 +262,37 @@ body {
   .dashboard-sidebar-mobile { display: none !important; }
 }
 
+/* Site footer — collapses to fewer columns on narrow screens so the link
+   grid never forces the page wider than the viewport (was causing large
+   unbalanced right-hand whitespace on mobile). */
+.site-footer {
+  padding: 64px 32px 32px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+
+@media (max-width: 768px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-footer {
+    padding: 48px 20px 24px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
 /* Auth pages — responsive two-column layout */
 .auth-root {
   display: flex;
@@ -293,6 +324,23 @@ body {
   min-width: 0;
 }
 
+/* Auth brand logo — fixed top-left offset works fine on the full-height
+   desktop panel, but on mobile the panel shrinks to fit its (bottom-anchored)
+   heading, so the logo needs to move in tandem with .auth-brand-content's
+   top padding below or the two visually collide. */
+.auth-brand-logo {
+  position: absolute;
+  top: 36px;
+  left: 48px;
+  z-index: 10;
+}
+
+.auth-brand-content {
+  position: relative;
+  z-index: 1;
+  padding: 48px 56px;
+}
+
 /* Responsive: Stack on tablet and mobile */
 @media (max-width: 1024px) {
   .auth-root {
@@ -305,6 +353,15 @@ body {
   .auth-brand-panel {
     min-height: 300px;
     padding: 32px 24px;
+  }
+
+  .auth-brand-logo {
+    top: 24px;
+    left: 24px;
+  }
+
+  .auth-brand-content {
+    padding: 84px 24px 8px;
   }
 
   .auth-form-shell {
@@ -325,6 +382,15 @@ body {
 
   .auth-brand-panel p {
     font-size: 13px !important;
+  }
+
+  .auth-brand-logo {
+    top: 20px;
+    left: 16px;
+  }
+
+  .auth-brand-content {
+    padding: 68px 16px 4px;
   }
 
   .auth-form-shell {
@@ -348,6 +414,15 @@ body {
 
   .auth-brand-panel ul li {
     font-size: 12px !important;
+  }
+
+  .auth-brand-logo {
+    top: 16px;
+    left: 12px;
+  }
+
+  .auth-brand-content {
+    padding: 60px 12px 4px;
   }
 
   .auth-form-shell {

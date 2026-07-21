@@ -13,9 +13,9 @@ const LINKS = {
 export function Footer() {
   
   return (
-    <footer style={{ background:'var(--color-surface)', color:'var(--color-text-secondary)', fontFamily:'var(--font-sans)', padding:'64px 32px 32px' }}>
+    <footer className="site-footer" style={{ background:'var(--color-surface)', color:'var(--color-text-secondary)', fontFamily:'var(--font-sans)' }}>
       <div style={{ maxWidth:1100, margin:'0 auto' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr', gap:40, marginBottom:56 }}>
+        <div className="footer-grid" style={{ marginBottom:56 }}>
           {/* Brand column */}
           <div>
             <div style={{ marginBottom:16 }}>
@@ -60,7 +60,7 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div style={{ borderTop:'1px solid var(--color-border)', paddingTop:24, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ borderTop:'1px solid var(--color-border)', paddingTop:24, display:'flex', flexWrap:'wrap', justifyContent:'space-between', alignItems:'center', gap:8 }}>
           <span style={{ fontSize:13, color:'var(--color-text-secondary)' }}>© 2026 LeadAI. All rights reserved.</span>
           <span style={{ fontSize:13, color:'var(--color-text-secondary)' }}>Built for real estate agents.</span>
         </div>

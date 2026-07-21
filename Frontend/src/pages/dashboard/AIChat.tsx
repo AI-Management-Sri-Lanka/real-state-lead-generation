@@ -221,7 +221,12 @@ export default function AIChat() {
   const [renaming, setRenaming] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Open by default on desktop (matches the in-flow two-column layout below);
+  // closed by default on mobile/tablet, where the sidebar renders as an
+  // overlay drawer that would otherwise cover the chat on first load.
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth >= 1024
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -609,10 +614,24 @@ export default function AIChat() {
       <div className="h-screen max-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_28%),linear-gradient(135deg,_#f8fbff_0%,_#f3f7ff_48%,_#eef2ff_100%)] text-slate-100 overflow-hidden dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)]">
         <div className="w-full h-full overflow-hidden">
           <div className="h-full bg-white/70 backdrop-blur-sm overflow-hidden flex flex-col dark:bg-slate-950/80">
-            <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+            <div className="relative flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
-              {/* ── Sidebar (fixed, never scrolls/resizes with chat) ── */}
-              <div className={`${sidebarOpen ? "w-full lg:w-80" : "hidden lg:hidden"} lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/70 transition-all duration-300`}>
+              {/* Mobile-only backdrop — tap outside the drawer to close it */}
+              {sidebarOpen && (
+                <div
+                  onClick={() => setSidebarOpen(false)}
+                  className="absolute inset-0 z-20 bg-black/40 lg:hidden"
+                  aria-hidden="true"
+                />
+              )}
+
+              {/* ── Sidebar — overlay drawer on mobile/tablet (never squeezes
+                   the chat area's height out of the flex column), in-flow
+                   column on desktop (fixed, never scrolls/resizes with chat) ── */}
+              <div className={sidebarOpen
+                ? "absolute inset-y-0 left-0 z-30 w-[85%] max-w-xs flex flex-col h-full overflow-hidden border-r border-sky-200/80 bg-white/95 backdrop-blur-md p-5 shadow-2xl dark:border-sky-800/40 dark:bg-slate-950/95 lg:static lg:z-auto lg:w-80 lg:max-w-none lg:shrink-0 lg:bg-white/70 lg:backdrop-blur-sm lg:shadow-none lg:dark:bg-slate-950/70 transition-all duration-300"
+                : "hidden"
+              }>
                 <div className="flex items-center justify-between gap-3 shrink-0">
                   <div className="flex items-center gap-2">
                     <History size={20} className="text-indigo-600 dark:text-sky-400 shrink-0" />
