@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -69,6 +69,14 @@ export function Navbar() {
     mql.addEventListener('change', handleChange)
     return () => mql.removeEventListener('change', handleChange)
   }, [])
+
+  // Mobile dropdown menu for the public nav links (Home, Properties,
+  // Contact, etc). This is separate from the dashboard's own sidebar
+  // toggle below — that one opens the app sidebar, not this nav list.
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
 
   // Dashboard / AI Assistant only show up while you're actually inside the
   // dashboard section — public pages (Home, Properties, Contact) always show
@@ -158,6 +166,19 @@ export function Navbar() {
               Browse Properties
             </Link>
             <ThemeToggle theme={theme} setTheme={setTheme} whiteIcon={isHome} />
+            {!isDashboard && !isDesktop && (
+              <button
+                className="navbar-mobile-toggle"
+                onClick={() => setMobileMenuOpen(o => !o)}
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileMenuOpen}
+                style={{ background:activeStyles.muted, border:`1px solid ${activeStyles.border}`, borderRadius:8, width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = activeStyles.subtle)}
+                onMouseLeave={e => (e.currentTarget.style.background = activeStyles.muted)}
+              >
+                {mobileMenuOpen ? <X size={20} color={activeStyles.text} /> : <Menu size={20} color={activeStyles.text} />}
+              </button>
+            )}
             {isDashboard && !isDesktop && (
               <button
                 className="navbar-sidebar-toggle"
@@ -194,6 +215,83 @@ export function Navbar() {
           </div>
         </nav>
       </div>
+
+      {!isDashboard && !isDesktop && mobileMenuOpen && (
+        <div
+          style={{
+            width: '100%',
+            background: styles.surface,
+            borderTop: `1px solid ${styles.border}`,
+            borderBottom: `1px solid ${styles.border}`,
+            padding: '12px 20px 20px',
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+          }}
+        >
+          {visibleLinks.map(({ label, to }) => {
+            const active = label === activeLabel
+            return (
+              <Link
+                key={label}
+                to={to}
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 8,
+                  fontSize: 15,
+                  fontWeight: active ? 600 : 500,
+                  color: active ? styles.text : styles.secondary,
+                  background: active ? styles.muted : 'transparent',
+                  textDecoration: 'none',
+                }}
+              >
+                {label}
+              </Link>
+            )
+          })}
+
+          <Link
+            to="/properties"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              marginTop: 8,
+              padding: '12px 14px',
+              borderRadius: 999,
+              fontSize: 15,
+              fontWeight: 700,
+              color: styles.text,
+              background: 'transparent',
+              border: `1px solid ${styles.border}`,
+              textDecoration: 'none',
+              textAlign: 'center',
+            }}
+          >
+            Browse Properties
+          </Link>
+
+          {showSignIn && (
+            <Link
+              to="/auth/signin"
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                marginTop: 4,
+                padding: '12px 14px',
+                borderRadius: 999,
+                fontSize: 15,
+                fontWeight: 700,
+                color: 'white',
+                background: 'var(--color-brand)',
+                textDecoration: 'none',
+                textAlign: 'center',
+              }}
+            >
+              Sign in
+            </Link>
+          )}
+        </div>
+      )}
     </header>
   )
 }
