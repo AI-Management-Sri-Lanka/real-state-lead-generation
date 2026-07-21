@@ -95,7 +95,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
         {/* Search Widget */}
         <div className="mx-auto max-w-4xl">
           {/* Tabs */}
-          <div className="flex justify-center mb-4 space-x-2">
+          <div className="flex flex-wrap justify-center mb-4 gap-2">
             {['ALL', 'FOR RENT', 'FOR SALE'].map((tab) => (
               <button
                 key={tab}
@@ -104,7 +104,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
                   color: 'white',
                   background: activeTab === tab ? '#37b754' : 'rgba(0,0,0,0.5)',
                 }}
-                className={`px-8 py-2 rounded-full text-xs font-bold transition-colors tracking-wide backdrop-blur-sm`}
+                className={`px-4 sm:px-6 md:px-8 py-2 rounded-full text-xs font-bold transition-colors tracking-wide backdrop-blur-sm`}
               >
                 {tab}
               </button>
