@@ -611,6 +611,25 @@ export default function AIChat() {
           <div className="h-full bg-white/70 backdrop-blur-sm overflow-hidden flex flex-col dark:bg-slate-950/80">
             <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
+              {/* ── Persistent left-edge rail toggle ──────────────────────
+                  Lives OUTSIDE the sidebar's own conditional visibility so
+                  it never moves, whether the sidebar is open or collapsed.
+                  This replaces the two separate buttons that used to live
+                  inside the sidebar (close) and inside the main header
+                  (expand) — that split was the cause of the icon jumping
+                  to the right edge on collapse. */}
+              <div className="hidden lg:flex flex-col items-center pt-5 px-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="inline-flex items-center justify-center h-9 w-9 rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 hover:text-slate-700 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
+                  aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+                  title={sidebarOpen ? "Close chat history" : "Open chat history"}
+                >
+                  {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+                </button>
+              </div>
+
               {/* ── Sidebar (fixed, never scrolls/resizes with chat) ── */}
               <div className={`${sidebarOpen ? "w-full lg:w-80" : "hidden lg:hidden"} lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/70 transition-all duration-300`}>
                 <div className="flex items-center justify-between gap-3 shrink-0">
@@ -627,10 +646,12 @@ export default function AIChat() {
                     >
                       <Plus size={16} /> 
                     </button>
+                    {/* Mobile-only close button — on desktop the rail toggle
+                        to the left of the sidebar handles this instead. */}
                     <button
                       type="button"
                       onClick={() => setSidebarOpen(false)}
-                      className="inline-flex items-center justify-center h-9 w-9 rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 hover:text-slate-700 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
+                      className="lg:hidden inline-flex items-center justify-center h-9 w-9 rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 hover:text-slate-700 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
                       aria-label="Close sidebar"
                     >
                       <PanelLeftClose size={18} />
@@ -709,7 +730,8 @@ export default function AIChat() {
                     </h1>
                   </div>
                   <div className="flex items-center gap-3">
-                    {/* Mobile hamburger menu */}
+                    {/* Mobile hamburger menu — desktop toggle now lives in
+                        the persistent rail to the left of the sidebar. */}
                     <button
                       type="button"
                       onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -718,18 +740,6 @@ export default function AIChat() {
                     >
                       {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>
-                    {/* Desktop expand button */}
-                    {!sidebarOpen && (
-                      <button
-                        type="button"
-                        onClick={() => setSidebarOpen(true)}
-                        className="hidden lg:inline-flex items-center justify-center h-10 w-10 rounded-2xl border border-sky-200/80 bg-white/90 text-slate-500 hover:text-slate-700 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
-                        aria-label="Open sidebar"
-                        title="Open chat history"
-                      >
-                        <PanelLeft size={18} />
-                      </button>
-                    )}
                   </div>
                 </div>
 
