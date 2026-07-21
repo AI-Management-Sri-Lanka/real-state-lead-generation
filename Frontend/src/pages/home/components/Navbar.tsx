@@ -290,6 +290,26 @@ export function Navbar() {
               Sign in
             </Link>
           )}
+
+          {showDashboardBtn && (
+            <Link
+              to="/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                marginTop: 4,
+                padding: '12px 14px',
+                borderRadius: 999,
+                fontSize: 15,
+                fontWeight: 700,
+                color: 'white',
+                background: 'var(--color-brand)',
+                textDecoration: 'none',
+                textAlign: 'center',
+              }}
+            >
+              Dashboard
+            </Link>
+          )}
         </div>
       )}
     </header>
