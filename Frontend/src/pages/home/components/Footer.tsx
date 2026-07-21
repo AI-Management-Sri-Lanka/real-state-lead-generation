@@ -15,9 +15,11 @@ export function Footer() {
   return (
     <footer style={{ background:'var(--color-surface)', color:'var(--color-text-secondary)', fontFamily:'var(--font-sans)', padding:'64px 32px 32px' }}>
       <div style={{ maxWidth:1100, margin:'0 auto' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr', gap:40, marginBottom:56 }}>
-          {/* Brand column */}
-          <div>
+        <div
+          className="grid grid-cols-2 gap-8 mb-10 sm:grid-cols-4 sm:gap-10 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] lg:mb-14"
+        >
+          {/* Brand column — full width on mobile/tablet, first (2fr) track on desktop */}
+          <div className="col-span-2 sm:col-span-4 lg:col-span-1">
             <div style={{ marginBottom:16 }}>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div style={{ width:30, height:30, borderRadius:8, background:'linear-gradient(135deg,#3D3BF3,#00C896)', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -41,9 +43,11 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Link columns */}
+          {/* Link columns — 2-up on mobile, 4-up from sm, folded into the
+              5-track desktop grid at lg (auto-placed into the remaining
+              four 1fr tracks after the brand column). */}
           {Object.entries(LINKS).map(([heading, items]) => (
-            <div key={heading}>
+            <div key={heading} className="min-w-0">
               <div style={{ fontSize:13, fontWeight:600, color:'var(--color-text-heading)', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:16 }}>{heading}</div>
               <ul style={{ listStyle:'none', display:'flex', flexDirection:'column', gap:10 }}>
                 {items.map(item => (
@@ -60,7 +64,7 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div style={{ borderTop:'1px solid var(--color-border)', paddingTop:24, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ borderTop:'1px solid var(--color-border)', paddingTop:24, display:'flex', flexWrap:'wrap', gap:8, justifyContent:'space-between', alignItems:'center' }}>
           <span style={{ fontSize:13, color:'var(--color-text-secondary)' }}>© 2026 LeadAI. All rights reserved.</span>
           <span style={{ fontSize:13, color:'var(--color-text-secondary)' }}>Built for real estate agents.</span>
         </div>
