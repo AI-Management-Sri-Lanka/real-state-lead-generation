@@ -221,7 +221,12 @@ export default function AIChat() {
   const [renaming, setRenaming] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    // Default open on desktop (persistent panel), closed on mobile
+    // (overlay drawer) so the chat box is visible without extra taps.
+    return window.matchMedia("(min-width: 1024px)").matches;
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -609,7 +614,7 @@ export default function AIChat() {
       <div className="h-screen max-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_28%),linear-gradient(135deg,_#f8fbff_0%,_#f3f7ff_48%,_#eef2ff_100%)] text-slate-100 overflow-hidden dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)]">
         <div className="w-full h-full overflow-hidden">
           <div className="h-full bg-white/70 backdrop-blur-sm overflow-hidden flex flex-col dark:bg-slate-950/80">
-            <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+            <div className="relative flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
               {/* ── Persistent left-edge rail toggle ──────────────────────
                   Lives OUTSIDE the sidebar's own conditional visibility so
@@ -630,8 +635,10 @@ export default function AIChat() {
                 </button>
               </div>
 
-              {/* ── Sidebar (fixed, never scrolls/resizes with chat) ── */}
-              <div className={`${sidebarOpen ? "w-full lg:w-80" : "hidden lg:hidden"} lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/70 transition-all duration-300`}>
+              {/* ── Sidebar (fixed, never scrolls/resizes with chat) ──
+                  On mobile it's an absolute overlay so it never pushes the
+                  chat panel out of view; on desktop it's an in-flow panel. */}
+              <div className={`${sidebarOpen ? "flex absolute inset-0 z-30 w-full lg:static lg:inset-auto lg:z-auto lg:w-80" : "hidden lg:hidden"} lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/95 lg:bg-white/70 backdrop-blur-sm lg:backdrop-blur-none p-5 flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/95 lg:dark:bg-slate-950/70 transition-all duration-300`}>
                 <div className="flex items-center justify-between gap-3 shrink-0">
                   <div className="flex items-center gap-2">
                     <History size={20} className="text-indigo-600 dark:text-sky-400 shrink-0" />

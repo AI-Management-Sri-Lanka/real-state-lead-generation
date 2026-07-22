@@ -105,7 +105,7 @@ export function Navbar() {
         </Link>
 
         <nav className="flex items-center gap-4" style={{ marginLeft: 'auto' }}>
-          <div className="hidden md:flex" style={{ gap: 4, alignItems: 'center' }}>
+          <div className="hidden lg:flex" style={{ gap: 4, alignItems: 'center' }}>
             {visibleLinks.map(({ label, to }) => {
               const active = label === activeLabel
               return (
@@ -144,7 +144,7 @@ export function Navbar() {
           <div className="ml-auto flex items-center gap-3">
             <Link
               to="/properties"
-              className="hidden md:inline-flex"
+              className="hidden lg:inline-flex"
               style={{
                 padding: '10px 18px',
                 borderRadius: 999,
@@ -193,7 +193,7 @@ export function Navbar() {
             {showSignIn && (
               <Link
                 to="/auth/signin"
-                className="hidden md:inline-flex"
+                className="hidden lg:inline-flex"
                 style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
@@ -204,7 +204,7 @@ export function Navbar() {
             {showDashboardBtn && (
               <Link
                 to="/dashboard"
-                className="hidden md:inline-flex"
+                className="hidden lg:inline-flex"
                 style={{ padding:'10px 18px', borderRadius:999, fontSize:14, fontWeight:700, color:'white', background:'var(--color-brand)', textDecoration:'none', transition:'transform 0.12s, opacity 0.12s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.opacity='0.92' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='none'; (e.currentTarget as HTMLElement).style.opacity='1' }}
