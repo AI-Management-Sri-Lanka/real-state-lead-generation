@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 
 interface SidebarContextType {
   isOpen: boolean
@@ -26,9 +26,9 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(COLLAPSE_STORAGE_KEY, collapsed ? '1' : '0')
   }, [collapsed])
 
-  const toggle = () => setIsOpen(!isOpen)
-  const close = () => setIsOpen(false)
-  const toggleCollapsed = () => setCollapsed((prev) => !prev)
+  const toggle = useCallback(() => setIsOpen((prev) => !prev), [])
+  const close = useCallback(() => setIsOpen(false), [])
+  const toggleCollapsed = useCallback(() => setCollapsed((prev) => !prev), [])
 
   return (
     <SidebarContext.Provider value={{ isOpen, toggle, close, collapsed, toggleCollapsed }}>

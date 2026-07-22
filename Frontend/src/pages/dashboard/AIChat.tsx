@@ -611,7 +611,7 @@ export default function AIChat() {
   // ── Render ──────────────────────────────────────────────────────────────
   return (
     <DashboardLayout activeNav="AI Chat">
-      <div className="h-screen max-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_28%),linear-gradient(135deg,_#f8fbff_0%,_#f3f7ff_48%,_#eef2ff_100%)] text-slate-100 overflow-hidden dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)]">
+      <div className="h-full max-h-full bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_28%),linear-gradient(135deg,_#f8fbff_0%,_#f3f7ff_48%,_#eef2ff_100%)] text-slate-100 overflow-hidden dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)]">
         <div className="w-full h-full overflow-hidden">
           <div className="h-full bg-white/70 backdrop-blur-sm overflow-hidden flex flex-col dark:bg-slate-950/80">
             <div className="relative flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
