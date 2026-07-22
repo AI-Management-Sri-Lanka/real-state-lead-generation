@@ -221,8 +221,25 @@ export default function AIChat() {
   const [renaming, setRenaming] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    // Default open on desktop (persistent panel), closed on mobile
+    // (overlay drawer) so the chat box is visible without extra taps.
+    return window.matchMedia("(min-width: 1024px)").matches;
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Selecting a session (or starting a new one) should drop the mobile
+  // overlay — it covers the whole screen there, so leaving it open hides
+  // the very chat the user just switched to. Desktop's panel is persistent
+  // in-flow, not an overlay, so it's left open there.
+  const selectSession = useCallback((sessionId: string) => {
+    setActiveSessionId(sessionId);
+    setActiveMenu(null);
+    if (!window.matchMedia("(min-width: 1024px)").matches) {
+      setSidebarOpen(false);
+    }
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -386,15 +403,14 @@ export default function AIChat() {
         messages: [],
       };
       setSessions((prev) => [newSession, ...prev]);
-      setActiveSessionId(newSession.id);
       setMessageText("");
-      setActiveMenu(null);
+      selectSession(newSession.id);
       return newSession.id;
     } catch (err) {
       console.error("Error creating session:", err);
       return undefined;
     }
-  }, []);
+  }, [selectSession]);
 
   const generateSessionTitle = useCallback(async (sessionId: string, userQuery: string) => {
     try {
@@ -606,10 +622,10 @@ export default function AIChat() {
   // ── Render ──────────────────────────────────────────────────────────────
   return (
     <DashboardLayout activeNav="AI Chat">
-      <div className="h-screen max-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_28%),linear-gradient(135deg,_#f8fbff_0%,_#f3f7ff_48%,_#eef2ff_100%)] text-slate-100 overflow-hidden dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)]">
+      <div className="h-full max-h-full bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_28%),linear-gradient(135deg,_#f8fbff_0%,_#f3f7ff_48%,_#eef2ff_100%)] text-slate-100 overflow-hidden dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)]">
         <div className="w-full h-full overflow-hidden">
           <div className="h-full bg-white/70 backdrop-blur-sm overflow-hidden flex flex-col dark:bg-slate-950/80">
-            <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+            <div className="relative flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
               {/* ── Persistent left-edge rail toggle ──────────────────────
                   Lives OUTSIDE the sidebar's own conditional visibility so
@@ -630,8 +646,10 @@ export default function AIChat() {
                 </button>
               </div>
 
-              {/* ── Sidebar (fixed, never scrolls/resizes with chat) ── */}
-              <div className={`${sidebarOpen ? "w-full lg:w-80" : "hidden lg:hidden"} lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/70 p-5 flex flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/70 transition-all duration-300`}>
+              {/* ── Sidebar (fixed, never scrolls/resizes with chat) ──
+                  On mobile it's an absolute overlay so it never pushes the
+                  chat panel out of view; on desktop it's an in-flow panel. */}
+              <div className={`${sidebarOpen ? "flex absolute inset-0 z-30 w-full lg:static lg:inset-auto lg:z-auto lg:w-80" : "hidden lg:hidden"} lg:shrink-0 border-b lg:border-b-0 lg:border-r border-sky-200/80 bg-white/95 lg:bg-white/70 backdrop-blur-sm lg:backdrop-blur-none p-5 flex-col h-full overflow-hidden dark:border-sky-800/40 dark:bg-slate-950/95 lg:dark:bg-slate-950/70 transition-all duration-300`}>
                 <div className="flex items-center justify-between gap-3 shrink-0">
                   <div className="flex items-center gap-2">
                     <History size={20} className="text-indigo-600 dark:text-sky-400 shrink-0" />
@@ -666,7 +684,7 @@ export default function AIChat() {
                       <div key={session.id} className="relative">
                         <button
                           type="button"
-                          onClick={() => setActiveSessionId(session.id)}
+                          onClick={() => selectSession(session.id)}
                           className={`group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition border ${active
                               ? "border-sky-400/40 bg-gradient-to-r from-sky-500/15 to-indigo-500/15"
                               : "border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
