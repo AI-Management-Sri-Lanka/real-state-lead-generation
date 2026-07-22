@@ -229,6 +229,18 @@ export default function AIChat() {
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Selecting a session (or starting a new one) should drop the mobile
+  // overlay — it covers the whole screen there, so leaving it open hides
+  // the very chat the user just switched to. Desktop's panel is persistent
+  // in-flow, not an overlay, so it's left open there.
+  const selectSession = useCallback((sessionId: string) => {
+    setActiveSessionId(sessionId);
+    setActiveMenu(null);
+    if (!window.matchMedia("(min-width: 1024px)").matches) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [sessions, isTyping, activeSessionId]);
@@ -391,15 +403,14 @@ export default function AIChat() {
         messages: [],
       };
       setSessions((prev) => [newSession, ...prev]);
-      setActiveSessionId(newSession.id);
       setMessageText("");
-      setActiveMenu(null);
+      selectSession(newSession.id);
       return newSession.id;
     } catch (err) {
       console.error("Error creating session:", err);
       return undefined;
     }
-  }, []);
+  }, [selectSession]);
 
   const generateSessionTitle = useCallback(async (sessionId: string, userQuery: string) => {
     try {
@@ -673,7 +684,7 @@ export default function AIChat() {
                       <div key={session.id} className="relative">
                         <button
                           type="button"
-                          onClick={() => setActiveSessionId(session.id)}
+                          onClick={() => selectSession(session.id)}
                           className={`group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition border ${active
                               ? "border-sky-400/40 bg-gradient-to-r from-sky-500/15 to-indigo-500/15"
                               : "border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
