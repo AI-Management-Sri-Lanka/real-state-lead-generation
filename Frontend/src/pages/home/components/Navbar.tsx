@@ -97,7 +97,7 @@ export function Navbar() {
   }, null)
 
   return (
-    <header style={{ position: isHome ? 'absolute' : 'sticky', width: '100%', top:0, left:0, zIndex:100, background:activeStyles.surface, backdropFilter: isHome ? 'none' : 'blur(12px)', borderBottom: isHome ? 'none' : `1px solid ${activeStyles.border}`, fontFamily:'var(--font-sans)' }}>
+    <header style={{ position: isHome ? 'fixed' : 'sticky', width: '100%', top:0, left:0, zIndex:100, background:activeStyles.surface, backdropFilter: isHome ? 'none' : 'blur(12px)', borderBottom: isHome ? 'none' : `1px solid ${activeStyles.border}`, fontFamily:'var(--font-sans)' }}>
       <div style={{ width:'100%', padding:'0 20px', height:72, display:'flex', alignItems:'center', gap:32, boxSizing:'border-box' }}>
 
         <Link to="/" style={{ textDecoration:'none', flexShrink:0 }}>
@@ -142,29 +142,6 @@ export function Navbar() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <Link
-              to="/properties"
-              className="hidden lg:inline-flex"
-              style={{
-                padding: '10px 18px',
-                borderRadius: 999,
-                fontSize: 14,
-                fontWeight: 700,
-                color: activeStyles.text,
-                background: isHome ? 'rgba(0,0,0,0.25)' : 'transparent',
-                border: isHome ? '1px solid rgba(0,0,0,0.6)' : `1px solid ${activeStyles.border}`,
-                textDecoration: 'none',
-                transition: 'background 0.12s, border-color 0.12s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = activeStyles.muted
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'transparent'
-              }}
-            >
-              Browse Properties
-            </Link>
             <ThemeToggle theme={theme} setTheme={setTheme} whiteIcon={isHome} />
             {!isDashboard && !isDesktop && (
               <button
@@ -251,25 +228,6 @@ export function Navbar() {
               </Link>
             )
           })}
-
-          <Link
-            to="/properties"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{
-              marginTop: 8,
-              padding: '12px 14px',
-              borderRadius: 999,
-              fontSize: 15,
-              fontWeight: 700,
-              color: styles.text,
-              background: 'transparent',
-              border: `1px solid ${styles.border}`,
-              textDecoration: 'none',
-              textAlign: 'center',
-            }}
-          >
-            Browse Properties
-          </Link>
 
           {showSignIn && (
             <Link
