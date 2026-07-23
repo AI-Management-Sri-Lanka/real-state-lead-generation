@@ -142,29 +142,6 @@ export function Navbar() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <Link
-              to="/properties"
-              className="hidden lg:inline-flex"
-              style={{
-                padding: '10px 18px',
-                borderRadius: 999,
-                fontSize: 14,
-                fontWeight: 700,
-                color: activeStyles.text,
-                background: isHome ? 'rgba(0,0,0,0.25)' : 'transparent',
-                border: isHome ? '1px solid rgba(0,0,0,0.6)' : `1px solid ${activeStyles.border}`,
-                textDecoration: 'none',
-                transition: 'background 0.12s, border-color 0.12s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = activeStyles.muted
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'transparent'
-              }}
-            >
-              Browse Properties
-            </Link>
             <ThemeToggle theme={theme} setTheme={setTheme} whiteIcon={isHome} />
             {!isDashboard && !isDesktop && (
               <button
@@ -251,25 +228,6 @@ export function Navbar() {
               </Link>
             )
           })}
-
-          <Link
-            to="/properties"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{
-              marginTop: 8,
-              padding: '12px 14px',
-              borderRadius: 999,
-              fontSize: 15,
-              fontWeight: 700,
-              color: styles.text,
-              background: 'transparent',
-              border: `1px solid ${styles.border}`,
-              textDecoration: 'none',
-              textAlign: 'center',
-            }}
-          >
-            Browse Properties
-          </Link>
 
           {showSignIn && (
             <Link

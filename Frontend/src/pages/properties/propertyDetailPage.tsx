@@ -193,12 +193,12 @@ export default function PropertyDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col transition-colors">
         <Navbar />
         <div className="grid flex-1 place-items-center">
           <div className="text-center flex flex-col items-center gap-2">
-            <Loader2 className="animate-spin text-indigo-600" size={36} />
-            <p className="text-sm text-slate-500">Loading property details...</p>
+            <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" size={36} />
+            <p className="text-sm text-slate-500 dark:text-slate-400">Loading property details...</p>
           </div>
         </div>
         <Footer />
@@ -208,12 +208,12 @@ export default function PropertyDetailPage() {
 
   if (fetchError || !property) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col transition-colors">
         <Navbar />
         <div className="grid flex-1 place-items-center">
           <div className="text-center">
             <p className="text-lg font-semibold">{fetchError ?? 'Property not found'}</p>
-            <Link to="/properties" className="mt-3 inline-block text-sm text-indigo-600 font-medium hover:underline">
+            <Link to="/properties" className="mt-3 inline-block text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
               Back to listings
             </Link>
           </div>
@@ -239,20 +239,20 @@ export default function PropertyDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col transition-colors">
       <Navbar />
 
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <button
           onClick={() => navigate(backUrl)}
-          className="mb-6 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition"
+          className="mb-6 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition"
         >
           <ArrowLeft size={16} /> {backLabel}
         </button>
 
         {/* Image placeholder */}
         {property.images && property.images.length > 0 ? (
-          <div className="relative h-56 w-full overflow-hidden rounded-3xl bg-slate-100 sm:h-[420px] shadow-lg border border-slate-200">
+          <div className="relative h-56 w-full overflow-hidden rounded-3xl bg-slate-100 sm:h-[420px] shadow-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <img
               src={property.images[0]}
               alt={property.title}
@@ -261,7 +261,7 @@ export default function PropertyDetailPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
           </div>
         ) : (
-          <div className="flex h-56 items-center justify-center rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-300 sm:h-[420px] shadow-sm">
+          <div className="flex h-56 items-center justify-center rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-300 sm:h-[420px] shadow-sm dark:bg-indigo-950/30 dark:border-indigo-900/40 dark:text-indigo-700">
             <MapPin size={48} />
           </div>
         )}
@@ -270,30 +270,30 @@ export default function PropertyDetailPage() {
 
           {/* ── Left: details ──────────────────────────────────── */}
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 mb-4 border border-slate-200 shadow-sm">
-              <MapPin size={12} className="text-indigo-500" /> {property.location}, Australia
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 mb-4 border border-slate-200 shadow-sm dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+              <MapPin size={12} className="text-indigo-500 dark:text-indigo-400" /> {property.location}, Australia
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
               {formatPrice(property.price, property.currency, property.listingType)}
             </h1>
-            <p className="mt-2 text-lg text-slate-600 font-medium">{property.title}</p>
+            <p className="mt-2 text-lg text-slate-600 dark:text-slate-300 font-medium">{property.title}</p>
 
             {/* Specs */}
-            <div className="mt-6 flex flex-wrap gap-4 text-sm font-medium text-slate-700">
-              {property.bedrooms        != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"><BedDouble size={18} className="text-indigo-500" /> {property.bedrooms} bedrooms</span>}
-              {property.bathrooms       != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"><Bath size={18} className="text-indigo-500" />      {property.bathrooms} bathrooms</span>}
-              {property.areaSqft        != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"><Ruler size={18} className="text-indigo-500" />    {property.areaSqft} sqft</span>}
-              {property.landSizePerches != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"><Ruler size={18} className="text-indigo-500" />    {property.landSizePerches} perches</span>}
+            <div className="mt-6 flex flex-wrap gap-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+              {property.bedrooms        != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm dark:bg-slate-800 dark:border-slate-700"><BedDouble size={18} className="text-indigo-500 dark:text-indigo-400" /> {property.bedrooms} bedrooms</span>}
+              {property.bathrooms       != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm dark:bg-slate-800 dark:border-slate-700"><Bath size={18} className="text-indigo-500 dark:text-indigo-400" />      {property.bathrooms} bathrooms</span>}
+              {property.areaSqft        != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm dark:bg-slate-800 dark:border-slate-700"><Ruler size={18} className="text-indigo-500 dark:text-indigo-400" />    {property.areaSqft} sqft</span>}
+              {property.landSizePerches != null && <span className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm dark:bg-slate-800 dark:border-slate-700"><Ruler size={18} className="text-indigo-500 dark:text-indigo-400" />    {property.landSizePerches} perches</span>}
             </div>
 
-            <div className="mt-10 rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Description</h3>
-              <p className="text-base leading-relaxed text-slate-600">{property.description || 'No description provided.'}</p>
+            <div className="mt-10 rounded-3xl bg-white p-8 shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-800">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Description</h3>
+              <p className="text-base leading-relaxed text-slate-600 dark:text-slate-300">{property.description || 'No description provided.'}</p>
 
-              <hr className="my-8 border-slate-100" />
+              <hr className="my-8 border-slate-100 dark:border-slate-800" />
 
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Property details</h3>
-              <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-slate-50/50">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Property details</h3>
+              <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-slate-50/50 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-800/30">
                 <Row label="Property type" value={property.type} />
                 <Row label="Listing type"  value={`For ${property.listingType}`} />
                 {property.furnishing && <Row label="Furnishing" value={property.furnishing} />}
@@ -308,15 +308,15 @@ export default function PropertyDetailPage() {
 
             {/* Owner contact card */}
             {property.owner && (
-              <div className="rounded-3xl border border-indigo-100 bg-white p-6 shadow-md shadow-indigo-100/50">
-                <p className="mb-4 text-xs font-bold uppercase tracking-widest text-indigo-500">Listed by</p>
+              <div className="rounded-3xl border border-indigo-100 bg-white p-6 shadow-md shadow-indigo-100/50 dark:border-indigo-900/40 dark:bg-slate-900 dark:shadow-none">
+                <p className="mb-4 text-xs font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400">Listed by</p>
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
                     <User size={24} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="truncate text-base font-bold text-slate-900">{property.owner.full_name}</p>
+                      <p className="truncate text-base font-bold text-slate-900 dark:text-white">{property.owner.full_name}</p>
                       {property.verified && (
                         <span title="Verified listing" className="shrink-0 flex items-center">
                           <ShieldCheck size={16} className="text-emerald-500" />
@@ -325,7 +325,7 @@ export default function PropertyDetailPage() {
                     </div>
                     <a
                       href={`mailto:${property.owner.email}`}
-                      className="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition truncate"
+                      className="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition truncate"
                     >
                       <Mail size={14} />
                       {property.owner.email}
@@ -336,50 +336,50 @@ export default function PropertyDetailPage() {
             )}
 
             {/* Inquiry / contact form */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/40">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
               {isOwner ? (
                 <div className="flex flex-col items-center gap-3 py-6 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 mb-2">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 mb-2 dark:bg-indigo-950/40 dark:text-indigo-400">
                     <ShieldCheck size={32} />
                   </div>
-                  <p className="text-lg font-bold text-slate-900">This is your listing</p>
-                  <p className="text-sm text-slate-500 px-4">
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">This is your listing</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 px-4">
                     You are viewing this property as the owner. Switch to edit mode to make changes.
                   </p>
                   <button
                     onClick={() => navigate(`/dashboard/properties/add?id=${property.id}`)}
-                    className="mt-4 w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5"
+                    className="mt-4 w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-200 dark:shadow-none transition hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5"
                   >
                     Edit property
                   </button>
-                  
+
                   {/* Embedded Inquiries for Owner */}
-                  <div className="mt-8 w-full border-t border-slate-100 pt-6 text-left">
+                  <div className="mt-8 w-full border-t border-slate-100 dark:border-slate-800 pt-6 text-left">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 text-center">Inquiries</h3>
                     {loadingInquiries ? (
                       <div className="flex justify-center py-4">
-                        <Loader2 size={20} className="animate-spin text-indigo-500" />
+                        <Loader2 size={20} className="animate-spin text-indigo-500 dark:text-indigo-400" />
                       </div>
                     ) : inquiries.length === 0 ? (
-                      <p className="text-sm text-slate-500 text-center">No inquiries yet.</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center">No inquiries yet.</p>
                     ) : (
                       <div className="space-y-4">
                         {inquiries.map(inq => (
-                          <div key={inq.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm text-sm">
+                          <div key={inq.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm text-sm dark:border-slate-700 dark:bg-slate-800/50">
                             <div className="flex justify-between items-start mb-2">
-                              <span className="font-bold text-slate-900">{inq.name}</span>
+                              <span className="font-bold text-slate-900 dark:text-white">{inq.name}</span>
                               <span className="text-[10px] font-medium text-slate-400">
                                 {format(new Date(inq.createdAt.endsWith('Z') ? inq.createdAt : inq.createdAt + 'Z'), 'MMM d, h:mm a')}
                               </span>
                             </div>
-                            <div className="flex flex-col gap-1.5 text-slate-600 mb-3 text-xs font-medium">
-                              <a href={`mailto:${inq.email}`} className="flex items-center gap-1.5 hover:text-indigo-600 transition"><Mail size={12}/> {inq.email}</a>
+                            <div className="flex flex-col gap-1.5 text-slate-600 mb-3 text-xs font-medium dark:text-slate-300">
+                              <a href={`mailto:${inq.email}`} className="flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition"><Mail size={12}/> {inq.email}</a>
                               {inq.phone && (
-                                <a href={`tel:${inq.phone}`} className="flex items-center gap-1.5 hover:text-indigo-600 transition"><Phone size={12}/> {inq.phone}</a>
+                                <a href={`tel:${inq.phone}`} className="flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition"><Phone size={12}/> {inq.phone}</a>
                               )}
                             </div>
                             {inq.message && (
-                              <p className="text-slate-600 mt-2 bg-white p-3 rounded-lg border border-slate-100 italic text-xs leading-relaxed">
+                              <p className="text-slate-600 mt-2 bg-white p-3 rounded-lg border border-slate-100 italic text-xs leading-relaxed dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700">
                                 "{inq.message}"
                               </p>
                             )}
@@ -391,21 +391,21 @@ export default function PropertyDetailPage() {
                 </div>
               ) : submitted ? (
                 <div className="flex flex-col items-center gap-3 py-8 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 mb-2">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 mb-2 dark:bg-emerald-950/30 dark:text-emerald-400">
                     <CheckCircle2 size={32} />
                   </div>
-                  <p className="text-lg font-bold text-slate-900">Inquiry sent!</p>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">Inquiry sent!</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
                     Thanks {formik.values.name.split(' ')[0]}! The listing agent will get back to you shortly.
                   </p>
-                  <p className="text-sm font-medium text-indigo-600 mt-2 bg-indigo-50 px-4 py-2 rounded-lg">
+                  <p className="text-sm font-medium text-indigo-600 mt-2 bg-indigo-50 px-4 py-2 rounded-lg dark:text-indigo-400 dark:bg-indigo-950/30">
                     A confirmation email has been sent to {formik.values.email}
                   </p>
                 </div>
               ) : (
                 <>
-                  <p className="text-xl font-bold tracking-tight text-slate-900">Interested in this property?</p>
-                  <p className="mt-1.5 text-sm text-slate-500">
+                  <p className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Interested in this property?</p>
+                  <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
                     Send a message and the listing agent will get back to you.
                   </p>
 
@@ -439,7 +439,7 @@ export default function PropertyDetailPage() {
                       error={formik.touched.phone ? formik.errors.phone : undefined}
                     />
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Message</label>
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Message</label>
                       <textarea
                         name="message"
                         value={formik.values.message}
@@ -447,15 +447,15 @@ export default function PropertyDetailPage() {
                         onBlur={formik.handleBlur}
                         placeholder="I'm interested in this property and would like to schedule a viewing."
                         rows={4}
-                        className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
+                        className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                       />
                       {formik.touched.message && formik.errors.message && (
-                        <p className="mt-1.5 text-xs font-medium text-red-500">{formik.errors.message}</p>
+                        <p className="mt-1.5 text-xs font-medium text-red-500 dark:text-red-400">{formik.errors.message}</p>
                       )}
                     </div>
 
                     {sendError && (
-                      <p className="text-sm font-medium text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{sendError}</p>
+                      <p className="text-sm font-medium text-red-500 bg-red-50 p-3 rounded-lg border border-red-100 dark:text-red-400 dark:bg-red-950/20 dark:border-red-900/40">{sendError}</p>
                     )}
 
                     <button
@@ -484,8 +484,8 @@ export default function PropertyDetailPage() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between px-6 py-4 text-sm">
-      <span className="font-semibold text-slate-500">{label}</span>
-      <span className="font-bold text-slate-900">{value}</span>
+      <span className="font-semibold text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="font-bold text-slate-900 dark:text-white">{value}</span>
     </div>
   )
 }
@@ -504,7 +504,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</label>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</label>
       <input
         type={type}
         name={name}
@@ -512,13 +512,13 @@ function Field({
         onChange={e => onChange(e.target.value)}
         onBlur={onBlur}
         placeholder={placeholder}
-        className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-sm ${
+        className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-sm dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 ${
           error
-            ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-            : 'border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+            ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 dark:border-red-500'
+            : 'border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700'
         }`}
       />
-      {error && <p className="mt-1.5 text-xs font-medium text-red-500">{error}</p>}
+      {error && <p className="mt-1.5 text-xs font-medium text-red-500 dark:text-red-400">{error}</p>}
     </div>
   )
 }

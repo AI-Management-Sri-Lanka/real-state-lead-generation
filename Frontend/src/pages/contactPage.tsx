@@ -5,6 +5,7 @@ import emailjs from "@emailjs/browser";
 import { load as parseYaml } from "js-yaml";
 import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { Navbar } from "@/pages/home/components/Navbar";
+import { Footer } from "@/pages/home/components/Footer";
 import recipientsRaw from "@/config/recipients.yaml?raw";
 import { BASE_URL } from "@/api/config";
 
@@ -300,6 +301,7 @@ export default function ContactPage() {
             </button>
           </div>
         </div>
+        <Footer />
       </>
     );
   }
@@ -488,6 +490,7 @@ export default function ContactPage() {
           </div>
         </form>
       </div>
+      <Footer />
     </>
   );
 }
