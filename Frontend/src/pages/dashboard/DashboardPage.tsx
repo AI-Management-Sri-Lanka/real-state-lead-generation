@@ -94,7 +94,7 @@ export default function DashboardPage() {
       ),
     },
     {
-      value: stats?.ai_match_rate ?? "0%",
+      value: stats?.aiMatchRate ?? "0%",
       label: "AI match rate",
       trend: "Priority confidence",
       trendPositive: true,
@@ -168,7 +168,7 @@ export default function DashboardPage() {
               <div>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Leads by source</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {(stats?.leads_by_source || []).map((bar) => (
+                  {(stats?.leadsBySource || []).map((bar: { source: string; percentage: number; amount: number; color: string }) => (
                     <div key={bar.source}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, color: 'var(--color-text-secondary)' }}>
                         <span>{bar.source}</span>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
               <div>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Match score breakdown</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {(stats?.score_breakdown || []).map((row) => (
+                  {(stats?.scoreBreakdown || []).map((row: { label: string; percentage: number; color: string }) => (
                     <div key={row.label}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13, color: 'var(--color-text-secondary)' }}>
                         <span>{row.label}</span>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
             }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: 18 }}>Recent leads</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {(stats?.recent_leads || []).map((lead) => (
+                {(stats?.recentLeads || []).map((lead: { id: number; name: string; location: string; amount: string; score: string; initials: string; color: string }) => (
                   <div key={lead.id} style={{
                     display: "flex",
                     alignItems: "center",
@@ -252,7 +252,7 @@ export default function DashboardPage() {
                     <span style={scoreBadgeStyle(lead.score)}>{lead.score}</span>
                   </div>
                 ))}
-                {(stats?.recent_leads || []).length === 0 && (
+                {(stats?.recentLeads || []).length === 0 && (
                   <div style={{ textAlign: 'center', fontSize: 14, color: 'var(--color-text-secondary)', padding: '20px 0' }}>
                     No leads received yet.
                   </div>
