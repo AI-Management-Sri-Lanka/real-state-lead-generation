@@ -3,10 +3,8 @@ import os
 import json
 from typing import List, Optional
 import logging
-
 from tavily import TavilyClient
 from langchain_core.prompts import ChatPromptTemplate
-
 from app.schemas.lead_schema import ScrapedLead, Platform
 from app.core.llm_provider import get_llm
 
@@ -35,9 +33,8 @@ class TavilySearchScraper:
         ptype = structured_query.get("property_type") or "property"
         bedrooms = structured_query.get("bedrooms")
         bedroom_str = f"{bedrooms} bedroom " if bedrooms else ""
-        # Fold any extra keywords/hashtags into the search terms instead of
-        # discarding them - this is what was missing before and was a big
-        # part of why results were off-topic.
+       
+        # Fold any extra keywords/hashtags into the search terms 
         extra_terms = (structured_query.get("extra_terms") or "").strip()
 
         # Quote the location as an exact phrase so Tavily treats it as a
@@ -67,10 +64,7 @@ class TavilySearchScraper:
             for item in response.get("results", []):
                 raw_text = f"{item.get('title', '')}\n{item.get('content', '')}".strip()
 
-                # Enforce the exact location: if the user gave one, only
-                # keep posts that actually mention it. This drops the
-                # "close enough" results Tavily sometimes returns even
-                # when the query is quoted.
+                # Enforce the exact location
                 if location_lower and location_lower not in raw_text.lower():
                     logger.info(
                         f"[google] dropping result not matching location "
@@ -113,10 +107,7 @@ IMPORTANT: usernames, dates, emails, and phone numbers are often embedded inside
 async def run_tavily_scraper(scraper_input: dict) -> List[ScrapedLead]:
     """Fallback scraper using Tavily (Google search)."""
     query: dict = {
-        # Prefer real structured fields if they're already present on
-        # scraper_input (e.g. from an upstream LLM parse step). Previously
-        # this function ignored these and always derived location/property_type
-        # from hashtags[0]/keywords[0], which is why searches went off-topic.
+        # Prefer real structured fields if they're already present on scraper_input (e.g. from an upstream LLM parse step).
         "location": scraper_input.get("location"),
         "property_type": scraper_input.get("property_type"),
         "bedrooms": scraper_input.get("bedrooms"),
