@@ -185,37 +185,6 @@ Everything below links to docs that already live inside this repo:
 | [`Frontend/docs/admin-portal.md`](./Frontend/docs/admin-portal.md) | Admin portal UI reference |
 | [`Frontend/docs/properties-ui.md`](./Frontend/docs/properties-ui.md) | Properties UI reference |
 
-## 🕒 Recent Updates
-
-<details>
-<summary><b>2026-07-17 → 2026-07-21</b></summary>
-
-Master admin analytics, chat transcript, and global inquiries APIs · comprehensive owner dashboard stats · UI bug-fix pass across AI chat, navbar, footer, and properties pages.
-
-</details>
-
-<details>
-<summary><b>2026-07-15</b></summary>
-
-Tavily-powered scraping added as a fallback lead source when Apify returns no results · Google added as a supported scraping platform.
-
-</details>
-
-<details>
-<summary><b>2026-07-08 → 2026-07-13</b></summary>
-
-Master Admin portal built out (dashboard with SVG donut/bar charts, users, sessions, admin management) · owner dashboard inquiries · homepage redesigned for buyer discovery · multi-recipient email notifications.
-
-</details>
-
-<details>
-<summary><b>2026-06-28 → 2026-07-06</b></summary>
-
-Master admin core architecture, models, and auth flows · property-ownership linking and secured endpoints · async chat-title generation · property CRUD role scenarios finalized.
-
-</details>
-
-<sub>Condensed from git history (280+ commits, 2026-05-19 → 2026-07-21).</sub>
 
 ## 🗺️ Roadmap / Status
 
