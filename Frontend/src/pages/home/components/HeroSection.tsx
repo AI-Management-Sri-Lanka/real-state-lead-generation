@@ -60,7 +60,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
   }
 
   return (
-    <section className="relative w-full h-[600px] md:h-[700px] flex items-center justify-center overflow-hidden">
+    <section className="relative w-full h-[600px] md:h-[700px] flex items-start justify-center pt-28 md:items-center md:pt-0 overflow-hidden">
       {/* Background Images Carousel */}
       {HERO_IMAGES.map((img, index) => (
         <div
