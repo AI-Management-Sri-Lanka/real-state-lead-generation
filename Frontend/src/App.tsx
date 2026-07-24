@@ -5,6 +5,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext'
 import HomePage from './pages/home/HomePage'
 import Dashboard from './pages/dashboard/Dashboard'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { BackToTopButton } from '@/components/ui/BackToTopButton'
 import SignInPage from './pages/auth/SignInPage'
 import SignUpPage from './pages/auth/SignUpPage'
 import PropertiesPage from '@/pages/properties/propertiesPage'
@@ -40,6 +41,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <SidebarProvider>
+      <BackToTopButton />
       <Routes>
         {/* ── Public ─────────────────────────────────────────────────── */}
         <Route path="/"                  element={<HomePage />} />

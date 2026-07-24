@@ -137,8 +137,9 @@ const NAME_PATTERN = /^[A-Za-z][A-Za-z\s'-]{1,49}$/;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// 1–10 digits, numeric only
-const PHONE_PATTERN = /^\d{1,10}$/;
+// Mobile (04XX XXX XXX) or landline (0[2378] XXXX XXXX), domestic "0..." or
+// international "+61.../61..." form.
+const PHONE_PATTERN = /^(?:\+?61|0)[2-478]\d{8}$/;
 
 // Resolved once per page load from recipients.yaml.
 const TO_EMAILS = loadRecipients();
@@ -161,7 +162,7 @@ function validate(values: FormValues) {
       } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
         newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
       } else if (q.id === "phone" && !PHONE_PATTERN.test((val as string).trim())) {
-        newErrors[q.id] = "Please enter a valid phone number (numeric values only, 1–10 digits).";
+        newErrors[q.id] = "Please enter a valid phone number (e.g. 0412345678).";
       }
     } else if (q.type === "multi") {
       if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
@@ -312,7 +313,7 @@ export default function ContactPage() {
       <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_35%),linear-gradient(135deg,_#f8fbff_0%,_#f4f6ff_50%,_#eef8ff_100%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_30%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] transition-colors">
         {/* Header */}
         <div className="border-b border-sky-100/80 bg-white/90 shadow-[0_10px_40px_rgba(14,116,144,0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 dark:shadow-[0_10px_40px_rgba(2,6,23,0.35)]">
-          <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-12">
+          <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-sky-700 dark:border-sky-900/40 dark:bg-sky-950/30 dark:text-sky-300">
               <span className="h-2 w-2 rounded-full bg-sky-500" />
               Lead Qualification
@@ -332,7 +333,7 @@ export default function ContactPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 py-10 space-y-8">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
             {questions.map((q, idx) => {
               const showError = (touched[q.id] || submitCount > 0) && errors[q.id];
@@ -435,15 +436,15 @@ export default function ContactPage() {
                     <div className="sm:ml-9">
                       <input
                         type={q.id === "email" ? "email" : q.id === "phone" ? "tel" : "text"}
-                        inputMode={q.id === "phone" ? "numeric" : undefined}
+                        inputMode={q.id === "phone" ? "tel" : undefined}
                         pattern={
                           q.id === "phone"
-                            ? "\\d{1,10}"
+                            ? "(\\+?61|0)[2-478]\\d{8}"
                             : q.id === "name"
                             ? "[A-Za-z\\s'-]+"
                             : undefined
                         }
-                        maxLength={q.id === "phone" ? 10 : q.id === "name" ? 50 : undefined}
+                        maxLength={q.id === "phone" ? 12 : q.id === "name" ? 50 : undefined}
                         autoComplete={
                           q.id === "name" ? "name" : q.id === "email" ? "email" : q.id === "phone" ? "tel" : "off"
                         }

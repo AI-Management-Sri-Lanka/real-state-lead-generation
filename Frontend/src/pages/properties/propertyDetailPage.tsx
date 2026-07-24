@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   ArrowLeft, BedDouble, Bath, Ruler, MapPin,
@@ -11,6 +11,7 @@ import * as Yup from 'yup'
 
 import { Navbar } from '@/pages/home/components/Navbar'
 import { Footer } from '@/pages/home/components/Footer'
+import { AddPropertyModal } from '@/components/properties/AddPropertyModal'
 
 const EMAILJS_SERVICE_ID          = 'service_zx94q0s'
 const EMAILJS_TEMPLATE_ID         = 'template_s0pzf6g'   // inquiry → agent
@@ -32,26 +33,28 @@ function formatPrice(price: number, currency: string, listingType: string) {
     : `${formatted} ${currency}`
 }
 
-const NAME_REGEX  = /^[A-Za-z\s'-]+$/
-const PHONE_REGEX = /^(0\d{9}|\+94\d{9})$/
+// Must start with a letter, then letters/spaces/hyphens/apostrophes (mirrors
+// the contact page's NAME_PATTERN so both forms reject the same inputs).
+const NAME_REGEX  = /^[A-Za-z][A-Za-z\s'-]*$/
+// Australian phone numbers: mobile (04XX XXX XXX) or landline (0[2378] XXXX XXXX),
+// either in domestic "0..." form or international "+61..."/"61..." form.
+const PHONE_REGEX = /^(?:\+?61|0)[2-478]\d{8}$/
 
 const inquiryValidationSchema = Yup.object({
   name: Yup.string()
     .trim()
     .required('Name is required.')
-    .matches(NAME_REGEX, 'Name can only contain letters, spaces, apostrophes and hyphens.')
-    .min(2, 'Name must be at least 2 characters.'),
+    .matches(NAME_REGEX, 'Please enter a valid name (letters only, 2–50 characters).')
+    .min(2, 'Name must be at least 2 characters.')
+    .max(50, 'Name must be at most 50 characters.'),
   email: Yup.string()
     .trim()
     .required('Email is required.')
     .email('Please enter a valid email address.'),
   phone: Yup.string()
     .trim()
-    .test(
-      'valid-phone',
-      'Please enter a valid phone number (e.g. 07X XXX XXXX or +94 7X XXX XXXX).',
-      (value) => !value || PHONE_REGEX.test(value)
-    ),
+    .required('Phone number is required.')
+    .matches(PHONE_REGEX, 'Please enter a valid phone number (e.g. 0412345678).'),
   message: Yup.string()
     .trim()
     .required('Message is required.'),
@@ -76,6 +79,7 @@ export default function PropertyDetailPage() {
 
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [loadingInquiries, setLoadingInquiries] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   const formik = useFormik({
     initialValues: { name: '', email: '', phone: '', message: '' },
@@ -145,32 +149,31 @@ export default function PropertyDetailPage() {
     },
   })
 
-  useEffect(() => {
-    async function fetchProperty() {
-      if (!id) return
+  const fetchProperty = useCallback(async () => {
+    if (!id) return
+    try {
+      setLoading(true)
+      setFetchError(null)
       try {
-        setLoading(true)
-        setFetchError(null)
-        try {
-          const data = await propertyApi.getProperty(id)
-          // PropertyApi returns PropertyPayload & { id, images }
-          setProperty(data as unknown as Property)
-        } catch (err: any) {
-          if (err.message?.includes('not found') || err.message?.includes('404')) {
-            setFetchError('Property not found')
-            return
-          }
-          throw err
+        const data = await propertyApi.getProperty(id)
+        // PropertyApi returns PropertyPayload & { id, images }
+        setProperty(data as unknown as Property)
+      } catch (err: any) {
+        if (err.message?.includes('not found') || err.message?.includes('404')) {
+          setFetchError('Property not found')
+          return
         }
-      } catch (err: unknown) {
-        console.error(err)
-        setFetchError(err instanceof Error ? err.message : 'Failed to connect to server')
-      } finally {
-        setLoading(false)
+        throw err
       }
+    } catch (err: unknown) {
+      console.error(err)
+      setFetchError(err instanceof Error ? err.message : 'Failed to connect to server')
+    } finally {
+      setLoading(false)
     }
-    fetchProperty()
   }, [id])
+
+  useEffect(() => { fetchProperty() }, [fetchProperty])
 
   useEffect(() => {
     if (!isOwner || !property) return
@@ -228,7 +231,7 @@ export default function PropertyDetailPage() {
   // on blur & submit. This stops digits from ever landing in the Name field,
   // and stops letters/extra digits from landing in the Phone field.
   function handleNameChange(raw: string) {
-    const sanitized = raw.replace(/[^A-Za-z\s'-]/g, '')
+    const sanitized = raw.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50)
     formik.setFieldValue('name', sanitized)
   }
 
@@ -348,7 +351,7 @@ export default function PropertyDetailPage() {
                     You are viewing this property as the owner. Switch to edit mode to make changes.
                   </p>
                   <button
-                    onClick={() => navigate(`/dashboard/properties/add?id=${property.id}`)}
+                    onClick={() => setEditModalOpen(true)}
                     className="mt-4 w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-200 dark:shadow-none transition hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5"
                   >
                     Edit property
@@ -418,6 +421,8 @@ export default function PropertyDetailPage() {
                       onChange={handleNameChange}
                       onBlur={formik.handleBlur}
                       name="name"
+                      maxLength={50}
+                      autoComplete="name"
                       error={formik.touched.name ? formik.errors.name : undefined}
                     />
                     <Field
@@ -428,15 +433,19 @@ export default function PropertyDetailPage() {
                       onBlur={formik.handleBlur}
                       name="email"
                       type="email"
+                      autoComplete="email"
                       error={formik.touched.email ? formik.errors.email : undefined}
                     />
                     <Field
                       label="Phone"
-                      placeholder="+94 7X XXX XXXX"
+                      placeholder="e.g. 0412345678"
                       value={formik.values.phone}
                       onChange={handlePhoneChange}
                       onBlur={formik.handleBlur}
                       name="phone"
+                      maxLength={12}
+                      inputMode="tel"
+                      autoComplete="tel"
                       error={formik.touched.phone ? formik.errors.phone : undefined}
                     />
                     <div>
@@ -476,6 +485,16 @@ export default function PropertyDetailPage() {
       </div>
 
       <Footer />
+
+      {property && (
+        <AddPropertyModal
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          isAdminMode={false}
+          editId={property.id}
+          onSaved={() => fetchProperty()}
+        />
+      )}
     </div>
   )
 }
@@ -493,6 +512,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function Field({
   label, value, onChange, onBlur, placeholder, name, type = 'text', error,
+  maxLength, inputMode, autoComplete,
 }: {
   label: string
   value: string
@@ -502,6 +522,9 @@ function Field({
   name: string
   type?: string
   error?: string
+  maxLength?: number
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
+  autoComplete?: string
 }) {
   return (
     <div>
@@ -513,6 +536,9 @@ function Field({
         onChange={e => onChange(e.target.value)}
         onBlur={onBlur}
         placeholder={placeholder}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
         className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-sm dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 ${
           error
             ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 dark:border-red-500'

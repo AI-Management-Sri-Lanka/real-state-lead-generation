@@ -8,10 +8,9 @@
  *  - Verify / un-verify a property (green badge)
  *  - Delete any property
  *  - Add a property (admin owned)
- *  - Links to "Edit" (reuses the owner PropertyManager form via query param)
+ *  - Edit a property in a popup modal (reuses the shared property form)
  */
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
 import {
   Building2, Trash2, ShieldCheck, ShieldOff, Plus, Search,
   Loader2, ExternalLink, MapPin, BedDouble, Bath, AlertCircle,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react'
 import { adminPropertiesApi } from '@/api/adminApi'
 import { Property } from '@/types/property'
+import { AddPropertyModal } from '@/components/properties/AddPropertyModal'
 
 function StatusBadge({ verified }: { verified: boolean }) {
   return verified ? (
@@ -33,13 +33,14 @@ function StatusBadge({ verified }: { verified: boolean }) {
 }
 
 export default function AdminPropertiesPage() {
-  const navigate = useNavigate()
   const [properties, setProperties] = useState<Property[]>([])
   const [filtered, setFiltered] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null) // property id being actioned
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -111,12 +112,12 @@ export default function AdminPropertiesPage() {
           >
             <RefreshCw size={14} /> Refresh
           </button>
-          <Link
-            to="/admin/properties/add"
+          <button
+            onClick={() => setAddModalOpen(true)}
             className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
           >
             <Plus size={15} /> Add Property
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -265,13 +266,13 @@ export default function AdminPropertiesPage() {
                         </button>
 
                         {/* Edit */}
-                        <Link
-                          to={`/admin/properties/add?id=${p.id}`}
+                        <button
+                          onClick={() => setEditId(p.id)}
                           className="rounded-lg border border-slate-700 p-1.5 text-slate-400 transition hover:border-slate-500 hover:text-white"
                           title="Edit property"
                         >
                           <Pencil size={13} />
-                        </Link>
+                        </button>
 
                         {/* Delete */}
                         <button
@@ -301,6 +302,21 @@ export default function AdminPropertiesPage() {
           </div>
         )}
       </div>
+
+      <AddPropertyModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        isAdminMode={true}
+        onSaved={() => load()}
+      />
+
+      <AddPropertyModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        isAdminMode={true}
+        editId={editId}
+        onSaved={() => load()}
+      />
     </div>
   )
 }

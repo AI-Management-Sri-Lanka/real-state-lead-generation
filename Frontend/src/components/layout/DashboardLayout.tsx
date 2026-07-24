@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Navbar } from '@/pages/home/components/Navbar'
 import { useSidebar } from '@/contexts/SidebarContext'
+import { BackToTopButton } from '@/components/ui/BackToTopButton'
 
 interface Props { children: React.ReactNode; activeNav?: string }
 
@@ -13,6 +14,7 @@ const COLLAPSED_WIDTH = 76
 export function DashboardLayout({ children }: Props) {
   const { isOpen: sidebarOpen, close: closeSidebar, collapsed } = useSidebar()
   const { pathname } = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     closeSidebar()
@@ -43,9 +45,11 @@ export function DashboardLayout({ children }: Props) {
           <Sidebar />
         </aside>
 
-        <main className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
+        <main ref={mainRef} className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
           {children}
         </main>
+
+        <BackToTopButton scrollContainerRef={mainRef} />
       </div>
     </div>
   )
