@@ -7,6 +7,7 @@ import {
   LogOut, Menu, X, ChevronRight, Bell, Star
 } from 'lucide-react'
 import { BackToTopButton } from '@/components/ui/BackToTopButton'
+import { adminAuthApi } from '@/api/adminApi'
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
@@ -26,8 +27,10 @@ export default function AdminLayout() {
     catch { return {} }
   })()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await adminAuthApi.logout()
     localStorage.removeItem('aimsl_admin_token')
+    localStorage.removeItem('aimsl_admin_refresh_token')
     localStorage.removeItem('aimsl_admin')
     navigate('/admin/login', { replace: true })
   }

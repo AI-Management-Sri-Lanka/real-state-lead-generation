@@ -55,3 +55,16 @@ def decode_master_admin_token(token: str) -> dict:
     if not payload.get("is_master_admin"):
         raise ValueError("Token is missing is_master_admin=True claim")
     return payload
+
+def create_master_admin_refresh_token(admin_id: int, email: str) -> str:
+    """Create a JWT refresh token specifically for a Master Admin."""
+    expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = {
+        "sub": str(admin_id), 
+        "email": email, 
+        "is_master_admin": True,
+        "exp": expire, 
+        "type": "refresh"
+    }
+    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+    return encoded_jwt
