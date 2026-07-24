@@ -36,7 +36,9 @@ function formatPrice(price: number, currency: string, listingType: string) {
 // Must start with a letter, then letters/spaces/hyphens/apostrophes (mirrors
 // the contact page's NAME_PATTERN so both forms reject the same inputs).
 const NAME_REGEX  = /^[A-Za-z][A-Za-z\s'-]*$/
-const PHONE_REGEX = /^(0\d{9}|\+94\d{9})$/
+// Australian phone numbers: mobile (04XX XXX XXX) or landline (0[2378] XXXX XXXX),
+// either in domestic "0..." form or international "+61..."/"61..." form.
+const PHONE_REGEX = /^(?:\+?61|0)[2-478]\d{8}$/
 
 const inquiryValidationSchema = Yup.object({
   name: Yup.string()
@@ -51,11 +53,8 @@ const inquiryValidationSchema = Yup.object({
     .email('Please enter a valid email address.'),
   phone: Yup.string()
     .trim()
-    .test(
-      'valid-phone',
-      'Please enter a valid phone number (e.g. 07X XXX XXXX or +94 7X XXX XXXX).',
-      (value) => !value || PHONE_REGEX.test(value)
-    ),
+    .required('Phone number is required.')
+    .matches(PHONE_REGEX, 'Please enter a valid phone number (e.g. 0412345678).'),
   message: Yup.string()
     .trim()
     .required('Message is required.'),
@@ -439,7 +438,7 @@ export default function PropertyDetailPage() {
                     />
                     <Field
                       label="Phone"
-                      placeholder="+94 7X XXX XXXX"
+                      placeholder="e.g. 0412345678"
                       value={formik.values.phone}
                       onChange={handlePhoneChange}
                       onBlur={formik.handleBlur}

@@ -28,7 +28,7 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = 'max
   if (!open) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 backdrop-blur-sm px-4 py-8">
+    <div className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto bg-slate-950/60 backdrop-blur-sm px-4 py-8">
       <div
         className="absolute inset-0"
         onClick={onClose}
@@ -38,15 +38,15 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = 'max
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative w-full ${maxWidthClassName} rounded-2xl border border-slate-200 bg-white shadow-2xl`}
+        className={`relative w-full ${maxWidthClassName} rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900`}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-            <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
             <button
               onClick={onClose}
               aria-label="Close"
-              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
               <X size={18} />
             </button>

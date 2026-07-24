@@ -45,10 +45,10 @@ export function PropertyFormFields({
             <CustomSelect label="For" value={form.listingType} onChange={v => set('listingType', v)} options={['Sale', 'Rent']} />
           </div>
           <label className="flex cursor-pointer select-none items-center gap-2">
-            <div onClick={() => set('verified', !form.verified)} className={`relative h-5 w-9 rounded-full transition ${form.verified ? 'bg-emerald-500' : 'bg-slate-200 shadow-inner'}`}>
+            <div onClick={() => set('verified', !form.verified)} className={`relative h-5 w-9 rounded-full transition ${form.verified ? 'bg-emerald-500' : 'bg-slate-200 shadow-inner dark:bg-slate-700'}`}>
               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.verified ? 'left-4' : 'left-0.5'}`} />
             </div>
-            <span className="text-sm font-medium text-slate-700">Mark as verified</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Mark as verified</span>
           </label>
         </FieldGroup>
       </Section>
@@ -74,11 +74,11 @@ export function PropertyFormFields({
           </div>
           <TextInput label="Listed by *" placeholder="Agent or owner name" value={form.listedBy} onChange={v => set('listedBy', v)} />
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">Description</label>
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Description</label>
             <textarea
               value={form.description} onChange={e => set('description', e.target.value)}
               placeholder="Describe the property…" rows={4}
-              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
+              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
           </div>
         </FieldGroup>
@@ -87,7 +87,7 @@ export function PropertyFormFields({
       {/* Images */}
       <Section title="Images">
         <FieldGroup>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Paste an image URL and click Add — or leave it blank and click Add to upload from your device. You can also drag files onto this box.
           </p>
 
@@ -96,7 +96,7 @@ export function PropertyFormFields({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             className={`flex gap-2 rounded-xl border p-1 transition ${
-              isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-transparent'
+              isDragging ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40' : 'border-transparent'
             }`}
           >
             <input
@@ -111,11 +111,11 @@ export function PropertyFormFields({
               value={imageInput} onChange={e => setImageInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAddButtonClick()}
               placeholder="https://example.com/image.jpg — or leave blank to upload"
-              className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
+              className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
             <button
               onClick={handleAddButtonClick}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 transition hover:bg-slate-200"
+              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700"
             >
               {imageInput.trim() ? <Plus size={16} /> : <UploadCloud size={16} />}
               {imageInput.trim() ? 'Add' : 'Upload'}
@@ -123,31 +123,31 @@ export function PropertyFormFields({
           </div>
 
           {isDragging && (
-            <p className="text-xs font-medium text-indigo-600">Drop image files anywhere in that box to upload.</p>
+            <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">Drop image files anywhere in that box to upload.</p>
           )}
           {uploadError && (
-            <p className="text-xs font-medium text-red-500">{uploadError}</p>
+            <p className="text-xs font-medium text-red-500 dark:text-red-400">{uploadError}</p>
           )}
 
           {/* Image previews with thumbnails */}
           {form.images.length > 0 && (
             <ul className="space-y-2 mt-4">
               {form.images.map((url, i) => (
-                <li key={i} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                <li key={i} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-800">
                   <img
                     src={url} alt=""
-                    className="h-12 w-16 shrink-0 rounded-lg object-cover bg-slate-100 border border-slate-200"
+                    className="h-12 w-16 shrink-0 rounded-lg object-cover bg-slate-100 border border-slate-200 dark:bg-slate-700 dark:border-slate-600"
                     onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
                   />
-                  <span className="flex-1 truncate text-xs font-medium text-slate-600">
+                  <span className="flex-1 truncate text-xs font-medium text-slate-600 dark:text-slate-300">
                     {url.startsWith('data:') ? `Uploaded image ${i + 1}` : url}
                   </span>
                   {i === 0 && (
-                    <span className="shrink-0 rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700">
+                    <span className="shrink-0 rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                       Primary
                     </span>
                   )}
-                  <button onClick={() => removeImage(i)} className="shrink-0 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition">
+                  <button onClick={() => removeImage(i)} className="shrink-0 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition dark:hover:bg-red-950/40 dark:hover:text-red-400">
                     <X size={16} />
                   </button>
                 </li>
@@ -165,8 +165,8 @@ export function PropertyFormFields({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400">{title}</h2>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">{children}</div>
+      <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">{title}</h2>
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">{children}</div>
     </div>
   )
 }
@@ -178,9 +178,9 @@ function TextInput({ label, value, onChange, placeholder, type = 'text' }: {
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm" />
+        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500" />
     </div>
   )
 }

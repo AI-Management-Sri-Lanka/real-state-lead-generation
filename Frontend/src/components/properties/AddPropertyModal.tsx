@@ -48,7 +48,7 @@ export function AddPropertyModal({ open, onClose, isAdminMode, editId = null, on
         </div>
       ) : (
         <>
-          <p className="-mt-2 mb-6 text-sm text-slate-500">Required fields are marked with *.</p>
+          <p className="-mt-2 mb-6 text-sm text-slate-500 dark:text-slate-400">Required fields are marked with *.</p>
 
           <PropertyFormFields
             form={form}
@@ -67,11 +67,11 @@ export function AddPropertyModal({ open, onClose, isAdminMode, editId = null, on
           />
 
           {error && (
-            <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>
+            <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400">{error}</p>
           )}
 
           <div className="mt-8 flex justify-end gap-3">
-            <button onClick={handleClose} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
+            <button onClick={handleClose} className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
               Cancel
             </button>
             <button
