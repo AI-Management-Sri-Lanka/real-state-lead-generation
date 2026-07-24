@@ -33,15 +33,18 @@ function formatPrice(price: number, currency: string, listingType: string) {
     : `${formatted} ${currency}`
 }
 
-const NAME_REGEX  = /^[A-Za-z\s'-]+$/
+// Must start with a letter, then letters/spaces/hyphens/apostrophes (mirrors
+// the contact page's NAME_PATTERN so both forms reject the same inputs).
+const NAME_REGEX  = /^[A-Za-z][A-Za-z\s'-]*$/
 const PHONE_REGEX = /^(0\d{9}|\+94\d{9})$/
 
 const inquiryValidationSchema = Yup.object({
   name: Yup.string()
     .trim()
     .required('Name is required.')
-    .matches(NAME_REGEX, 'Name can only contain letters, spaces, apostrophes and hyphens.')
-    .min(2, 'Name must be at least 2 characters.'),
+    .matches(NAME_REGEX, 'Please enter a valid name (letters only, 2–50 characters).')
+    .min(2, 'Name must be at least 2 characters.')
+    .max(50, 'Name must be at most 50 characters.'),
   email: Yup.string()
     .trim()
     .required('Email is required.')
@@ -229,7 +232,7 @@ export default function PropertyDetailPage() {
   // on blur & submit. This stops digits from ever landing in the Name field,
   // and stops letters/extra digits from landing in the Phone field.
   function handleNameChange(raw: string) {
-    const sanitized = raw.replace(/[^A-Za-z\s'-]/g, '')
+    const sanitized = raw.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50)
     formik.setFieldValue('name', sanitized)
   }
 
@@ -419,6 +422,8 @@ export default function PropertyDetailPage() {
                       onChange={handleNameChange}
                       onBlur={formik.handleBlur}
                       name="name"
+                      maxLength={50}
+                      autoComplete="name"
                       error={formik.touched.name ? formik.errors.name : undefined}
                     />
                     <Field
@@ -429,6 +434,7 @@ export default function PropertyDetailPage() {
                       onBlur={formik.handleBlur}
                       name="email"
                       type="email"
+                      autoComplete="email"
                       error={formik.touched.email ? formik.errors.email : undefined}
                     />
                     <Field
@@ -438,6 +444,9 @@ export default function PropertyDetailPage() {
                       onChange={handlePhoneChange}
                       onBlur={formik.handleBlur}
                       name="phone"
+                      maxLength={12}
+                      inputMode="tel"
+                      autoComplete="tel"
                       error={formik.touched.phone ? formik.errors.phone : undefined}
                     />
                     <div>
@@ -504,6 +513,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function Field({
   label, value, onChange, onBlur, placeholder, name, type = 'text', error,
+  maxLength, inputMode, autoComplete,
 }: {
   label: string
   value: string
@@ -513,6 +523,9 @@ function Field({
   name: string
   type?: string
   error?: string
+  maxLength?: number
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
+  autoComplete?: string
 }) {
   return (
     <div>
@@ -524,6 +537,9 @@ function Field({
         onChange={e => onChange(e.target.value)}
         onBlur={onBlur}
         placeholder={placeholder}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
         className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-sm dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 ${
           error
             ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 dark:border-red-500'
