@@ -232,9 +232,9 @@ export default function ContactPage() {
           .join("\n");
 
         const inquiryPayload = {
-          name: values.name.trim(),
-          email: values.email.trim(),
-          phone: values.phone.trim() || undefined,
+          name: typeof values.name === 'string' ? values.name.trim() : values.name.join(", "),
+          email: typeof values.email === 'string' ? values.email.trim() : values.email.join(", "),
+          phone: typeof values.phone === 'string' ? values.phone.trim() || undefined : undefined,
           message: answersSummary,
           source: "contact_page"
         };
