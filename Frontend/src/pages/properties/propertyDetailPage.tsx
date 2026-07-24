@@ -174,12 +174,13 @@ export default function PropertyDetailPage() {
 
   useEffect(() => {
     if (!isOwner || !property) return
+    const p: Property = property
     async function loadInquiries() {
       setLoadingInquiries(true)
       try {
-        const rawPropertyId = typeof property.id === 'string' && property.id.startsWith('prop-')
-          ? parseInt(property.id.split('-')[1], 10)
-          : Number(property.id)
+        const rawPropertyId = typeof p.id === 'string' && p.id.startsWith('prop-')
+          ? parseInt(p.id.split('-')[1], 10)
+          : Number(p.id)
         const data = await getOwnerInquiries(rawPropertyId)
         setInquiries(data)
       } catch (err) {

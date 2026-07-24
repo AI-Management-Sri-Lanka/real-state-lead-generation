@@ -86,6 +86,10 @@ async def refresh_token(request: RefreshTokenRequest, db: AsyncSession = Depends
 @router.post("/logout", response_model=ResponseSchema[None])
 async def logout(request: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
     """Logout the user by revoking the refresh token."""
+    db_token = await get_refresh_token_db(db, request.refresh_token)
+    if not db_token or db_token.is_revoked:
+        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS, custom_message="Invalid or already revoked refresh token")
+
     await revoke_refresh_token_db(db, request.refresh_token)
     return ok(message="Logged out successfully")
 

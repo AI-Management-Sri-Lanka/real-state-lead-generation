@@ -39,6 +39,11 @@ async def get_user_by_email_db(db: AsyncSession, email: str) -> User | None:
 
 async def update_user_db(db: AsyncSession, user: User, update_data: dict, commit: bool = True) -> User:
     """Update user information in the database."""
+    if "email" in update_data and update_data["email"] != user.email:
+        existing_user = await get_user_by_email_db(db, update_data["email"])
+        if existing_user:
+            raise AppException(error=AppError.AUTH_EMAIL_EXISTS, custom_message="Email already registered by another account.")
+
     try:
         for key, value in update_data.items():
             setattr(user, key, value)
