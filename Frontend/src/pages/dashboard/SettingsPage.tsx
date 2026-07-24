@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const [passwordForm, setPasswordForm] = useState({
     current_password: '',
     new_password: '',
+    confirm_password: '',
   });
 
   // Delete State
@@ -53,13 +54,19 @@ export default function SettingsPage() {
     if (passwordForm.new_password.length < 8) {
       return toast.error('New password must be at least 8 characters');
     }
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      return toast.error('New password and confirm password do not match');
+    }
     setPasswordLoading(true);
     try {
-      await authApi.changePassword(passwordForm);
+      await authApi.changePassword({
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      });
       // After changing password, backend may revoke tokens. Sign the user out
       // and require re-login to ensure a clean session.
       toast.success('Password changed — please sign in again.');
-      setPasswordForm({ current_password: '', new_password: '' });
+      setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
       signOut();
       navigate('/auth/signin');
     } catch (err: unknown) {
@@ -132,6 +139,14 @@ export default function SettingsPage() {
                   type="password"
                   value={passwordForm.new_password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                  required
+                />
+                <Input
+                  label="Confirm New Password"
+                  name="confirm_password"
+                  type="password"
+                  value={passwordForm.confirm_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
                   required
                 />
                 <div className="pt-2">
