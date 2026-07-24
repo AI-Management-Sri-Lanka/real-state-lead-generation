@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Building2, Plus, Loader2, Search } from 'lucide-react'
 import { propertyApi } from '@/api/propertyApi'
 import { Property } from '@/types/property'
@@ -9,12 +8,12 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { AddPropertyModal } from '@/components/properties/AddPropertyModal'
 
 export default function MyPropertiesList() {
-  const navigate = useNavigate()
   const { user } = useAuth()
   const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [addModalOpen, setAddModalOpen] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!user) return
@@ -84,7 +83,7 @@ export default function MyPropertiesList() {
               <PropertyCard
                 key={p.id}
                 property={p}
-                onEdit={() => navigate(`/dashboard/properties/add?id=${p.id}`)}
+                onEdit={() => setEditId(p.id)}
                 onDelete={() => handleDelete(p)}
               />
             ))}
@@ -97,7 +96,15 @@ export default function MyPropertiesList() {
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         isAdminMode={false}
-        onCreated={() => load()}
+        onSaved={() => load()}
+      />
+
+      <AddPropertyModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        isAdminMode={false}
+        editId={editId}
+        onSaved={() => load()}
       />
     </DashboardLayout>
   )

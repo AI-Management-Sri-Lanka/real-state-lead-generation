@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   ArrowLeft, BedDouble, Bath, Ruler, MapPin,
@@ -11,6 +11,7 @@ import * as Yup from 'yup'
 
 import { Navbar } from '@/pages/home/components/Navbar'
 import { Footer } from '@/pages/home/components/Footer'
+import { AddPropertyModal } from '@/components/properties/AddPropertyModal'
 
 const EMAILJS_SERVICE_ID          = 'service_zx94q0s'
 const EMAILJS_TEMPLATE_ID         = 'template_s0pzf6g'   // inquiry → agent
@@ -76,6 +77,7 @@ export default function PropertyDetailPage() {
 
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [loadingInquiries, setLoadingInquiries] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   const formik = useFormik({
     initialValues: { name: '', email: '', phone: '', message: '' },
@@ -145,32 +147,31 @@ export default function PropertyDetailPage() {
     },
   })
 
-  useEffect(() => {
-    async function fetchProperty() {
-      if (!id) return
+  const fetchProperty = useCallback(async () => {
+    if (!id) return
+    try {
+      setLoading(true)
+      setFetchError(null)
       try {
-        setLoading(true)
-        setFetchError(null)
-        try {
-          const data = await propertyApi.getProperty(id)
-          // PropertyApi returns PropertyPayload & { id, images }
-          setProperty(data as unknown as Property)
-        } catch (err: any) {
-          if (err.message?.includes('not found') || err.message?.includes('404')) {
-            setFetchError('Property not found')
-            return
-          }
-          throw err
+        const data = await propertyApi.getProperty(id)
+        // PropertyApi returns PropertyPayload & { id, images }
+        setProperty(data as unknown as Property)
+      } catch (err: any) {
+        if (err.message?.includes('not found') || err.message?.includes('404')) {
+          setFetchError('Property not found')
+          return
         }
-      } catch (err: unknown) {
-        console.error(err)
-        setFetchError(err instanceof Error ? err.message : 'Failed to connect to server')
-      } finally {
-        setLoading(false)
+        throw err
       }
+    } catch (err: unknown) {
+      console.error(err)
+      setFetchError(err instanceof Error ? err.message : 'Failed to connect to server')
+    } finally {
+      setLoading(false)
     }
-    fetchProperty()
   }, [id])
+
+  useEffect(() => { fetchProperty() }, [fetchProperty])
 
   useEffect(() => {
     if (!isOwner || !property) return
@@ -348,7 +349,7 @@ export default function PropertyDetailPage() {
                     You are viewing this property as the owner. Switch to edit mode to make changes.
                   </p>
                   <button
-                    onClick={() => navigate(`/dashboard/properties/add?id=${property.id}`)}
+                    onClick={() => setEditModalOpen(true)}
                     className="mt-4 w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-200 dark:shadow-none transition hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5"
                   >
                     Edit property
@@ -476,6 +477,16 @@ export default function PropertyDetailPage() {
       </div>
 
       <Footer />
+
+      {property && (
+        <AddPropertyModal
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          isAdminMode={false}
+          editId={property.id}
+          onSaved={() => fetchProperty()}
+        />
+      )}
     </div>
   )
 }
