@@ -11,7 +11,7 @@
  *  - Links to "Edit" (reuses the owner PropertyManager form via query param)
  */
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Building2, Trash2, ShieldCheck, ShieldOff, Plus, Search,
   Loader2, ExternalLink, MapPin, BedDouble, Bath, AlertCircle,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { adminPropertiesApi } from '@/api/adminApi'
 import { Property } from '@/types/property'
+import { AddPropertyModal } from '@/components/properties/AddPropertyModal'
 
 function StatusBadge({ verified }: { verified: boolean }) {
   return verified ? (
@@ -33,13 +34,13 @@ function StatusBadge({ verified }: { verified: boolean }) {
 }
 
 export default function AdminPropertiesPage() {
-  const navigate = useNavigate()
   const [properties, setProperties] = useState<Property[]>([])
   const [filtered, setFiltered] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null) // property id being actioned
+  const [addModalOpen, setAddModalOpen] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -111,12 +112,12 @@ export default function AdminPropertiesPage() {
           >
             <RefreshCw size={14} /> Refresh
           </button>
-          <Link
-            to="/admin/properties/add"
+          <button
+            onClick={() => setAddModalOpen(true)}
             className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
           >
             <Plus size={15} /> Add Property
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -301,6 +302,13 @@ export default function AdminPropertiesPage() {
           </div>
         )}
       </div>
+
+      <AddPropertyModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        isAdminMode={true}
+        onCreated={() => load()}
+      />
     </div>
   )
 }
