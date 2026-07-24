@@ -103,7 +103,7 @@ export default function HomePage() {
       <Navbar />
       <HeroSection onSearch={setHeroSearch} />
 
-      <main id="properties-section" className="w-full px-4 pb-24 sm:px-8 lg:px-12 pt-8">
+      <main id="properties-section" className="w-full px-4 pb-24 sm:px-6 lg:px-8 pt-8">
         
 
 

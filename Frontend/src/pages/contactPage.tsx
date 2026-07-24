@@ -312,7 +312,7 @@ export default function ContactPage() {
       <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_35%),linear-gradient(135deg,_#f8fbff_0%,_#f4f6ff_50%,_#eef8ff_100%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_30%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] transition-colors">
         {/* Header */}
         <div className="border-b border-sky-100/80 bg-white/90 shadow-[0_10px_40px_rgba(14,116,144,0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/90 dark:shadow-[0_10px_40px_rgba(2,6,23,0.35)]">
-          <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-12">
+          <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-sky-700 dark:border-sky-900/40 dark:bg-sky-950/30 dark:text-sky-300">
               <span className="h-2 w-2 rounded-full bg-sky-500" />
               Lead Qualification
@@ -332,7 +332,7 @@ export default function ContactPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 py-10 space-y-8">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
             {questions.map((q, idx) => {
               const showError = (touched[q.id] || submitCount > 0) && errors[q.id];
