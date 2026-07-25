@@ -20,6 +20,7 @@ export interface PropertyPayload {
   furnishing: string | null
   parking: string | null
   listedBy: string
+  phoneNumber: string | null
   description: string
 }
 

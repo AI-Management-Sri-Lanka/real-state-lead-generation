@@ -16,6 +16,7 @@ export type PropertyFormState = {
   furnishing: string
   parking: string
   listedBy: string
+  phoneNumber: string
   description: string
   images: string[]
 }
@@ -24,7 +25,7 @@ export const EMPTY_PROPERTY_FORM: PropertyFormState = {
   title: '', price: '', currency: 'AUD', location: '',
   bedrooms: '', bathrooms: '', areaSqft: '', landSizePerches: '',
   type: 'Apartment', listingType: 'Sale', verified: false,
-  furnishing: '', parking: '', listedBy: '', description: '', images: [],
+  furnishing: '', parking: '', listedBy: '', phoneNumber: '', description: '', images: [],
 }
 
 const MAX_FILE_MB = 5
@@ -77,10 +78,11 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
           furnishing: p.furnishing ?? '',
           parking: p.parking ?? '',
           listedBy: p.listedBy ?? '',
+          phoneNumber: p.phoneNumber ?? '',
           description: p.description ?? '',
-          images: Array.isArray(p.images) ? p.images : [],
+          images: Array.isArray(p.images) ? p.images.map((img: any) => typeof img === 'string' ? img : img.url) : [],
         })
-        setOriginalImageUrls(Array.isArray(p.images) ? p.images : [])
+        setOriginalImageUrls(Array.isArray(p.images) ? p.images.map((img: any) => typeof img === 'string' ? img : img.url) : [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load property.')
       } finally {
@@ -207,6 +209,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
       furnishing: form.furnishing.trim() || null,
       parking: form.parking.trim() || null,
       listedBy: form.listedBy.trim(),
+      phoneNumber: form.phoneNumber.trim() || null,
       description: form.description.trim(),
     }
 

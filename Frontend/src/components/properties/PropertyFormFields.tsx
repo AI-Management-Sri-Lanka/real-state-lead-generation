@@ -72,7 +72,10 @@ export function PropertyFormFields({
             <CustomSelect label="Furnishing" value={form.furnishing} onChange={v => set('furnishing', v)} options={['Fully-Furnished', 'Semi-Furnished', 'Unfurnished']} placeholder="Select (optional)" />
             <TextInput label="Parking" placeholder="e.g. 1 Covered Parking" value={form.parking} onChange={v => set('parking', v)} />
           </div>
-          <TextInput label="Listed by *" placeholder="Agent or owner name" value={form.listedBy} onChange={v => set('listedBy', v)} />
+          <div className="grid grid-cols-2 gap-4">
+            <TextInput label="Listed by *" placeholder="Agent or owner name" value={form.listedBy} onChange={v => set('listedBy', v)} />
+            <TextInput label="Phone number" placeholder="e.g. +1 234 567 8900" value={form.phoneNumber} onChange={v => set('phoneNumber', v)} />
+          </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Description</label>
             <textarea
