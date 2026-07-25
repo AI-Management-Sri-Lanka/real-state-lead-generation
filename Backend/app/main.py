@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 from app.api.v1 import auth
 from app.api.v1.chat import router as chat_router
 from fastapi.exceptions import RequestValidationError
@@ -132,6 +134,9 @@ app.include_router(session_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(property_router,  prefix="/api/v1")
 
+from app.api.v1.upload_router import router as upload_router
+app.include_router(upload_router, prefix="/api/v1")
+
 from app.api.v1.inquiry_router import router as inquiry_router
 from app.api.v1.owner_dashboard_router import router as owner_dashboard_router
 from app.api.v1.dashboard_router import router as dashboard_router
@@ -153,7 +158,8 @@ app.include_router(admin_property_router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup():
-    """Create database tables on startup."""
+    """Create database tables on startup and setup uploads dir."""
+    os.makedirs("uploads", exist_ok=True)
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -167,3 +173,7 @@ async def startup():
 def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "Real Estate Lead Generation API"}
+
+# Mount uploads directory so frontend can access images
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

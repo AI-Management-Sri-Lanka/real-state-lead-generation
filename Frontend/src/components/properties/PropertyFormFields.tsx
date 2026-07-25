@@ -9,6 +9,7 @@ type PropertyFormFieldsProps = {
   setImageInput: (value: string) => void
   fileInputRef: React.RefObject<HTMLInputElement>
   isDragging: boolean
+  isUploading?: boolean
   uploadError: string | null
   handleAddButtonClick: () => void
   removeImage: (idx: number) => void
@@ -19,7 +20,7 @@ type PropertyFormFieldsProps = {
 }
 
 export function PropertyFormFields({
-  form, set, imageInput, setImageInput, fileInputRef, isDragging, uploadError,
+  form, set, imageInput, setImageInput, fileInputRef, isDragging, isUploading, uploadError,
   handleAddButtonClick, removeImage, handleDrop, handleDragOver, handleDragLeave, handleFileInputChange,
 }: PropertyFormFieldsProps) {
   return (
@@ -118,10 +119,11 @@ export function PropertyFormFields({
             />
             <button
               onClick={handleAddButtonClick}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700"
+              disabled={isUploading}
+              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 border border-slate-300 transition hover:bg-slate-200 disabled:opacity-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700"
             >
-              {imageInput.trim() ? <Plus size={16} /> : <UploadCloud size={16} />}
-              {imageInput.trim() ? 'Add' : 'Upload'}
+              {isUploading ? <span className="animate-spin text-lg block h-4 w-4 rounded-full border-2 border-slate-400 border-t-indigo-600"></span> : (imageInput.trim() ? <Plus size={16} /> : <UploadCloud size={16} />)}
+              {isUploading ? 'Uploading...' : (imageInput.trim() ? 'Add' : 'Upload')}
             </button>
           </div>
 

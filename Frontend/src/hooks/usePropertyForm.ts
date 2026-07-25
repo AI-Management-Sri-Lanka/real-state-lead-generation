@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { propertyApi, adminPropertyApi, PropertyPayload } from '@/api/propertyApi'
+import { uploadApi } from '@/api/uploadApi'
 
 export type PropertyFormState = {
   title: string
@@ -51,6 +52,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
   const [loadingProperty, setLoadingProperty] = useState(false)
   const [originalImageUrls, setOriginalImageUrls] = useState<string[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -150,11 +152,18 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
 
     if (validFiles.length === 0) return
 
+    setIsUploading(true)
     try {
-      const dataUrls = await Promise.all(validFiles.map(fileToDataUrl))
-      set('images', [...form.images, ...dataUrls])
+      // Use uploadApi instead of base64
+      const urls = await Promise.all(validFiles.map(file => uploadApi.uploadImage(file)))
+      // If relative URL is returned, construct full URL. 
+      // But uploadApi.uploadImage returns relative, which works for static files? 
+      // Or we can just store the relative URL. The backend stores relative URL strings now.
+      set('images', [...form.images, ...urls])
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Failed to read one or more files.')
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload one or more files.')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -266,7 +275,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
     imageInput, setImageInput,
     submitting, submitted, error,
     loadingProperty,
-    isDragging, uploadError,
+    isDragging, isUploading, uploadError,
     fileInputRef,
     addImage, removeImage, handleAddButtonClick,
     handleDrop, handleDragOver, handleDragLeave, handleFileInputChange,
