@@ -55,7 +55,7 @@ export default function DashboardPage() {
 
   const statCardsData: StatCard[] = [
     {
-      value: stats?.total_leads ?? 0,
+      value: stats?.total_inquiries ?? 0,
       label: "Total leads",
       trend: "All properties",
       trendPositive: true,

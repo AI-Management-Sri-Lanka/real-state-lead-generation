@@ -257,7 +257,7 @@ export const adminChatApi = {
 
 // ─── Inquiry Analytics ────────────────────────────────────────────────────────
 export interface InquiryAnalytics {
-  total_leads: number
+  total_inquiries: number
   leads_by_source: Record<string, number>
   top_properties: { property_id: number, title: string, lead_count: number }[]
   top_owners: { user_id: number, full_name: string, lead_count: number }[]

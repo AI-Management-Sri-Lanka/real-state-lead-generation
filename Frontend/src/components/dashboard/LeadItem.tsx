@@ -31,20 +31,20 @@ export function LeadItem({ lead, onSelect, isActive = false }: LeadItemProps) {
     <button
       type="button"
       onClick={() => onSelect?.(lead)}
-      className={`group flex w-full items-center justify-between gap-4 rounded-[24px] border border-slate-800/90 bg-slate-950/90 px-4 py-4 text-left transition hover:border-brand hover:bg-slate-900 ${isActive ? 'ring-2 ring-brand/40' : ''}`}
+      className={`group flex w-full items-center justify-between gap-4 rounded-[24px] border border-sky-200/80 bg-white/70 px-4 py-4 text-left transition hover:border-sky-400 hover:bg-sky-50/80 dark:border-slate-800/90 dark:bg-slate-950/90 dark:hover:border-brand dark:hover:bg-slate-900 ${isActive ? 'ring-2 ring-brand/40' : ''}`}
       aria-label={`Open lead ${lead.name} from ${lead.location}`}
     >
       <div className="flex items-center gap-4">
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800 text-sm font-semibold uppercase text-slate-100"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sm font-bold uppercase text-sky-700 dark:bg-slate-800 dark:text-slate-100"
           aria-label={`Lead initials ${lead.initials}`}
           role="img"
         >
           {lead.initials}
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-white">{lead.name}</p>
-          <p className="mt-1 text-xs text-slate-500">{lead.location} ·AUD {lead.amount}</p>
+          <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{lead.name}</p>
+          <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">{lead.location} · {lead.amount}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">

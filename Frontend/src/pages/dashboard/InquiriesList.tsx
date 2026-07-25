@@ -3,6 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { getOwnerInquiries, Inquiry } from '@/api/inquiryApi'
 import { Loader2, Inbox, Calendar, User, Mail, Phone, Home } from 'lucide-react'
 import { format } from 'date-fns'
+import { InquiryMessage } from '@/components/InquiryMessage'
 
 export default function InquiriesList() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
@@ -91,9 +92,9 @@ export default function InquiriesList() {
                     </div>
 
                     {inquiry.message && (
-                      <div className="lg:w-1/2 rounded-xl bg-slate-50 p-4 border border-slate-200 text-sm text-slate-700 whitespace-pre-wrap dark:border-slate-800/80 dark:bg-slate-950/70 dark:text-slate-300">
-                        <div className="max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                          {inquiry.message}
+                      <div className="lg:w-1/2 rounded-xl bg-slate-50 p-4 border border-slate-200 dark:border-slate-800/80 dark:bg-slate-950/70">
+                        <div className="max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                          <InquiryMessage message={inquiry.message} />
                         </div>
                       </div>
                     )}
