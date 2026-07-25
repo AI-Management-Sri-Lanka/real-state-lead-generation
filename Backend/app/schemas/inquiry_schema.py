@@ -52,7 +52,7 @@ class ScoreBreakdownItem(BaseModel):
     color: str
 
 class OwnerDashboardStats(BaseModel):
-    total_leads: int
+    total_inquiries: int
     qualified_leads: int
     new_leads_today: int
     ai_match_rate: str = Field(..., alias="aiMatchRate", serialization_alias="aiMatchRate", validation_alias="aiMatchRate")
@@ -60,7 +60,7 @@ class OwnerDashboardStats(BaseModel):
     score_breakdown: List[ScoreBreakdownItem] = Field(..., alias="scoreBreakdown", serialization_alias="scoreBreakdown", validation_alias="scoreBreakdown")
     recent_leads: List[LeadItemSchema] = Field(..., alias="recentLeads", serialization_alias="recentLeads", validation_alias="recentLeads")
     total_properties: int = Field(..., alias="totalProperties", serialization_alias="totalProperties", validation_alias="totalProperties")
-    total_inquiries: int = Field(..., alias="totalInquiries", serialization_alias="totalInquiries", validation_alias="totalInquiries")
+
     total_chats: int = Field(..., alias="totalChats", serialization_alias="totalChats", validation_alias="totalChats")
     scraped_leads: int = Field(..., alias="scrapedLeads", serialization_alias="scrapedLeads", validation_alias="scrapedLeads")
 
