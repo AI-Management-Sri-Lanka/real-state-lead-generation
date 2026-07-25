@@ -101,7 +101,7 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
       {/* ── Image / placeholder ─────────────────────────────── */}
       <div className="relative h-44 w-full overflow-hidden bg-slate-900">
         {property.images && property.images.length > 0 ? (
-          <img src={property.images[0]} alt={property.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+          <img src={typeof property.images[0] === 'string' ? property.images[0] : property.images[0].url} alt={property.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-slate-600">
             <MapPin size={28} />
