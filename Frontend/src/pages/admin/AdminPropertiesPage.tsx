@@ -184,7 +184,7 @@ export default function AdminPropertiesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-start gap-3">
                         {p.images?.[0] ? (
-                          <img src={p.images[0]} alt={p.title} className="h-12 w-16 rounded-lg object-cover shrink-0" />
+                          <img src={typeof p.images[0] === 'string' ? p.images[0] : p.images[0].url} alt={p.title} className="h-12 w-16 rounded-lg object-cover shrink-0" />
                         ) : (
                           <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-600">
                             <Building2 size={20} />

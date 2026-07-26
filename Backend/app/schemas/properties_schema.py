@@ -37,6 +37,7 @@ class PropertyBase(BaseModel):
     furnishing: Optional[str] = Field(None, example="Fully-Furnished")
     parking: Optional[str] = Field(None, max_length=255, example="1 Undercover Car Space")
     listed_by: Optional[str] = Field(None, max_length=255, example="Jane Smith", serialization_alias="listedBy", validation_alias="listedBy")
+    phone_number: Optional[str] = Field(None, max_length=50, example="+1234567890", serialization_alias="phoneNumber", validation_alias="phoneNumber")
     description: Optional[str] = Field(None, max_length=1024, example="A bright, modern apartment in the heart of Sydney...")
 
 
@@ -58,8 +59,9 @@ class PropertyUpdate(BaseModel):
     is_verified: Optional[bool] = Field(None, serialization_alias="verified", validation_alias="verified")
     furnishing: Optional[str] = None
     parking: Optional[str] = None
-    listed_by: Optional[str] = Field(None, serialization_alias="listedBy", validation_alias="listedBy")
-    description: Optional[str] = None
+    listed_by: Optional[str] = Field(None, max_length=255, serialization_alias="listedBy", validation_alias="listedBy")
+    phone_number: Optional[str] = Field(None, max_length=50, serialization_alias="phoneNumber", validation_alias="phoneNumber")
+    description: Optional[str] = Field(None, max_length=1024)
 
 
 # --- Nested owner profile (shown to public and admin when viewing a property) ---

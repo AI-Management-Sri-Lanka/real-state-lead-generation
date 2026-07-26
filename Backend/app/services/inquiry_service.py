@@ -44,13 +44,53 @@ class InquiryService:
         return "#e74c3c"
 
     def _classify_score(self, message: str) -> str:
-        if not message or len(message) < 15:
+        if not message:
             return "Low"
+            
         msg_lower = message.lower()
-        high_keywords = ["immediate", "urgent", "buy", "purchase", "invest", "ready", "now", "quick"]
-        if any(kw in msg_lower for kw in high_keywords):
+        score_points = 0
+        
+        # 1. Length weight
+        if len(message) < 15:
+            score_points -= 2
+        elif len(message) > 50:
+            score_points += 1
+        
+        if len(message) > 100:
+            score_points += 1
+            
+        # 2. Timeline / Urgency Intent
+        urgency_keywords = ["immediate", "urgent", "ready", "now", "quick", "asap", "this week", "next month", "soon"]
+        if any(kw in msg_lower for kw in urgency_keywords):
+            score_points += 2
+            
+        # 3. Financial / Buying Intent
+        financial_keywords = ["buy", "purchase", "invest", "budget", "price", "cash", "loan", "mortgage", "$", "aud", "rs", "lkr", "usd"]
+        if any(kw in msg_lower for kw in financial_keywords):
+            score_points += 2
+            
+        # 4. Specificity / Property terms
+        property_keywords = ["bedroom", "bathroom", "sqft", "viewing", "inspect", "tour", "visit", "location"]
+        if any(kw in msg_lower for kw in property_keywords):
+            score_points += 1
+            
+        # 5. Verified Buyer Qualification
+        # Automatically boost leads who submitted top-tier questionnaire answers
+        verified_keywords = [
+            "120k", "150k", "180k+",
+            "300k+ equity",
+            "yes – $40k", "yes – $80k+",
+            "superannuation ($230k+): yes"
+        ]
+        if any(kw in msg_lower for kw in verified_keywords):
+            score_points += 3
+            
+        # Classify based on points
+        if score_points >= 3:
             return "High"
-        return "Medium"
+        elif score_points >= 1:
+            return "Medium"
+        return "Low"
 
     async def get_owner_stats(self, db: AsyncSession, owner_id: int) -> OwnerDashboardStats:
         # 1. Get properties owned by this owner
@@ -83,7 +123,7 @@ class InquiryService:
 
         if not prop_ids:
             return OwnerDashboardStats(
-                total_leads=0,
+                total_inquiries=0,
                 qualified_leads=0,
                 new_leads_today=0,
                 ai_match_rate="0%",
@@ -91,7 +131,7 @@ class InquiryService:
                 score_breakdown=[],
                 recent_leads=[],
                 total_properties=total_properties,
-                total_inquiries=0,
+
                 total_chats=total_chats,
                 scraped_leads=scraped_leads
             )
@@ -102,7 +142,7 @@ class InquiryService:
         )
         inquiries = inquiries_result.scalars().all()
 
-        total_leads = len(inquiries)
+        total_inquiries = len(inquiries)
         
         # Calculate new leads today (last 24 hours)
         one_day_ago = datetime.utcnow() - timedelta(days=1)
@@ -153,7 +193,7 @@ class InquiryService:
             "Website": "#6b7280"
         }
         for src, count in source_counts.items():
-            percentage = (count / total_leads * 100) if total_leads > 0 else 0
+            percentage = (count / total_inquiries * 100) if total_inquiries > 0 else 0
             leads_by_source.append(SourceBreakdownItem(
                 source=src,
                 percentage=round(percentage, 1),
@@ -168,7 +208,7 @@ class InquiryService:
             "Low": "#e74c3c"
         }
         for lbl, count in score_counts.items():
-            percentage = (count / total_leads * 100) if total_leads > 0 else 0
+            percentage = (count / total_inquiries * 100) if total_inquiries > 0 else 0
             score_breakdown.append(ScoreBreakdownItem(
                 label=lbl,
                 percentage=round(percentage, 1),
@@ -176,11 +216,11 @@ class InquiryService:
             ))
 
         # AI match rate: calculate percentage of High/Medium leads
-        match_rate_pct = (qualified_leads / total_leads * 100) if total_leads > 0 else 85.0
+        match_rate_pct = (qualified_leads / total_inquiries * 100) if total_inquiries > 0 else 85.0
         ai_match_rate = f"{round(match_rate_pct, 0):.0f}%"
 
         return OwnerDashboardStats(
-            total_leads=total_leads,
+            total_inquiries=total_inquiries,
             qualified_leads=qualified_leads,
             new_leads_today=new_leads_today,
             ai_match_rate=ai_match_rate,
@@ -188,7 +228,7 @@ class InquiryService:
             score_breakdown=score_breakdown,
             recent_leads=recent_leads_list[:5],
             total_properties=total_properties,
-            total_inquiries=total_leads,
+
             total_chats=total_chats,
             scraped_leads=scraped_leads
         )

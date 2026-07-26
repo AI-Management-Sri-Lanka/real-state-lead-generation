@@ -57,7 +57,7 @@ async def get_inquiry_analytics(db: AsyncSession) -> dict:
     """Get advanced inquiry and lead generation analytics for the master admin."""
     
     # 1. Total leads
-    total_leads = await db.scalar(select(func.count(Inquiry.id))) or 0
+    total_inquiries = await db.scalar(select(func.count(Inquiry.id))) or 0
     
     # 2. Leads by source
     source_rows = await db.execute(
@@ -88,7 +88,7 @@ async def get_inquiry_analytics(db: AsyncSession) -> dict:
     top_owners = [{"user_id": row[0], "full_name": row[1], "lead_count": row[2]} for row in top_owners_rows.all()]
 
     return {
-        "total_leads": total_leads,
+        "total_inquiries": total_inquiries,
         "leads_by_source": leads_by_source,
         "top_properties": top_properties,
         "top_owners": top_owners

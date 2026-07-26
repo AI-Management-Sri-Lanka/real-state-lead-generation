@@ -199,7 +199,7 @@ export default function AdminDashboardPage() {
             <MetricCard
               icon={BarChart3}
               label="Total Leads Generated"
-              value={analytics.total_leads}
+              value={analytics.total_inquiries}
               sub="Platform-wide inquiries"
               color="bg-emerald-500"
             />

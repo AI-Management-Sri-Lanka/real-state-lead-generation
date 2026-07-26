@@ -9,6 +9,7 @@ import { DashboardLayout }   from '@/components/layout/DashboardLayout'
 import { StatsCard }         from '@/components/dashboard/StatsCard'
 import { LeadItem }          from '@/components/dashboard/LeadItem'
 import { fetchOwnerDashboardStats, type OwnerDashboardStats } from '@/api/dashboardApi'
+import { useNavigate }       from 'react-router-dom'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -19,15 +20,16 @@ function getGreeting(): string {
   return 'Good evening'
 }
 
-function buildStatCards(stats: OwnerDashboardStats | null) {
+function buildStatCards(stats: OwnerDashboardStats | null, navigate: ReturnType<typeof useNavigate>) {
   return [
     {
       label: 'Total Inquiries',
-      value: stats?.totalInquiries ?? 0,
+      value: stats?.total_inquiries ?? 0,
       trend: 'All property requests',
       trendPositive: true,
       accentLabel: 'Requests',
       icon: <Users size={20} className="text-brand" />,
+      onClick: () => navigate('/dashboard/requests'),
     },
     {
       label: 'AI Chats',
@@ -36,14 +38,16 @@ function buildStatCards(stats: OwnerDashboardStats | null) {
       trendPositive: true,
       accentLabel: 'Chats',
       icon: <MessageSquare size={20} className="text-emerald-400" />,
+      onClick: () => navigate('/dashboard/ai-assistant'),
     },
     {
       label: 'Scraped Leads',
       value: stats?.scrapedLeads ?? 0,
-      trend: 'Extracted from social/chats',
+      trend: 'Tap to view AI found buyers',
       trendPositive: (stats?.scrapedLeads ?? 0) > 0,
       accentLabel: 'Scraped',
       icon: <Sparkles size={20} className="text-brand" />,
+      onClick: () => navigate('/dashboard/found-leads'),
     },
     {
       label: 'Total Properties',
@@ -52,6 +56,7 @@ function buildStatCards(stats: OwnerDashboardStats | null) {
       trendPositive: true,
       accentLabel: 'Properties',
       icon: <Users size={20} className="text-brand" />,
+      onClick: () => navigate('/dashboard/properties'),
     },
   ]
 }
@@ -59,9 +64,7 @@ function buildStatCards(stats: OwnerDashboardStats | null) {
 type LeadScore = 'High' | 'Medium' | 'Low'
 type Lead = { id: string; initials: string; name: string; location: string; amount: string; score: LeadScore }
 
-const defaultLeadSources = [
-  { source: 'Direct',  percentage: 100, amount: 0, color: '#6366f1' },
-]
+
 
 const scoreLegend = [
   { title: 'High match',   description: 'Strong buyer fit with budget and location.',  icon: CheckCircle2,  tone: 'text-emerald-400' },
@@ -75,6 +78,7 @@ const initialLeads: Lead[] = []
 
 export default function Dashboard() {
   const { user }   = useAuth()
+  const navigate = useNavigate()
   const [query,      setQuery]     = useState('')
   const [isLoading,  setIsLoading] = useState(true)
   const [stats,      setStats]     = useState<OwnerDashboardStats | null>(null)
@@ -102,9 +106,7 @@ export default function Dashboard() {
     )
   }, [query, stats])
 
-  const currentLeadSources = stats?.leadsBySource && stats.leadsBySource.length > 0 
-    ? stats.leadsBySource 
-    : defaultLeadSources
+  const currentLeadSources = stats?.leadsBySource || []
 
   return (
     <DashboardLayout activeNav="Dashboard">
@@ -152,8 +154,16 @@ export default function Dashboard() {
             className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-4"
             aria-label="Pipeline statistics"
           >
-            {buildStatCards(stats).map(card => (
-              <StatsCard key={card.label} card={card} isLoading={isLoading} />
+            {buildStatCards(stats, navigate).map(card => (
+              <button
+                key={card.label}
+                type="button"
+                onClick={card.onClick}
+                className="text-left transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300 rounded-[28px]"
+                aria-label={`Go to ${card.label}`}
+              >
+                <StatsCard card={card} isLoading={isLoading} />
+              </button>
             ))}
           </section>
 
@@ -178,22 +188,28 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="mt-5 space-y-4">
-                {currentLeadSources.map(src => (
-                  <div key={src.source}>
-                    <div className="mb-2 flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
-                      <span>{src.source}</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {src.percentage}% · <span className="font-semibold text-slate-700 dark:text-slate-200">{src.amount} leads</span>
-                      </span>
+                {currentLeadSources.length > 0 ? (
+                  currentLeadSources.map(src => (
+                    <div key={src.source}>
+                      <div className="mb-2 flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-200">
+                        <span>{src.source}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {src.percentage}% · <span className="font-semibold text-slate-700 dark:text-slate-200">{src.amount} leads</span>
+                        </span>
+                      </div>
+                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-900">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${src.percentage}%`, background: src.color }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/80 dark:bg-slate-900">
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${src.percentage}%`, background: src.color }}
-                      />
-                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-sky-200/50 bg-white/50 p-6 text-center text-sm text-slate-500 dark:border-slate-800/50 dark:bg-slate-900/50 dark:text-slate-400">
+                    No lead sources available yet. Share your properties to start generating leads!
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -232,6 +248,42 @@ export default function Dashboard() {
             </div>
           </section>
 
+          {/* ── Lead Quality Insights ────────────────────────────────────── */}
+          <section className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-5 md:grid-cols-3">
+            <div className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.95),rgba(238,242,255,0.95))] p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_16px_35px_rgba(2,6,23,0.35)] sm:p-6 flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg">
+               <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest dark:text-slate-400">Qualified Leads</p>
+                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">High & medium intent buyers</p>
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{stats?.qualified_leads ?? 0}</p>
+               </div>
+               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400 ring-1 ring-emerald-200/50">
+                  <CheckCircle2 size={26} />
+               </div>
+            </div>
+
+            <div className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.95),rgba(238,242,255,0.95))] p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_16px_35px_rgba(2,6,23,0.35)] sm:p-6 flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg">
+               <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest dark:text-slate-400">New Today</p>
+                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Inquiries from last 24 hours</p>
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{stats?.new_leads_today ?? 0}</p>
+               </div>
+               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400 ring-1 ring-sky-200/50">
+                  <CalendarDays size={26} />
+               </div>
+            </div>
+
+            <div className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.95),rgba(238,242,255,0.95))] p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_16px_35px_rgba(2,6,23,0.35)] sm:p-6 flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg">
+               <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest dark:text-slate-400">AI Match Rate</p>
+                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">% of qualified vs total leads</p>
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{stats?.aiMatchRate ?? '0%'}</p>
+               </div>
+               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 ring-1 ring-indigo-200/50">
+                  <Sparkles size={26} />
+               </div>
+            </div>
+          </section>
+
           {/* ── Recent leads ─────────────────────────────────────────────── */}
           <section className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.95),rgba(238,242,255,0.95))] p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_16px_35px_rgba(2,6,23,0.35)] sm:p-6">
             {/* Header + search */}
@@ -267,7 +319,7 @@ export default function Dashboard() {
             {/* Lead rows */}
             <div className="mt-5 grid gap-2.5">
               {filteredLeads.map(lead => (
-                <LeadItem key={lead.id} lead={lead} onSelect={() => {}} />
+                <LeadItem key={lead.id} lead={lead} onSelect={() => navigate('/dashboard/requests')} />
               ))}
               {filteredLeads.length === 0 && (
                 <div className="rounded-2xl border border-sky-200/80 bg-white/70 p-8 text-center text-sm text-slate-500 dark:border-slate-800/90 dark:bg-slate-900/90 dark:text-slate-400">

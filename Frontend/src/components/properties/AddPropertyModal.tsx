@@ -21,6 +21,7 @@ export function AddPropertyModal({ open, onClose, isAdminMode, editId = null, on
     submitting, error,
     loadingProperty,
     isDragging, uploadError,
+    isUploading,
     fileInputRef,
     handleAddButtonClick, removeImage,
     handleDrop, handleDragOver, handleDragLeave, handleFileInputChange,
@@ -57,6 +58,7 @@ export function AddPropertyModal({ open, onClose, isAdminMode, editId = null, on
             setImageInput={setImageInput}
             fileInputRef={fileInputRef}
             isDragging={isDragging}
+            isUploading={isUploading}
             uploadError={uploadError}
             handleAddButtonClick={handleAddButtonClick}
             removeImage={removeImage}

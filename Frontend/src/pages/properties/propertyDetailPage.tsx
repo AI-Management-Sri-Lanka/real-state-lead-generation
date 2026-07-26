@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   ArrowLeft, BedDouble, Bath, Ruler, MapPin,
-  CheckCircle2, Loader2, ShieldCheck, User, Mail, Phone,
+  CheckCircle2, Loader2, ShieldCheck, User, Mail, Phone, ChevronDown, BadgeCheck
 } from 'lucide-react'
 
 import emailjs from '@emailjs/browser'
@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { BASE_URL } from '@/api/config'
 import { getOwnerInquiries, Inquiry } from '@/api/inquiryApi'
 import { format } from 'date-fns'
+import { InquiryMessage } from '@/components/InquiryMessage'
 
 
 function formatPrice(price: number, currency: string, listingType: string) {
@@ -71,6 +72,8 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
 
+
+
   const [submitted, setSubmitted] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const { isAuthenticated, user }  = useAuth()
@@ -82,7 +85,11 @@ export default function PropertyDetailPage() {
   const [editModalOpen, setEditModalOpen] = useState(false)
 
   const formik = useFormik({
-    initialValues: { name: '', email: '', phone: '', message: '' },
+    initialValues: { 
+      name: '', email: '', phone: '', message: '',
+      income: '', property_equity: '', deposit: '', age: '', super: '',
+      state: '', contact_day: '', contact_time: ''
+    },
     validationSchema: inquiryValidationSchema,
     validateOnBlur: true,
     validateOnChange: true,
@@ -123,11 +130,26 @@ export default function PropertyDetailPage() {
           ? parseInt(property.id.split('-')[1], 10)
           : Number(property.id)
 
+        let fullMessage = values.message.trim()
+        const qAnswers = []
+        if (values.income) qAnswers.push(`Income: ${values.income}`)
+        if (values.property_equity) qAnswers.push(`Property Equity: ${values.property_equity}`)
+        if (values.deposit) qAnswers.push(`Deposit: ${values.deposit}`)
+        if (values.age) qAnswers.push(`Age: ${values.age}`)
+        if (values.super) qAnswers.push(`Superannuation ($230K+): ${values.super}`)
+        if (values.state) qAnswers.push(`State: ${values.state}`)
+        if (values.contact_day) qAnswers.push(`Best Day: ${values.contact_day}`)
+        if (values.contact_time) qAnswers.push(`Best Time: ${values.contact_time}`)
+        
+        if (qAnswers.length > 0) {
+          fullMessage += `\n\n--- Qualification Data ---\n` + qAnswers.join('\n')
+        }
+
         const payload = {
           name:    values.name.trim(),
           email:   values.email.trim(),
           phone:   values.phone.trim() || undefined,
-          message: values.message.trim(),
+          message: fullMessage,
           propertyId: rawPropertyId,
           source: 'property_page'
         }
@@ -258,7 +280,7 @@ export default function PropertyDetailPage() {
         {property.images && property.images.length > 0 ? (
           <div className="relative h-56 w-full overflow-hidden rounded-3xl bg-slate-100 sm:h-[420px] shadow-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <img
-              src={property.images[0]}
+              src={typeof property.images[0] === 'string' ? property.images[0] : property.images[0].url}
               alt={property.title}
               className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />
@@ -303,8 +325,133 @@ export default function PropertyDetailPage() {
                 {property.furnishing && <Row label="Furnishing" value={property.furnishing} />}
                 {property.parking    && <Row label="Parking"    value={property.parking} />}
                 <Row label="Listed by" value={property.listedBy} />
+                {property.phoneNumber && <Row label="Phone number" value={property.phoneNumber} />}
               </div>
             </div>
+
+            {/* ── Verified Buyer Questionnaire ── */}
+            {!isOwner && !submitted && (
+              <div className="mt-8 rounded-3xl border border-emerald-200 bg-emerald-50/50 p-8 shadow-sm transition-all dark:border-emerald-900/30 dark:bg-emerald-900/10">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400">
+                    <BadgeCheck size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Become a Verified Buyer <span className="text-emerald-600 dark:text-emerald-400 font-medium text-base ml-1">(Optional)</span></h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Answer these quick questions to stand out to the agent and get priority response.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <SelectField
+                    label="What category of income do you earn?"
+                    name="income"
+                    value={formik.values.income}
+                    onChange={formik.handleChange}
+                    options={["$120K – $150K", "$150K – $180K", "$180K+", "Below $120K"]}
+                  />
+                  <SelectField
+                    label="Do you own a property? (With $300K+ equity?)"
+                    name="property_equity"
+                    value={formik.values.property_equity}
+                    onChange={formik.handleChange}
+                    options={["Yes, with $300K+ equity", "Yes, but less than $300K equity", "No"]}
+                  />
+                  <SelectField
+                    label="Do you have a deposit saved?"
+                    name="deposit"
+                    value={formik.values.deposit}
+                    onChange={formik.handleChange}
+                    options={["Yes – $40K–$50K (First Home Buyer)", "Yes – $80K+ (Investor)", "No / Not applicable"]}
+                  />
+                  <SelectField
+                    label="Age Range"
+                    name="age"
+                    value={formik.values.age}
+                    onChange={formik.handleChange}
+                    options={["18 – 29", "30 – 44", "45 – 59", "60+"]}
+                  />
+                  <SelectField
+                    label="Do you have $230K or more in Superannuation?"
+                    name="super"
+                    value={formik.values.super}
+                    onChange={formik.handleChange}
+                    options={["Yes", "No", "Unsure"]}
+                  />
+                  <SelectField
+                    label="What State of Australia are you in?"
+                    name="state"
+                    value={formik.values.state}
+                    onChange={formik.handleChange}
+                    options={[
+                      "New South Wales", "Victoria", "Queensland", "South Australia",
+                      "Western Australia", "Tasmania", "Australian Capital Territory", "Northern Territory"
+                    ]}
+                  />
+                  <SelectField
+                    label="Best day to contact you"
+                    name="contact_day"
+                    value={formik.values.contact_day}
+                    onChange={formik.handleChange}
+                    options={["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Any day"]}
+                  />
+                  <SelectField
+                    label="Best time to contact you"
+                    name="contact_time"
+                    value={formik.values.contact_time}
+                    onChange={formik.handleChange}
+                    options={["8am–10am", "10am–12pm", "12pm–2pm", "2pm–4pm", "4pm–6pm", "6pm–8pm", "Any time"]}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── Owner Inquiries (Left Side) ── */}
+            {isOwner && (
+              <div className="mt-10 rounded-3xl bg-white p-8 shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Recent Inquiries</h3>
+                {loadingInquiries ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 size={24} className="animate-spin text-indigo-500 dark:text-indigo-400" />
+                  </div>
+                ) : inquiries.length === 0 ? (
+                  <div className="text-center py-10 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">No inquiries yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {inquiries.map(inq => (
+                      <div key={inq.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800/50">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold dark:bg-slate-800 dark:text-indigo-400">
+                              {inq.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="block font-bold text-slate-900 dark:text-white">{inq.name}</span>
+                              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                {format(new Date(inq.createdAt.endsWith('Z') ? inq.createdAt : inq.createdAt + 'Z'), 'MMM d, yyyy h:mm a')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2 text-sm text-slate-600 font-medium dark:text-slate-300">
+                            <a href={`mailto:${inq.email}`} className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition justify-end"><Mail size={14}/> {inq.email}</a>
+                            {inq.phone && (
+                              <a href={`tel:${inq.phone}`} className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition justify-end"><Phone size={14}/> {inq.phone}</a>
+                            )}
+                          </div>
+                        </div>
+                        {inq.message && (
+                          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <InquiryMessage message={inq.message} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── Right: owner + contact form ──────────────────── */}
@@ -356,42 +503,6 @@ export default function PropertyDetailPage() {
                   >
                     Edit property
                   </button>
-
-                  {/* Embedded Inquiries for Owner */}
-                  <div className="mt-8 w-full border-t border-slate-100 dark:border-slate-800 pt-6 text-left">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 text-center">Inquiries</h3>
-                    {loadingInquiries ? (
-                      <div className="flex justify-center py-4">
-                        <Loader2 size={20} className="animate-spin text-indigo-500 dark:text-indigo-400" />
-                      </div>
-                    ) : inquiries.length === 0 ? (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center">No inquiries yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {inquiries.map(inq => (
-                          <div key={inq.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm text-sm dark:border-slate-700 dark:bg-slate-800/50">
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="font-bold text-slate-900 dark:text-white">{inq.name}</span>
-                              <span className="text-[10px] font-medium text-slate-400">
-                                {format(new Date(inq.createdAt.endsWith('Z') ? inq.createdAt : inq.createdAt + 'Z'), 'MMM d, h:mm a')}
-                              </span>
-                            </div>
-                            <div className="flex flex-col gap-1.5 text-slate-600 mb-3 text-xs font-medium dark:text-slate-300">
-                              <a href={`mailto:${inq.email}`} className="flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition"><Mail size={12}/> {inq.email}</a>
-                              {inq.phone && (
-                                <a href={`tel:${inq.phone}`} className="flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition"><Phone size={12}/> {inq.phone}</a>
-                              )}
-                            </div>
-                            {inq.message && (
-                              <p className="text-slate-600 mt-2 bg-white p-3 rounded-lg border border-slate-100 italic text-xs leading-relaxed dark:text-slate-300 dark:bg-slate-900 dark:border-slate-700">
-                                "{inq.message}"
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
               ) : submitted ? (
                 <div className="flex flex-col items-center gap-3 py-8 text-center">
@@ -546,6 +657,34 @@ function Field({
         }`}
       />
       {error && <p className="mt-1.5 text-xs font-medium text-red-500 dark:text-red-400">{error}</p>}
+    </div>
+  )
+}
+
+function SelectField({
+  label, name, value, onChange, options
+}: {
+  label: string
+  name: string
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  options: string[]
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</label>
+      <div className="relative">
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="w-full appearance-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 pr-10 text-sm text-slate-900 outline-none transition shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+        >
+          <option value="" disabled>Select...</option>
+          {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        </select>
+        <ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+      </div>
     </div>
   )
 }

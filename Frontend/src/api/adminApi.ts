@@ -13,13 +13,79 @@ function adminHeaders(): HeadersInit {
   }
 }
 
+let isAdminRefreshing = false
+let adminRefreshSubscribers: ((token: string) => void)[] = []
+
+function onAdminRefreshed(token: string) {
+  adminRefreshSubscribers.forEach((cb) => cb(token))
+  adminRefreshSubscribers = []
+}
+
 async function adminFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const res = await fetch(url, {
+  let res = await fetch(url, {
     ...options,
     headers: { ...adminHeaders(), ...options.headers },
   })
-  if (res.status === 401 || res.status === 403) {
+
+  if (res.status === 401) {
+    const refreshToken = localStorage.getItem('aimsl_admin_refresh_token')
+    if (refreshToken) {
+      if (!isAdminRefreshing) {
+        isAdminRefreshing = true
+        try {
+          const refreshRes = await fetch(`${BASE_URL}/admin/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken })
+          })
+          const body = await refreshRes.json()
+          if (refreshRes.ok && body?.data?.access_token) {
+            localStorage.setItem('aimsl_admin_token', body.data.access_token)
+            if (body.data.refresh_token) {
+              localStorage.setItem('aimsl_admin_refresh_token', body.data.refresh_token)
+            }
+            onAdminRefreshed(body.data.access_token)
+          } else {
+            throw new Error('Refresh failed')
+          }
+        } catch (e) {
+          adminRefreshSubscribers = []
+          localStorage.removeItem('aimsl_admin_token')
+          localStorage.removeItem('aimsl_admin_refresh_token')
+          localStorage.removeItem('aimsl_admin')
+          window.location.href = '/admin/login'
+        } finally {
+          isAdminRefreshing = false
+        }
+      }
+
+      // Wait for refresh to complete
+      const newToken = await new Promise<string>((resolve, reject) => {
+        adminRefreshSubscribers.push(resolve)
+        // Basic timeout to prevent hanging
+        setTimeout(() => reject(new Error('Refresh timeout')), 5000)
+      }).catch(() => null)
+
+      if (newToken) {
+        // Retry with new token
+        res = await fetch(url, {
+          ...options,
+          headers: {
+            ...options.headers,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${newToken}`,
+          },
+        })
+      }
+    } else {
+      localStorage.removeItem('aimsl_admin_token')
+      localStorage.removeItem('aimsl_admin_refresh_token')
+      localStorage.removeItem('aimsl_admin')
+      window.location.href = '/admin/login'
+    }
+  } else if (res.status === 403) {
     localStorage.removeItem('aimsl_admin_token')
+    localStorage.removeItem('aimsl_admin_refresh_token')
     localStorage.removeItem('aimsl_admin')
     window.location.href = '/admin/login'
   }
@@ -74,6 +140,22 @@ export const adminDashboardApi = {
     const res = await adminFetch(`${BASE_URL}/admin/dashboard/stats`)
     return unwrap<DashboardStats>(res)
   },
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+export const adminAuthApi = {
+  async logout(): Promise<void> {
+    const refreshToken = localStorage.getItem('aimsl_admin_refresh_token')
+    if (!refreshToken) return
+    try {
+      await adminFetch(`${BASE_URL}/admin/auth/logout`, {
+        method: 'POST',
+        body: JSON.stringify({ refresh_token: refreshToken })
+      })
+    } catch (e) {
+      console.error('Logout API failed:', e)
+    }
+  }
 }
 
 // ─── User Management ──────────────────────────────────────────────────────────
@@ -175,7 +257,7 @@ export const adminChatApi = {
 
 // ─── Inquiry Analytics ────────────────────────────────────────────────────────
 export interface InquiryAnalytics {
-  total_leads: number
+  total_inquiries: number
   leads_by_source: Record<string, number>
   top_properties: { property_id: number, title: string, lead_count: number }[]
   top_owners: { user_id: number, full_name: string, lead_count: number }[]

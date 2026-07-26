@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 
@@ -84,13 +85,22 @@ async def refresh_token(request: RefreshTokenRequest, db: AsyncSession = Depends
 
 
 @router.post("/logout", response_model=ResponseSchema[None])
-async def logout(request: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
-    """Logout the user by revoking the refresh token."""
+async def logout(
+    request: RefreshTokenRequest, 
+    db: AsyncSession = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))
+):
+    """Logout the user by revoking the refresh token and blacklisting the access token."""
     db_token = await get_refresh_token_db(db, request.refresh_token)
     if not db_token or db_token.is_revoked:
         raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS, custom_message="Invalid or already revoked refresh token")
 
     await revoke_refresh_token_db(db, request.refresh_token)
+    
+    from app.crud.token_crud import add_blacklisted_token
+    if credentials and credentials.credentials:
+        await add_blacklisted_token(db, credentials.credentials)
+        
     return ok(message="Logged out successfully")
 
 

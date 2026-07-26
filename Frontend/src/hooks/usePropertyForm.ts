@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { propertyApi, adminPropertyApi, PropertyPayload } from '@/api/propertyApi'
+import { uploadApi } from '@/api/uploadApi'
 
 export type PropertyFormState = {
   title: string
@@ -16,6 +17,7 @@ export type PropertyFormState = {
   furnishing: string
   parking: string
   listedBy: string
+  phoneNumber: string
   description: string
   images: string[]
 }
@@ -24,7 +26,7 @@ export const EMPTY_PROPERTY_FORM: PropertyFormState = {
   title: '', price: '', currency: 'AUD', location: '',
   bedrooms: '', bathrooms: '', areaSqft: '', landSizePerches: '',
   type: 'Apartment', listingType: 'Sale', verified: false,
-  furnishing: '', parking: '', listedBy: '', description: '', images: [],
+  furnishing: '', parking: '', listedBy: '', phoneNumber: '', description: '', images: [],
 }
 
 const MAX_FILE_MB = 5
@@ -50,6 +52,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
   const [loadingProperty, setLoadingProperty] = useState(false)
   const [originalImageUrls, setOriginalImageUrls] = useState<string[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -77,10 +80,11 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
           furnishing: p.furnishing ?? '',
           parking: p.parking ?? '',
           listedBy: p.listedBy ?? '',
+          phoneNumber: p.phoneNumber ?? '',
           description: p.description ?? '',
-          images: Array.isArray(p.images) ? p.images : [],
+          images: Array.isArray(p.images) ? p.images.map((img: any) => typeof img === 'string' ? img : img.url) : [],
         })
-        setOriginalImageUrls(Array.isArray(p.images) ? p.images : [])
+        setOriginalImageUrls(Array.isArray(p.images) ? p.images.map((img: any) => typeof img === 'string' ? img : img.url) : [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load property.')
       } finally {
@@ -148,11 +152,18 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
 
     if (validFiles.length === 0) return
 
+    setIsUploading(true)
     try {
-      const dataUrls = await Promise.all(validFiles.map(fileToDataUrl))
-      set('images', [...form.images, ...dataUrls])
+      // Use uploadApi instead of base64
+      const urls = await Promise.all(validFiles.map(file => uploadApi.uploadImage(file)))
+      // If relative URL is returned, construct full URL. 
+      // But uploadApi.uploadImage returns relative, which works for static files? 
+      // Or we can just store the relative URL. The backend stores relative URL strings now.
+      set('images', [...form.images, ...urls])
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Failed to read one or more files.')
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload one or more files.')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -207,6 +218,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
       furnishing: form.furnishing.trim() || null,
       parking: form.parking.trim() || null,
       listedBy: form.listedBy.trim(),
+      phoneNumber: form.phoneNumber.trim() || null,
       description: form.description.trim(),
     }
 
@@ -263,7 +275,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
     imageInput, setImageInput,
     submitting, submitted, error,
     loadingProperty,
-    isDragging, uploadError,
+    isDragging, isUploading, uploadError,
     fileInputRef,
     addImage, removeImage, handleAddButtonClick,
     handleDrop, handleDragOver, handleDragLeave, handleFileInputChange,

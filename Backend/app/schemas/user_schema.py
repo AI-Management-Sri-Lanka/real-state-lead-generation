@@ -1,10 +1,30 @@
-from pydantic import BaseModel, EmailStr, Field
+import re
+from pydantic import BaseModel, EmailStr, Field, model_validator, field_validator
 from datetime import datetime
+
+def validate_strong_password(v: str) -> str:
+    if len(v) < 8:
+        raise ValueError('Password must be at least 8 characters long')
+    if not re.search(r'[A-Z]', v):
+        raise ValueError('Password must contain at least one uppercase letter')
+    if not re.search(r'[a-z]', v):
+        raise ValueError('Password must contain at least one lowercase letter')
+    if not re.search(r'[0-9]', v):
+        raise ValueError('Password must contain at least one number')
+    if not re.search(r'[!@#$%^&*()_+={}\[\]|\\:;"\'<>,.?/~`-]', v):
+        raise ValueError('Password must contain at least one special character')
+    if re.search(r'\s', v):
+        raise ValueError('Password cannot contain spaces')
+    return v
 
 class UserCreate(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=255)
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=255)
+
+    @field_validator('password')
+    def validate_password(cls, v):
+        return validate_strong_password(v)
 
     model_config = {
         "extra": "forbid",
@@ -13,7 +33,7 @@ class UserCreate(BaseModel):
                 {
                     "full_name": "John Doe",
                     "email": "user@example.com",
-                    "password": "stringst"
+                    "password": "SecurePassword123!"
                 }
             ]
         }
@@ -63,3 +83,16 @@ class UserUpdate(BaseModel):
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str = Field(..., min_length=8, max_length=255)
+    confirm_password: str = Field(..., min_length=8, max_length=255)
+
+    @field_validator('new_password')
+    def validate_password(cls, v):
+        return validate_strong_password(v)
+
+    @model_validator(mode='after')
+    def verify_passwords(self) -> 'PasswordChange':
+        if self.new_password != self.confirm_password:
+            raise ValueError('Passwords do not match')
+        if self.new_password == self.current_password:
+            raise ValueError('New password cannot be the same as the current password')
+        return self
