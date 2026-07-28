@@ -12,6 +12,15 @@ logger = logging.getLogger(__name__)
 
 SITES = ["facebook.com", "instagram.com", "tiktok.com"]
 
+# Relative share of the result budget each site gets. Facebook is weighted
+# heavier because it's usually the richest source for buyer leads, even
+# though Google only indexes a slice of it (mostly public groups/pages).
+SITE_WEIGHTS = {
+    "facebook.com": 3,
+    "instagram.com": 1,
+    "tiktok.com": 1,
+}
+
 # Simple queries that find real estate posts — LLM will decide buyer vs seller
 QUERY_TEMPLATES = [
     "{ptype} {location} looking",
@@ -19,6 +28,18 @@ QUERY_TEMPLATES = [
     "{ptype} {location} want to buy",
     "{ptype} {location} need",
     "{ptype} {location} buyer",
+]
+
+# Extra templates specifically for Facebook — worded closer to how buyer
+# posts actually show up in public groups / marketplace-adjacent content,
+# which is the part of FB that Google can actually index.
+FACEBOOK_QUERY_TEMPLATES = [
+    "{ptype} {location} wanted",
+    "looking to rent {ptype} {location}",
+    "looking to buy {ptype} {location}",
+    "relocating to {location} need {ptype}",
+    "any recommendations {ptype} {location}",
+    "{ptype} {location} inurl:groups",
 ]
 
 
@@ -38,20 +59,30 @@ class TavilySearchScraper:
         location = (location or "").strip()
         ptype = (ptype or "property").strip()
 
-        per_query = max(1, self.max_results // (len(QUERY_TEMPLATES) * len(SITES)))
         seen_urls: set = set()
         results: list[dict] = []
 
-        for tpl in QUERY_TEMPLATES:
-            phrase = tpl.format(ptype=ptype, location=location)
-            for site in SITES:
+        total_weight = sum(SITE_WEIGHTS.get(s, 1) for s in SITES)
+
+        for site in SITES:
+            templates = list(QUERY_TEMPLATES)
+            if site == "facebook.com":
+                templates += FACEBOOK_QUERY_TEMPLATES
+
+            # This site's slice of the overall budget, scaled by its weight,
+            # then spread across however many templates we're running for it.
+            site_budget = self.max_results * SITE_WEIGHTS.get(site, 1) // total_weight
+            per_query = max(1, site_budget // max(1, len(templates)))
+
+            for tpl in templates:
+                phrase = tpl.format(ptype=ptype, location=location)
                 query = f"{phrase} site:{site}"
-                print(f"[Tavily] searching → {query}")
+                print(f"[Tavily] searching → {query} (max_results={per_query})")
                 try:
                     loop = asyncio.get_running_loop()
                     response = await loop.run_in_executor(
                         None,
-                        lambda q=query: self.client.search(query=q, max_results=per_query),
+                        lambda q=query, n=per_query: self.client.search(query=q, max_results=n),
                     )
                 except Exception as e:
                     print(f"[Tavily] search error ({site}): {e}")
