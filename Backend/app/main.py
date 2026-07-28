@@ -59,18 +59,26 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     request_id = getattr(request.state, "request_id", None)
     errors = exc.errors()
     
-    # Compile user-friendly message
+    # Compile user-friendly message and clean details for JSON serialization
     error_msgs = []
+    clean_errors = []
     for err in errors:
         loc_str = " -> ".join(str(item) for item in err.get("loc", []))
         msg = err.get("msg", "Invalid value")
         error_msgs.append(f"{loc_str}: {msg}")
         
+        # Only keep JSON serializable fields
+        clean_errors.append({
+            "loc": err.get("loc"),
+            "msg": msg,
+            "type": err.get("type")
+        })
+        
     message = "Request validation failed: " + "; ".join(error_msgs)
     logger.warning(f"[{request_id}] Validation error at {request.url.path}: {message}")
     
     error_def = AppError.VALIDATION_ERROR
-    error_dict = build_error_dict(error_def, request_id, details=errors)
+    error_dict = build_error_dict(error_def, request_id, details=clean_errors)
     error_dict["message"] = message
     
     return fail(error_dict=error_dict, status_code=error_def.http_status)

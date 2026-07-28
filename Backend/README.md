@@ -65,22 +65,24 @@ If VS Code is showing import errors (`sqlalchemy`, `asyncpg`, etc.), it's likely
 2. Type "Python: Select Interpreter" and press Enter.
 3. Select the interpreter that points to your virtual environment (it will usually contain `venv` in its path, e.g., `.\venv\Scripts\python.exe`).
 
-### 4. Database Setup with Docker
+### 4. Running the Application with Docker
 
-We use Docker to run a PostgreSQL database with the `pgvector` extension locally, ensuring everyone on the team has an identical database environment.
+We use Docker Compose to run the entire stack: PostgreSQL (`pgvector`), Qdrant Vector DB, the FastAPI backend, and the React frontend (via Nginx).
 
-#### 4.1. Start the PostgreSQL Database Container
+#### 4.1. Start the Docker Compose Stack
 
 Navigate to the root directory of your entire project (one level up from this `Backend` folder, where `docker-compose.yml` is located).
 
 ```bash
 cd .. # Go back to the real-state-lead-generation root folder
-docker-compose up -d
+docker compose up -d --build
 ```
 
-This will download the `ankane/pgvector:latest` image (first time only) and start your database container in the background.
+This will build the frontend and backend images and start all containers in the background. Note that local property uploads are automatically persisted in the `Backend/uploads` directory via volume mapping.
 
-You can verify it's running with `docker ps`.
+Once running, access your app at:
+* **Frontend**: `http://localhost`
+* **Backend API**: `http://localhost:8000`
 
 #### 4.2. Configure Environment Variables
 
@@ -138,9 +140,9 @@ You should see output confirming the upgrade.
 
 **Verification (Optional):** You can use a database tool like DBeaver or pgAdmin (connect to `localhost:5432` with your `docker-compose.yml` credentials) to confirm the `users` and `leads` tables now exist in `real_estate_dev_db`.
 
-### 6. Running the FastAPI Application
+### 6. Local Backend Development (Without Docker for Backend)
 
-Once all the above steps are complete, you can start your FastAPI server:
+If you prefer to run the backend locally on your host machine (e.g., for easier debugging or avoiding Docker build times), ensure the databases are running via Docker, then start your FastAPI server directly from the `Backend` directory:
 
 ```bash
 uvicorn app.main:app --reload
