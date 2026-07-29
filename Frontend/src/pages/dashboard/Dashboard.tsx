@@ -5,54 +5,37 @@ import {
   Users, TrendingUp, Sparkles, Info, AlertTriangle,
 } from 'lucide-react'
 import { useAuth }           from '@/hooks/useAuth'
+import { fetchWithAuth }     from '@/api/authApi'
 import { DashboardLayout }   from '@/components/layout/DashboardLayout'
 import { StatsCard }         from '@/components/dashboard/StatsCard'
 import { LeadItem }          from '@/components/dashboard/LeadItem'
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+const BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api/v1`
 
-const statCards = [
-  {
-    label: 'Total leads',
-    value: 248,
-    trend: '+12 this week',
-    trendPositive: true,
-    accentLabel: 'Growth',
-    icon: <Users size={20} className="text-brand" />,
-  },
-  {
-    label: 'Qualified leads',
-    value: 34,
-    trend: '+5 this week',
-    trendPositive: true,
-    accentLabel: 'Verified',
-    icon: <CheckCircle2 size={20} className="text-emerald-400" />,
-  },
-  {
-    label: 'New today',
-    value: 12,
-    trend: '+3 vs yesterday',
-    trendPositive: true,
-    accentLabel: 'Fresh',
-    icon: <Sparkles size={20} className="text-brand" />,
-  },
-  {
-    label: 'AI match rate',
-    value: '87%',
-    trend: '+2% this month',
-    trendPositive: true,
-    accentLabel: 'Accuracy',
-    icon: <TrendingUp size={20} className="text-brand" />,
-  },
-]
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type LeadScore = 'High' | 'Medium' | 'Low'
-type Lead = { id: string; initials: string; name: string; location: string; amount: string; score: LeadScore }
+type Lead = { id: string; initials: string; name: string; location: string; platform: string; propertyType: string; score: LeadScore }
 
-const leadSources = [
-  { source: 'Facebook',  percentage: 68, amount: 170, color: '#6366f1' },
-  { source: 'Instagram', percentage: 32, amount: 80,  color: '#f59e0b' },
-]
+type SourceBreakdown = { source: string; count: number; percentage: number }
+
+type LeadsStats = {
+  total: number
+  newToday: number
+  newThisWeek: number
+  qualified: number
+  avgMatchScorePct: number | null
+  bySource: SourceBreakdown[]
+}
+
+type LeadApiItem = {
+  id: number
+  name: string
+  location: string | null
+  platform: string
+  propertyType: string
+  score: LeadScore
+}
 
 const scoreLegend = [
   { title: 'High match',   description: 'Strong buyer fit with budget and location.',  icon: CheckCircle2,  tone: 'text-emerald-400' },
@@ -60,13 +43,21 @@ const scoreLegend = [
   { title: 'Low match',    description: 'Low confidence, may need requalification.',   icon: Circle,        tone: 'text-red-400'     },
 ]
 
-const initialLeads: Lead[] = [
-  { id: '1', initials: 'DK', name: 'Dilanka K.',  location: 'Colombo 7',   amount: '150,000', score: 'High'   },
-  { id: '2', initials: 'NP', name: 'Nadia P.',    location: 'Nugegoda',    amount: '120,000', score: 'Medium' },
-  { id: '3', initials: 'RS', name: 'Roshan S.',   location: 'Mt. Lavinia', amount: '90,000',  score: 'Low'    },
-  { id: '4', initials: 'KM', name: 'Kumari M.',   location: 'Colombo 3',   amount: '180,000', score: 'High'   },
-  { id: '5', initials: 'AP', name: 'Ashan P.',    location: 'Battaramulla',amount: '110,000', score: 'Medium' },
-]
+const SOURCE_COLORS: Record<string, string> = {
+  Facebook:  '#6366f1',
+  Instagram: '#f59e0b',
+  Tiktok:    '#22c55e',
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+}
+
+function capitalize(s: string): string {
+  return s.length ? s[0].toUpperCase() + s.slice(1) : s
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -74,26 +65,106 @@ export default function Dashboard() {
   const { user }   = useAuth()
   const [query,      setQuery]     = useState('')
   const [isLoading,  setIsLoading] = useState(true)
+  const [leads,      setLeads]     = useState<Lead[]>([])
+  const [stats,      setStats]     = useState<LeadsStats | null>(null)
 
   useEffect(() => {
-    const t = window.setTimeout(() => setIsLoading(false), 700)
-    return () => window.clearTimeout(t)
-  }, [])
+    if (!user) return
+    let cancelled = false
+
+    async function load() {
+      try {
+        const [leadsRes, statsRes] = await Promise.all([
+          fetchWithAuth(`${BASE_URL}/leads?limit=10`),
+          fetchWithAuth(`${BASE_URL}/leads/stats`),
+        ])
+        const leadsJson = await leadsRes.json()
+        const statsJson = await statsRes.json()
+        if (cancelled) return
+
+        const fetchedLeads: LeadApiItem[] = leadsJson.data ?? []
+        setLeads(fetchedLeads.map(l => ({
+          id: String(l.id),
+          initials: getInitials(l.name),
+          name: l.name,
+          location: l.location ?? 'Unknown',
+          platform: capitalize(l.platform),
+          propertyType: capitalize(l.propertyType),
+          score: l.score,
+        })))
+        setStats(statsJson.data ?? null)
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [user])
 
   const today = useMemo(
     () => new Date().toLocaleDateString('en-GB', { weekday: 'long', month: 'long', day: 'numeric' }),
     [],
   )
 
+  const statCards = useMemo(() => {
+    const s = stats
+    return [
+      {
+        label: 'Total leads',
+        value: s?.total ?? 0,
+        trend: `${s?.newThisWeek ?? 0} new this week`,
+        trendPositive: true,
+        accentLabel: 'Growth',
+        icon: <Users size={20} className="text-brand" />,
+      },
+      {
+        label: 'Qualified leads',
+        value: s?.qualified ?? 0,
+        trend: s && s.total > 0 ? `${Math.round((s.qualified / s.total) * 100)}% of total` : 'No leads yet',
+        trendPositive: true,
+        accentLabel: 'Verified',
+        icon: <CheckCircle2 size={20} className="text-emerald-400" />,
+      },
+      {
+        label: 'New today',
+        value: s?.newToday ?? 0,
+        trend: `${s?.newThisWeek ?? 0} this week`,
+        trendPositive: true,
+        accentLabel: 'Fresh',
+        icon: <Sparkles size={20} className="text-brand" />,
+      },
+      {
+        label: 'AI match rate',
+        value: s?.avgMatchScorePct != null ? `${s.avgMatchScorePct}%` : '—',
+        trend: `across ${s?.total ?? 0} leads`,
+        trendPositive: true,
+        accentLabel: 'Accuracy',
+        icon: <TrendingUp size={20} className="text-brand" />,
+      },
+    ]
+  }, [stats])
+
+  const leadSources = useMemo(() => {
+    return (stats?.bySource ?? []).map(src => ({
+      source: src.source,
+      percentage: src.percentage,
+      count: src.count,
+      color: SOURCE_COLORS[src.source] ?? '#6366f1',
+    }))
+  }, [stats])
+
   const filteredLeads = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return initialLeads
-    return initialLeads.filter(l =>
+    if (!q) return leads
+    return leads.filter(l =>
       l.name.toLowerCase().includes(q) ||
       l.location.toLowerCase().includes(q) ||
       l.score.toLowerCase().includes(q),
     )
-  }, [query])
+  }, [query, leads])
 
   return (
     <DashboardLayout activeNav="Dashboard">
@@ -167,12 +238,14 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="mt-5 space-y-4">
-                {leadSources.map(src => (
+                {leadSources.length === 0 ? (
+                  <p className="text-sm text-slate-500">No leads yet — try asking the AI assistant to find some.</p>
+                ) : leadSources.map(src => (
                   <div key={src.source}>
                     <div className="mb-2 flex items-center justify-between text-sm font-medium text-slate-200">
                       <span>{src.source}</span>
                       <span className="text-xs text-slate-400">
-                        {src.percentage}% · <span className="font-semibold text-slate-200">{src.amount} leads</span>
+                        {src.percentage}% · <span className="font-semibold text-slate-200">{src.count} leads</span>
                       </span>
                     </div>
                     <div className="h-2.5 overflow-hidden rounded-full bg-slate-900">
@@ -258,7 +331,12 @@ export default function Dashboard() {
               {filteredLeads.map(lead => (
                 <LeadItem key={lead.id} lead={lead} onSelect={() => {}} />
               ))}
-              {filteredLeads.length === 0 && (
+              {filteredLeads.length === 0 && leads.length === 0 && (
+                <div className="rounded-2xl border border-slate-800/90 bg-slate-900/90 p-8 text-center text-sm text-slate-500">
+                  No leads yet — try asking the AI assistant to find some.
+                </div>
+              )}
+              {filteredLeads.length === 0 && leads.length > 0 && (
                 <div className="rounded-2xl border border-slate-800/90 bg-slate-900/90 p-8 text-center text-sm text-slate-500">
                   No matching leads found. Try a different name, location, or score.
                 </div>

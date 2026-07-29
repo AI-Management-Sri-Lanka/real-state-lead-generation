@@ -75,7 +75,9 @@ class RankLeads:
 
             ranked_leads: List[ScrapedLead] = []
             for hit in search_results.points:
-                ranked_leads.append(ScrapedLead(**hit.payload))
+                lead = ScrapedLead(**hit.payload)
+                lead.match_score = hit.score
+                ranked_leads.append(lead)
 
             return ranked_leads
         finally:

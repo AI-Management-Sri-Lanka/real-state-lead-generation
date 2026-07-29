@@ -34,3 +34,4 @@ class ScrapedLead(BaseModel):
         description="Classified real-estate property type"
     )
     location: Optional[str] = Field(default=None, description="Inferred or stated location")
+    match_score: Optional[float] = Field(default=None, description="Qdrant similarity score from ranking, if ranked")

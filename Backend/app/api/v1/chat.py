@@ -11,6 +11,7 @@ from app.core.logger import get_logger
 logger = get_logger(__name__)
 
 from app.services.dependencies.deps import get_current_user
+from app.models.user import User
 
 router = APIRouter(
     prefix="/chat",
@@ -22,7 +23,8 @@ router = APIRouter(
 async def post_chat(
     request: ChatRequest,
     db: AsyncSession = Depends(get_db),
-    orchestrator: Orchestrator = Depends(Orchestrator)
+    orchestrator: Orchestrator = Depends(Orchestrator),
+    current_user: User = Depends(get_current_user),
 ) -> ChatResponse:
 
     await session_service.add_message(
@@ -34,7 +36,8 @@ async def post_chat(
     res = await orchestrator.handle_user_query(
         user_query=request.query,
         session_id=request.session_id,
-        db=db
+        db=db,
+        user_id=current_user.id,
     )
 
     await session_service.add_message(

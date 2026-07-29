@@ -12,6 +12,7 @@ from app.services.ai.router import Router
 from app.services.ai.simple_chat import DirectChatTool
 from app.services.ai.rank_leads import RankLeads
 from app.services.apify.apify_scraper import run_scraper
+from app.services.leads import leads_service
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class Orchestrator:
         user_query: str,
         session_id: str | None = None,
         db: AsyncSession | None = None,
+        user_id: int | None = None,
     ) -> OrchestratorResponse:
 
         # Route
@@ -42,7 +44,9 @@ class Orchestrator:
         if route_result.lead_search:
             return await self._handle_lead_search(
                 user_query=user_query,
-                route_result=route_result
+                route_result=route_result,
+                db=db,
+                user_id=user_id,
             )
 
         # Simple Chat
@@ -74,6 +78,8 @@ class Orchestrator:
         self,
         user_query: str,
         route_result: RouterOutput,
+        db: AsyncSession | None = None,
+        user_id: int | None = None,
     ) -> OrchestratorResponse:
 
         hashtags = self._build_hashtags(route_result)
@@ -95,6 +101,13 @@ class Orchestrator:
 
         # Rank leads
         ranked_leads: List[ScrapedLead] = RankLeads().rank_leads(query=user_query, leads=scraped_leads)
+
+        # Persist leads for the dashboard — best-effort, never breaks the chat response
+        if db is not None and user_id is not None:
+            try:
+                await leads_service.save_leads(db, user_id, ranked_leads)
+            except Exception as e:
+                logger.error("Failed to persist leads for user_id=%s: %s", user_id, e)
 
         return OrchestratorResponse(
             message="Here are the leads I found for you",

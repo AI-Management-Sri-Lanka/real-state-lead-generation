@@ -13,7 +13,8 @@ type Lead = {
   initials: string
   name: string
   location: string
-  amount: string
+  platform: string
+  propertyType: string
   score: LeadScore
 }
 
@@ -44,7 +45,7 @@ export function LeadItem({ lead, onSelect, isActive = false }: LeadItemProps) {
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-white">{lead.name}</p>
-          <p className="mt-1 text-xs text-slate-500">{lead.location} · LKR {lead.amount}</p>
+          <p className="mt-1 text-xs text-slate-500">{lead.location} · {lead.platform} · {lead.propertyType}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -62,7 +63,8 @@ LeadItem.propTypes = {
     initials: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     location: PropTypes.string.isRequired,
-    amount: PropTypes.string.isRequired,
+    platform: PropTypes.string.isRequired,
+    propertyType: PropTypes.string.isRequired,
     score: PropTypes.oneOf(['High', 'Medium', 'Low']).isRequired,
   }).isRequired,
   onSelect: PropTypes.func,
