@@ -437,3 +437,8 @@ body {
     padding: 24px 12px;
   }
 }
+
+.auth-form-shell--signup {
+  justify-content: safe center;
+  padding-top: 72px;
+}

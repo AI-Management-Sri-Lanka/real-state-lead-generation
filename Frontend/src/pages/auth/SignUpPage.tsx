@@ -13,7 +13,7 @@ export default function SignUpPage() {
         subheading="Join real estate agents using AI to discover qualified buyers from social media — automatically."
         bullets={['Free 14-day trial, no credit card','OpenAI-powered chat assistant','Live Facebook & Instagram scraping','Real-time lead scoring']}
       />
-      <AuthFormShell width={520}><SignUpForm /></AuthFormShell>
+      <AuthFormShell width={520} className="auth-form-shell--signup"><SignUpForm /></AuthFormShell>
     </div>
   )
 }
