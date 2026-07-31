@@ -16,7 +16,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 }
 
 export interface OwnerDashboardStats {
-  total_leads: number
+  total_inquiries: number
   qualified_leads: number
   new_leads_today: number
   aiMatchRate: string
@@ -44,7 +44,7 @@ export interface OwnerDashboardStats {
     created_at: string
   }[]
   totalProperties: number
-  totalInquiries: number
+
   totalChats: number
   scrapedLeads: number
 }

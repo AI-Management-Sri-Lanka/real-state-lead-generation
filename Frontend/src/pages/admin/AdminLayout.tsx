@@ -1,11 +1,13 @@
 // src/pages/admin/AdminLayout.tsx
 // Shared sidebar + topbar shell for all Master Admin pages
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, Users, MessageSquare, Shield,
   LogOut, Menu, X, ChevronRight, Bell, Star
 } from 'lucide-react'
+import { BackToTopButton } from '@/components/ui/BackToTopButton'
+import { adminAuthApi } from '@/api/adminApi'
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
@@ -19,13 +21,16 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const mainRef = useRef<HTMLElement>(null)
   const admin = (() => {
     try { return JSON.parse(localStorage.getItem('aimsl_admin') ?? '{}') }
     catch { return {} }
   })()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await adminAuthApi.logout()
     localStorage.removeItem('aimsl_admin_token')
+    localStorage.removeItem('aimsl_admin_refresh_token')
     localStorage.removeItem('aimsl_admin')
     navigate('/admin/login', { replace: true })
   }
@@ -131,9 +136,11 @@ export default function AdminLayout() {
         </header>
 
         {/* Page outlet */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
+
+        <BackToTopButton scrollContainerRef={mainRef} />
       </div>
     </div>
   )

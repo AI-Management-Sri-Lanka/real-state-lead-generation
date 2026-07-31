@@ -4,9 +4,14 @@ from app.db.session import get_db
 from app.schemas.master_admin_schema import MasterAdminCreate, MasterAdminLogin, MasterAdminResponse
 from app.schemas.response_schema import ResponseSchema
 from app.crud.master_admin_crud import has_any_admins, create_admin, get_admin_by_email
-from app.core.security import verify_password, create_master_admin_token
+from app.core.security import verify_password, create_master_admin_token, create_master_admin_refresh_token, decode_token
 from app.core.errors import AppException, AppError
 from app.core.response import ok
+from app.schemas.token_schema import RefreshTokenRequest
+from app.crud.token_crud import create_master_admin_refresh_token_db, get_master_admin_refresh_token_db, revoke_master_admin_refresh_token_db, add_blacklisted_token
+from datetime import datetime, timedelta
+from app.core.config import settings
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 router = APIRouter(prefix="/admin/auth", tags=["Admin Auth"])
 
@@ -30,16 +35,74 @@ async def master_admin_login(body: MasterAdminLogin, db: AsyncSession = Depends(
     if not admin.is_active:
         raise AppException(error=AppError.PERM_PERMISSION_DENIED, custom_message="Account deactivated.")
         
-    token = create_master_admin_token(admin.id, admin.email)
+    access_token = create_master_admin_token(admin.id, admin.email)
+    refresh_token = create_master_admin_refresh_token(admin.id, admin.email)
+    
+    expires_at = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    await create_master_admin_refresh_token_db(db, admin.id, refresh_token, expires_at)
     
     return ok(item={
-        "access_token": token, 
+        "access_token": access_token, 
+        "refresh_token": refresh_token,
         "admin": {
             "id": admin.id,
             "email": admin.email,
             "full_name": admin.full_name
         }
     })
+
+@router.post("/refresh")
+async def refresh_admin_token(request: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
+    """Refresh the master admin access token using a refresh token."""
+    try:
+        payload = decode_token(request.refresh_token)
+        if payload.get("type") != "refresh" or not payload.get("is_master_admin"):
+            raise ValueError("Invalid token type")
+        admin_id_str = payload.get("sub")
+        admin_email = payload.get("email")
+        if not admin_id_str or not admin_email:
+            raise ValueError("Token missing subject or email")
+        admin_id = int(admin_id_str)
+    except Exception:
+        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS)
+
+    db_token = await get_master_admin_refresh_token_db(db, request.refresh_token)
+    if not db_token or db_token.is_revoked or db_token.expires_at < datetime.utcnow():
+        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS)
+
+    try:
+        await revoke_master_admin_refresh_token_db(db, request.refresh_token, commit=False)
+        access_token = create_master_admin_token(admin_id, admin_email)
+        refresh_token = create_master_admin_refresh_token(admin_id, admin_email)
+        expires_at = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        await create_master_admin_refresh_token_db(db, admin_id, refresh_token, expires_at, commit=False)
+        await db.commit()
+        return ok(message="Token refreshed successfully", item={
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer"
+        })
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+@router.post("/logout")
+async def logout_admin(
+    request: RefreshTokenRequest, 
+    db: AsyncSession = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))
+):
+    """Logout the master admin by revoking the refresh token and blacklisting the access token."""
+    db_token = await get_master_admin_refresh_token_db(db, request.refresh_token)
+    if not db_token or db_token.is_revoked:
+        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS, custom_message="Invalid or already revoked refresh token")
+
+    await revoke_master_admin_refresh_token_db(db, request.refresh_token)
+    
+    if credentials and credentials.credentials:
+        await add_blacklisted_token(db, credentials.credentials)
+        
+    return ok(message="Logged out successfully")
 
 from app.services.dependencies.deps import require_master_admin
 from app.schemas.master_admin_schema import MasterAdminUpdate, MasterAdminPasswordChange

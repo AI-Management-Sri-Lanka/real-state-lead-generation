@@ -23,9 +23,10 @@ export interface Property {
   furnishing: string | null
   parking: string | null
   listedBy: string
+  phoneNumber: string | null
   verified: boolean
-  description: string
-  images: string[]
+  description: string | null
+  images: string[] | { url: string; isPrimary: boolean }[]
 }
 
 export interface InquiryPayload {

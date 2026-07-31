@@ -34,10 +34,14 @@ export default function AdminLoginPage() {
         throw new Error(body?.error?.message ?? body?.message ?? 'Login failed')
       }
       const token = body?.data?.access_token
+      const refresh_token = body?.data?.refresh_token
       const admin = body?.data?.admin
       if (!token) throw new Error('No token in response')
 
       localStorage.setItem('aimsl_admin_token', token)
+      if (refresh_token) {
+        localStorage.setItem('aimsl_admin_refresh_token', refresh_token)
+      }
       localStorage.setItem('aimsl_admin', JSON.stringify(admin))
       navigate('/admin/dashboard', { replace: true })
     } catch (err: unknown) {

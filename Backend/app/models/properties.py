@@ -38,6 +38,7 @@ class Property(Base):
     furnishing = Column(Enum(Furnishing), nullable=True)
     parking = Column(String(255), nullable=True)
     listed_by = Column(String(255), nullable=True)
+    phone_number = Column(String(50), nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     description = Column(String(1024), nullable=True)
  

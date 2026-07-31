@@ -1,16 +1,17 @@
 // src/components/layout/Sidebar.tsx
 import PropTypes from 'prop-types'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, History, Settings, LogOut, Home, ChevronsLeft, ChevronsRight, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, History, Settings, LogOut, Home, ChevronsLeft, ChevronsRight, MessageSquare, Zap } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { useSidebar } from '@/contexts/SidebarContext'
 
 const MAIN_NAV = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/dashboard/ai-assistant', icon: History, label: 'AI Chat' },
-  { to: '/dashboard/properties', icon: Home, label: 'My Properties' },
-  { to: '/dashboard/requests', icon: MessageSquare, label: 'Requests' },
+  { to: '/dashboard',              icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard/ai-assistant', icon: History,         label: 'AI Chat' },
+  { to: '/dashboard/found-leads',  icon: Zap,             label: 'Found Leads', highlight: true },
+  { to: '/dashboard/properties',   icon: Home,            label: 'My Properties' },
+  { to: '/dashboard/requests',     icon: MessageSquare,   label: 'Requests' },
 ]
 const ACCOUNT_NAV = [
   { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
@@ -49,16 +50,31 @@ export function Sidebar() {
           <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Main</p>
         )}
         <div className="mt-4 space-y-2">
-          {MAIN_NAV.map(({ to, icon: Icon, label }) => (
+          {MAIN_NAV.map(({ to, icon: Icon, label, highlight }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/dashboard'}
-              className={navLinkClass}
+              className={({ isActive }) =>
+                `group relative flex items-center gap-3 rounded-3xl py-3 text-sm font-medium transition-all duration-200 ${
+                  collapsed ? 'justify-center px-3' : 'px-4'
+                } ${
+                  isActive
+                    ? 'border-l-4 border-sky-500 bg-gradient-to-r from-sky-500/15 to-indigo-500/15 text-sky-700 dark:text-sky-300'
+                    : highlight
+                    ? 'text-emerald-600 hover:bg-emerald-50/80 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300'
+                    : 'text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-900/70 dark:hover:text-slate-200'
+                }`
+              }
               title={collapsed ? label : undefined}
             >
               <Icon size={18} className="shrink-0" />
               {!collapsed && <span className="truncate">{label}</span>}
+              {!collapsed && highlight && (
+                <span className="ml-auto rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                  AI
+                </span>
+              )}
             </NavLink>
           ))}
         </div>

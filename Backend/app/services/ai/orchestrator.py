@@ -88,6 +88,10 @@ class Orchestrator:
             "hashtags": hashtags,
             "keywords": keywords,
             "limit": SCRAPING_LIMIT,
+            # Pass structured fields so Tavily can build a precise buyer-intent
+            # search query rather than falling back to the first hashtag.
+            "location": route_result.preferred_location,
+            "property_type": route_result.property_type,
         }
 
         logger.info("Scraper input: %s", scraper_input)

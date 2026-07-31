@@ -26,6 +26,11 @@ async def get_current_user(
         logger.warning(f"Invalid token: {e}")
         raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS)
 
+    from app.crud.token_crud import is_token_blacklisted
+    if await is_token_blacklisted(db, token):
+        logger.warning("Attempted to use blacklisted access token.")
+        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS)
+
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     
@@ -49,6 +54,11 @@ async def require_master_admin(
     except Exception as e:
         logger.warning(f"Invalid master admin token: {e}")
         raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS, custom_message="Not authorized as Master Admin")
+        
+    from app.crud.token_crud import is_token_blacklisted
+    if await is_token_blacklisted(db, token):
+        logger.warning("Attempted to use blacklisted master admin access token.")
+        raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS)
         
     admin_email = payload.get("email")
     if not admin_email:
