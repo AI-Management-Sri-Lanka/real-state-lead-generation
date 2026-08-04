@@ -127,11 +127,11 @@ export interface AdminRecord {
 }
 
 export interface AdminSession {
-  id: string
+  session_id: string
   user_id: number
   title: string
   message_count: number
-  created_at: string
+  updated_at: string
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
