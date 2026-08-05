@@ -196,10 +196,11 @@ function parseLeadsFromBakedContent(content: string): { intro: string; leads: Le
 export default function AIChat() {
   const { user } = useAuth();
   const userName = (user as any)?.name || (user as any)?.email || "You";
+  const sessionKey = user?.id ? `leadai_sessions_${user.id}` : "leadai_sessions";
 
   const [sessions, setSessions] = useState<Session[]>(() => {
     try {
-      const stored = localStorage.getItem("leadai_sessions");
+      const stored = localStorage.getItem(sessionKey);
       return stored ? JSON.parse(stored, (key, val) => {
         if (key === "timestamp" || key === "createdAt") return val; // keep as string, convert on use
         return val;
@@ -209,9 +210,9 @@ export default function AIChat() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("leadai_sessions", JSON.stringify(sessions));
+      localStorage.setItem(sessionKey, JSON.stringify(sessions));
     } catch { /* quota exceeded or private mode */ }
-  }, [sessions]);
+  }, [sessions, sessionKey]);
 
   const [activeSessionId, setActiveSessionId] = useState<string>("");
   const [messageText, setMessageText] = useState("");
@@ -662,7 +663,7 @@ export default function AIChat() {
                       onClick={handleNewChat}
                       className="inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 text-sm font-semibold !text-white shadow-[0_10px_25px_rgba(14,116,144,0.24)] transition hover:from-sky-400 hover:to-indigo-500"
                     >
-                      <Plus size={16} /> 
+                      <Plus size={16} />
                     </button>
                     {/* Mobile-only close button — on desktop the rail toggle
                         to the left of the sidebar handles this instead. */}
@@ -686,8 +687,8 @@ export default function AIChat() {
                           type="button"
                           onClick={() => selectSession(session.id)}
                           className={`group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition border ${active
-                              ? "border-sky-400/40 bg-gradient-to-r from-sky-500/15 to-indigo-500/15"
-                              : "border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
+                            ? "border-sky-400/40 bg-gradient-to-r from-sky-500/15 to-indigo-500/15"
+                            : "border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
                             }`}
                         >
                           <p className="truncate text-sm font-semibold text-slate-900 flex-1 min-w-0 dark:text-white">
