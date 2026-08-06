@@ -121,7 +121,7 @@ export default function AdminPropertiesPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
 
       {/* ── Stats strip ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4">

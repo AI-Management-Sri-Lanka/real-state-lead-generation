@@ -55,17 +55,7 @@ export function Sidebar() {
               key={to}
               to={to}
               end={to === '/dashboard'}
-              className={({ isActive }) =>
-                `group relative flex items-center gap-3 rounded-3xl py-3 text-sm font-medium transition-all duration-200 ${
-                  collapsed ? 'justify-center px-3' : 'px-4'
-                } ${
-                  isActive
-                    ? 'border-l-4 border-sky-500 bg-gradient-to-r from-sky-500/15 to-indigo-500/15 text-sky-700 dark:text-sky-300'
-                    : highlight
-                    ? 'text-emerald-600 hover:bg-emerald-50/80 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300'
-                    : 'text-slate-500 hover:bg-slate-100/70 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-900/70 dark:hover:text-slate-200'
-                }`
-              }
+              className={navLinkClass}
               title={collapsed ? label : undefined}
             >
               <Icon size={18} className="shrink-0" />

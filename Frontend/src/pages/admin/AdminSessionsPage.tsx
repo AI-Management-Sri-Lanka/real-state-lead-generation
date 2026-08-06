@@ -123,7 +123,7 @@ export default function AdminSessionsPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {filtered.map(s => (
-                <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={s.session_id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 h-9 w-9 rounded-xl bg-cyan-600/20 flex items-center justify-center">
@@ -131,7 +131,7 @@ export default function AdminSessionsPage() {
                       </div>
                       <div>
                         <p className="font-medium text-white truncate max-w-xs">{s.title || 'Untitled Session'}</p>
-                        <p className="text-xs text-slate-600 font-mono truncate w-24">{s.id}</p>
+                        <p className="text-xs text-slate-600 font-mono truncate w-24">{s.session_id}</p>
                       </div>
                     </div>
                   </td>
@@ -142,13 +142,13 @@ export default function AdminSessionsPage() {
                     </span>
                   </td>
                   <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-600">
-                    {s.created_at ? new Date(s.created_at).toLocaleDateString('en-US', {
+                    {s.updated_at ? new Date(s.updated_at).toLocaleDateString('en-US', {
                       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                     }) : '—'}
                   </td>
                   <td className="px-5 py-4 text-right">
                     <button
-                      onClick={() => setSelectedSessionId(s.id)}
+                      onClick={() => setSelectedSessionId(s.session_id)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                     >
                       <Eye size={14} /> Transcript
