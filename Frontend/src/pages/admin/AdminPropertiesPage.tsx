@@ -126,25 +126,30 @@ export default function AdminPropertiesPage() {
       {/* ── Stats strip ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total', value: properties.length },
-          { label: 'Verified', value: properties.filter(p => p.verified).length },
-          { label: 'Unverified', value: properties.filter(p => !p.verified).length },
+          { label: 'Total Properties', value: properties.length, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' },
+          { label: 'Verified', value: properties.filter(p => p.verified).length, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+          { label: 'Unverified', value: properties.filter(p => !p.verified).length, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl border border-white/5 bg-[#13152a] px-5 py-4">
-            <p className="text-xs text-slate-500">{s.label}</p>
-            <p className="mt-1 text-2xl font-bold text-white">{s.value}</p>
+          <div key={s.label} className="rounded-2xl border border-slate-800 bg-slate-900 px-5 py-4 flex items-center justify-between shadow-sm">
+            <div>
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{s.label}</p>
+              <p className="mt-1 text-2xl font-extrabold text-white">{s.value}</p>
+            </div>
+            <div className={`p-3 rounded-xl border ${s.bg}`}>
+              <Building2 size={20} className={s.color} />
+            </div>
           </div>
         ))}
       </div>
 
       {/* ── Search ────────────────────────────────────────────────── */}
       <div className="relative">
-        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by title, location, or owner name / email…"
-          className="w-full rounded-xl border border-white/10 bg-[#13152a] py-3 pl-11 pr-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-indigo-500 transition-colors"
+          className="w-full rounded-xl border border-slate-700/80 bg-slate-900 py-3 pl-11 pr-4 text-sm text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors shadow-sm"
         />
       </div>
 
@@ -163,22 +168,22 @@ export default function AdminPropertiesPage() {
             {search ? 'No properties match your search.' : 'No properties in the system yet.'}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-800">
+          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-md">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-900/60 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-3">Property</th>
-                  <th className="px-4 py-3 hidden md:table-cell">Owner</th>
-                  <th className="px-4 py-3 hidden lg:table-cell">Price</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                <tr className="border-b border-slate-800 bg-slate-800/60 text-left text-xs font-bold uppercase tracking-wider text-slate-300">
+                  <th className="px-4 py-3.5">Property</th>
+                  <th className="px-4 py-3.5 hidden md:table-cell">Owner</th>
+                  <th className="px-4 py-3.5 hidden lg:table-cell">Price</th>
+                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-800/60">
                 {filtered.map(p => (
                   <tr
                     key={p.id}
-                    className="group transition hover:bg-slate-900/40"
+                    className="group transition hover:bg-slate-800/40"
                   >
                     {/* Property info */}
                     <td className="px-4 py-3">
@@ -186,16 +191,16 @@ export default function AdminPropertiesPage() {
                         {p.images?.[0] ? (
                           <img src={typeof p.images[0] === 'string' ? p.images[0] : p.images[0].url} alt={p.title} className="h-12 w-16 rounded-lg object-cover shrink-0" />
                         ) : (
-                          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-600">
+                          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400">
                             <Building2 size={20} />
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-white">{p.title}</p>
-                          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500">
+                          <p className="truncate font-semibold text-white">{p.title}</p>
+                          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-400">
                             <MapPin size={10} />{p.location}
                           </p>
-                          <p className="mt-0.5 text-xs text-slate-500">
+                          <p className="mt-0.5 text-xs text-slate-400">
                             {p.type} · For {p.listingType}
                             {p.bedrooms != null && <> · <BedDouble size={10} className="inline" /> {p.bedrooms}</>}
                             {p.bathrooms != null && <> · <Bath size={10} className="inline" /> {p.bathrooms}</>}
@@ -297,7 +302,7 @@ export default function AdminPropertiesPage() {
         )}
 
         {filtered.length > 0 && (
-          <div className="border-t border-white/5 bg-[#13152a] px-5 py-3 text-xs text-slate-600 text-right">
+          <div className="border-t border-slate-800 bg-slate-900 px-5 py-3 text-xs text-slate-400 font-semibold text-right">
             Showing {filtered.length} of {properties.length} properties
           </div>
         )}

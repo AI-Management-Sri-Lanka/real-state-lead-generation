@@ -40,15 +40,15 @@ export default function AdminLayout() {
     : 'A'
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0b14] text-slate-100 font-sans">
+    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside
-        className={`flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out border-r border-white/5 bg-[#0d0f1e]
+        className={`flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out border-r border-slate-800/80 bg-slate-900
           ${sidebarOpen ? 'w-56' : 'w-16'}`}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
+        <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-800/80">
           <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-900/50">
             <Shield size={16} className="text-white" />
           </div>
@@ -85,22 +85,22 @@ export default function AdminLayout() {
         </nav>
 
         {/* Admin profile at bottom */}
-        <div className="border-t border-white/5 p-3">
-          <div className={`flex items-center gap-3 rounded-xl p-2 ${sidebarOpen ? 'bg-white/5' : ''}`}>
+        <div className="border-t border-slate-800/80 p-3">
+          <div className={`flex items-center gap-3 rounded-xl p-2 ${sidebarOpen ? 'bg-slate-800/50' : ''}`}>
             <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-bold text-white">
               {initials}
             </div>
             {sidebarOpen && (
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-white truncate">{admin?.full_name ?? 'Admin'}</p>
-                <p className="text-[10px] text-slate-500 truncate">{admin?.email ?? ''}</p>
+                <p className="text-[10px] text-slate-400 truncate">{admin?.email ?? ''}</p>
               </div>
             )}
             {sidebarOpen && (
               <button
                 onClick={handleLogout}
                 title="Logout"
-                className="flex-shrink-0 p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+                className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-950/30 transition-colors"
               >
                 <LogOut size={14} />
               </button>
@@ -113,7 +113,7 @@ export default function AdminLayout() {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
         {/* Top bar */}
-        <header className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b border-white/5 bg-[#0d0f1e]/80 backdrop-blur">
+        <header className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur">
           <button
             onClick={() => setSidebarOpen(v => !v)}
             className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"

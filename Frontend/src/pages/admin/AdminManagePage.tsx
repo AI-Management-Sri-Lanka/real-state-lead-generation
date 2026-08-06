@@ -115,12 +115,12 @@ export default function AdminManagePage() {
 
       {/* Invite Modal */}
       {showInvite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#13152a] p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-5 border-b border-slate-800 pb-3">
               <h2 className="text-base font-bold text-white">Invite New Admin</h2>
               <button onClick={() => { setShowInvite(false); setInviteError(null); setInviteSuccess(false) }}
-                className="text-slate-500 hover:text-white transition-colors">
+                className="text-slate-400 hover:text-white transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -135,33 +135,33 @@ export default function AdminManagePage() {
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">Full Name</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-300">Full Name</label>
                   <input
                     value={form.full_name}
                     onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
                     placeholder="Jane Doe"
-                    className="w-full rounded-xl border border-white/10 bg-[#0d0f1e] px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:border-indigo-500 transition-colors"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">Email</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-300">Email</label>
                   <input
                     type="email"
                     value={form.email}
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                     placeholder="admin@example.com"
-                    className="w-full rounded-xl border border-white/10 bg-[#0d0f1e] px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:border-indigo-500 transition-colors"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-400">Password</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-300">Password</label>
                   <div className="relative">
                     <input
                       type={showPwd ? 'text' : 'password'}
                       value={form.password}
                       onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                       placeholder="Min. 8 characters"
-                      className="w-full rounded-xl border border-white/10 bg-[#0d0f1e] px-3.5 py-2.5 pr-10 text-sm text-white placeholder:text-slate-600 outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 pr-10 text-sm text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 transition-colors"
                     />
                     <button type="button" onClick={() => setShowPwd(v => !v)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
@@ -205,33 +205,33 @@ export default function AdminManagePage() {
           <AlertCircle size={20} className="shrink-0" /> {error}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/5">
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-md">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-[#13152a] text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-5 py-3">Admin</th>
-                <th className="px-5 py-3">Email</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3 text-right">Actions</th>
+              <tr className="border-b border-slate-800 bg-slate-800/60 text-left text-xs font-bold uppercase tracking-wider text-slate-300">
+                <th className="px-5 py-3.5">Admin</th>
+                <th className="px-5 py-3.5">Email</th>
+                <th className="px-5 py-3.5">Status</th>
+                <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-800/60">
               {admins.map(admin => {
                 const isSelf = admin.email === currentAdmin?.email
                 return (
-                  <tr key={admin.id} className="hover:bg-white/[0.02] transition-colors">
+                  <tr key={admin.id} className="hover:bg-slate-800/40 transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-9 w-9 rounded-xl bg-indigo-600/20 flex items-center justify-center">
                           <Shield size={16} className="text-indigo-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{admin.full_name}</p>
-                          {isSelf && <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">You</p>}
+                          <p className="font-semibold text-white">{admin.full_name}</p>
+                          {isSelf && <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">You</p>}
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-slate-400">{admin.email}</td>
+                    <td className="px-5 py-4 text-slate-300 font-medium">{admin.email}</td>
                     <td className="px-5 py-4"><StatusBadge isActive={admin.is_active} /></td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end">
@@ -239,10 +239,10 @@ export default function AdminManagePage() {
                           onClick={() => handleToggle(admin)}
                           disabled={actionId === admin.id || isSelf}
                           title={isSelf ? 'Cannot deactivate yourself' : admin.is_active ? 'Deactivate' : 'Activate'}
-                          className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                          className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                             admin.is_active
-                              ? 'border-red-800/60 text-red-400 hover:bg-red-950/30'
-                              : 'border-emerald-800/60 text-emerald-400 hover:bg-emerald-950/30'
+                              ? 'border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
+                              : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
                           }`}
                         >
                           {actionId === admin.id ? (
@@ -256,7 +256,7 @@ export default function AdminManagePage() {
               })}
             </tbody>
           </table>
-          <div className="border-t border-white/5 bg-[#13152a] px-5 py-3 text-xs text-slate-600 text-right">
+          <div className="border-t border-slate-800 bg-slate-900 px-5 py-3 text-xs text-slate-400 font-semibold text-right">
             {admins.length} admin{admins.length !== 1 ? 's' : ''} total
           </div>
         </div>

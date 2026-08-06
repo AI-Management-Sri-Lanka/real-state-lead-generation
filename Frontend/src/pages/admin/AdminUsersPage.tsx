@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
   Search, Loader2, UserCheck, UserX, Trash2, RefreshCw,
-  AlertCircle, Users, CheckCircle2,
+  AlertCircle, Users, CheckCircle2, Key
 } from 'lucide-react'
 import { adminUsersApi, AdminUser } from '@/api/adminApi'
 
@@ -85,6 +85,21 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleResetPassword = async (user: AdminUser) => {
+    const newPassword = window.prompt(`Enter a new password for "${user.full_name}":\n(Must be at least 8 chars, uppercase, lowercase, number, special char)`)
+    if (!newPassword) return
+    
+    setActionId(user.id)
+    try {
+      await adminUsersApi.resetUserPassword(user.id, newPassword)
+      alert(`Password for ${user.full_name} has been reset successfully.`)
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Reset password failed')
+    } finally {
+      setActionId(null)
+    }
+  }
+
   const activeCount = users.filter(u => u.is_active).length
   const bannedCount = users.length - activeCount
 
@@ -110,15 +125,17 @@ export default function AdminUsersPage() {
       {/* Stats strip */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total', value: total, icon: Users, color: 'text-indigo-400' },
-          { label: 'Active', value: activeCount, icon: UserCheck, color: 'text-emerald-400' },
-          { label: 'Banned', value: bannedCount, icon: UserX, color: 'text-red-400' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-2xl border border-white/5 bg-[#13152a] px-5 py-4 flex items-center gap-4">
-            <Icon size={20} className={color} />
+          { label: 'Total Users', value: total, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' },
+          { label: 'Active Users', value: activeCount, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+          { label: 'Banned Users', value: bannedCount, icon: UserX, color: 'text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20' },
+        ].map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="rounded-2xl border border-slate-800 bg-slate-900 px-5 py-4 flex items-center justify-between shadow-sm">
             <div>
-              <p className="text-xs text-slate-500">{label}</p>
-              <p className="text-2xl font-extrabold text-white">{value}</p>
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{label}</p>
+              <p className="text-3xl font-extrabold text-white mt-1">{value}</p>
+            </div>
+            <div className={`p-3 rounded-xl border ${bg}`}>
+              <Icon size={22} className={color} />
             </div>
           </div>
         ))}
@@ -126,12 +143,12 @@ export default function AdminUsersPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by name or email..."
-          className="w-full rounded-xl border border-white/10 bg-[#13152a] py-3 pl-11 pr-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-indigo-500 transition-colors"
+          className="w-full rounded-xl border border-slate-700/80 bg-slate-900 py-3 pl-11 pr-4 text-sm text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors shadow-sm"
         />
       </div>
 
@@ -149,32 +166,32 @@ export default function AdminUsersPage() {
           {search ? 'No users match your search.' : 'No users found.'}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/5">
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-md">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-[#13152a] text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-5 py-3">User</th>
-                <th className="px-5 py-3">Email</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3 hidden md:table-cell">Joined</th>
-                <th className="px-5 py-3 text-right">Actions</th>
+              <tr className="border-b border-slate-800 bg-slate-800/60 text-left text-xs font-bold uppercase tracking-wider text-slate-300">
+                <th className="px-5 py-3.5">User</th>
+                <th className="px-5 py-3.5">Email</th>
+                <th className="px-5 py-3.5">Status</th>
+                <th className="px-5 py-3.5 hidden md:table-cell">Joined</th>
+                <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-800/60">
               {filtered.map(user => (
-                <tr key={user.id} className="group hover:bg-white/[0.02] transition-colors">
+                <tr key={user.id} className="group hover:bg-slate-800/30 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <Avatar name={user.full_name} />
                       <div>
-                        <p className="font-medium text-white">{user.full_name}</p>
-                        <p className="text-xs text-slate-600">ID #{user.id}</p>
+                        <p className="font-semibold text-white">{user.full_name}</p>
+                        <p className="text-xs text-slate-400 font-mono">ID #{user.id}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-slate-400">{user.email}</td>
+                  <td className="px-5 py-4 text-slate-300 font-medium">{user.email}</td>
                   <td className="px-5 py-4"><StatusBadge isActive={user.is_active} /></td>
-                  <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-600">
+                  <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-300">
                     {new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                   </td>
                   <td className="px-5 py-4">
@@ -183,10 +200,10 @@ export default function AdminUsersPage() {
                         onClick={() => handleToggle(user)}
                         disabled={actionId === user.id}
                         title={user.is_active ? 'Ban user' : 'Activate user'}
-                        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
+                        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 ${
                           user.is_active
-                            ? 'border-red-800/60 text-red-400 hover:bg-red-950/30'
-                            : 'border-emerald-800/60 text-emerald-400 hover:bg-emerald-950/30'
+                            ? 'border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
+                            : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
                         }`}
                       >
                         {actionId === user.id ? (
@@ -198,10 +215,18 @@ export default function AdminUsersPage() {
                         )}
                       </button>
                       <button
+                        onClick={() => handleResetPassword(user)}
+                        disabled={actionId === user.id}
+                        title="Force reset password"
+                        className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 transition-colors flex items-center gap-1.5 disabled:opacity-40"
+                      >
+                        {actionId === user.id ? <Loader2 size={12} className="animate-spin" /> : <><Key size={12} /> Reset Password</>}
+                      </button>
+                      <button
                         onClick={() => handleDelete(user)}
                         disabled={actionId === user.id}
                         title="Delete user permanently"
-                        className="rounded-lg border border-white/10 p-1.5 text-slate-500 hover:border-red-800/60 hover:text-red-400 transition-colors disabled:opacity-40"
+                        className="rounded-lg border border-slate-700 bg-slate-800/80 p-1.5 text-slate-400 hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-300 transition-colors disabled:opacity-40"
                       >
                         {actionId === user.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                       </button>
@@ -211,7 +236,7 @@ export default function AdminUsersPage() {
               ))}
             </tbody>
           </table>
-          <div className="border-t border-white/5 bg-[#13152a] px-5 py-3 text-xs text-slate-600 text-right">
+          <div className="border-t border-slate-800 bg-slate-900 px-5 py-3 text-xs text-slate-400 font-semibold text-right">
             Showing {filtered.length} of {total} users
           </div>
         </div>

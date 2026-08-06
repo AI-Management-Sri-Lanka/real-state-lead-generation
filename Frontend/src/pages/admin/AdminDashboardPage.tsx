@@ -19,17 +19,17 @@ function MetricCard({
   trend?: string
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-[#13152a] p-5 group hover:border-white/10 transition-colors">
+    <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-5 group hover:border-slate-700 transition-colors shadow-sm">
       <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 ${color}`} />
       <div className="relative">
         <div className={`inline-flex items-center justify-center h-10 w-10 rounded-xl mb-4 ${color} bg-opacity-20`}>
           <Icon size={20} className="text-white" />
         </div>
         <p className="text-3xl font-extrabold text-white tracking-tight">{value}</p>
-        <p className="mt-1 text-sm font-medium text-slate-400">{label}</p>
-        {sub && <p className="mt-0.5 text-xs text-slate-600">{sub}</p>}
+        <p className="mt-1 text-sm font-semibold text-slate-300">{label}</p>
+        {sub && <p className="mt-0.5 text-xs text-slate-400 font-medium">{sub}</p>}
         {trend && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+          <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
             <TrendingUp size={12} />
             {trend}
           </div>
@@ -42,7 +42,7 @@ function MetricCard({
 // ── Donut Chart (Pure CSS) ────────────────────────────────────────────────────
 function DonutChart({ verified, unverified }: { verified: number; unverified: number }) {
   const total = verified + unverified
-  if (total === 0) return <p className="text-sm text-slate-600 text-center py-8">No data</p>
+  if (total === 0) return <p className="text-sm text-slate-400 text-center py-8 font-medium">No data</p>
   const pct = Math.round((verified / total) * 100)
   const circumference = 2 * Math.PI * 40
   const verifiedDash = (verified / total) * circumference
@@ -51,7 +51,7 @@ function DonutChart({ verified, unverified }: { verified: number; unverified: nu
     <div className="flex items-center gap-8">
       <div className="relative w-28 h-28 flex-shrink-0">
         <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
-          <circle cx="50" cy="50" r="40" fill="none" stroke="#1e2035" strokeWidth="12" />
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#334155" strokeWidth="12" />
           <circle
             cx="50" cy="50" r="40" fill="none"
             stroke="#6366f1" strokeWidth="12"
@@ -68,18 +68,18 @@ function DonutChart({ verified, unverified }: { verified: number; unverified: nu
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <p className="text-xl font-extrabold text-white">{pct}%</p>
-          <p className="text-[10px] text-slate-500">Verified</p>
+          <p className="text-[10px] text-slate-400 font-semibold">Verified</p>
         </div>
       </div>
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
-          <span className="text-sm text-slate-300">Verified</span>
+          <span className="text-sm text-slate-200 font-medium">Verified</span>
           <span className="ml-auto text-sm font-bold text-white">{verified}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-          <span className="text-sm text-slate-300">Unverified</span>
+          <span className="text-sm text-slate-200 font-medium">Unverified</span>
           <span className="ml-auto text-sm font-bold text-white">{unverified}</span>
         </div>
       </div>
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
 
           {/* ── Charts */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="rounded-2xl border border-white/5 bg-[#13152a] p-6 lg:col-span-1">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 lg:col-span-1 shadow-sm">
               <h2 className="text-base font-bold text-white mb-6">Verification Status</h2>
               <DonutChart
                 verified={stats.verified_properties}
@@ -222,7 +222,7 @@ export default function AdminDashboardPage() {
               />
             </div>
 
-            <div className="rounded-2xl border border-white/5 bg-[#13152a] p-6 lg:col-span-2">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 lg:col-span-2 shadow-sm">
               <h2 className="text-base font-bold text-white mb-6">Properties by Type</h2>
               <BarChart data={stats.properties_by_type} />
             </div>
@@ -234,22 +234,22 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               
               {/* Top Properties */}
-              <div className="rounded-2xl border border-white/5 bg-[#13152a] overflow-hidden">
-                <div className="border-b border-white/5 bg-white/[0.02] p-4 flex items-center gap-3">
-                  <Star className="text-yellow-500" size={18} />
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-sm">
+                <div className="border-b border-slate-800 bg-slate-800/50 p-4 flex items-center gap-3">
+                  <Star className="text-yellow-400" size={18} />
                   <h3 className="font-semibold text-white">Top 10 Properties</h3>
                 </div>
                 {analytics.top_properties.length === 0 ? (
-                  <p className="p-6 text-sm text-slate-500 text-center">No leads generated yet.</p>
+                  <p className="p-6 text-sm text-slate-400 font-medium text-center">No leads generated yet.</p>
                 ) : (
                   <table className="w-full text-sm">
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-slate-800">
                       {analytics.top_properties.map((p, idx) => (
-                        <tr key={p.property_id} className="hover:bg-white/[0.02]">
-                          <td className="p-4 w-8 text-slate-500 font-mono text-xs">{idx + 1}</td>
+                        <tr key={p.property_id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="p-4 w-8 text-slate-400 font-mono text-xs font-semibold">{idx + 1}</td>
                           <td className="p-4 text-white font-medium truncate max-w-[200px]">{p.title}</td>
                           <td className="p-4 text-right">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 text-xs font-semibold text-emerald-400">
                               {p.lead_count} Leads
                             </span>
                           </td>
@@ -261,25 +261,25 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Top Owners */}
-              <div className="rounded-2xl border border-white/5 bg-[#13152a] overflow-hidden">
-                <div className="border-b border-white/5 bg-white/[0.02] p-4 flex items-center gap-3">
-                  <Trophy className="text-orange-500" size={18} />
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-sm">
+                <div className="border-b border-slate-800 bg-slate-800/50 p-4 flex items-center gap-3">
+                  <Trophy className="text-amber-400" size={18} />
                   <h3 className="font-semibold text-white">Top 10 Owners</h3>
                 </div>
                 {analytics.top_owners.length === 0 ? (
-                  <p className="p-6 text-sm text-slate-500 text-center">No owners have received leads yet.</p>
+                  <p className="p-6 text-sm text-slate-400 font-medium text-center">No owners have received leads yet.</p>
                 ) : (
                   <table className="w-full text-sm">
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-slate-800">
                       {analytics.top_owners.map((o, idx) => (
-                        <tr key={o.user_id} className="hover:bg-white/[0.02]">
-                          <td className="p-4 w-8 text-slate-500 font-mono text-xs">{idx + 1}</td>
+                        <tr key={o.user_id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="p-4 w-8 text-slate-400 font-mono text-xs font-semibold">{idx + 1}</td>
                           <td className="p-4">
                             <p className="text-white font-medium">{o.full_name}</p>
-                            <p className="text-[10px] text-slate-500 font-mono">User ID: {o.user_id}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">User ID: {o.user_id}</p>
                           </td>
                           <td className="p-4 text-right">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2.5 py-1 text-xs font-semibold text-orange-400">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/30 px-2.5 py-1 text-xs font-semibold text-orange-400">
                               {o.lead_count} Leads
                             </span>
                           </td>
