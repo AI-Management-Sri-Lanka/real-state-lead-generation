@@ -177,7 +177,16 @@ export const adminUsersApi = {
   },
 
   async deleteUser(userId: number): Promise<void> {
-    await adminFetch(`${BASE_URL}/admin/manage/users/${userId}`, { method: 'DELETE' })
+    await adminFetch(`${BASE_URL}/admin/manage/users/${userId}`, {
+      method: 'DELETE'
+    })
+  },
+  
+  async resetUserPassword(userId: number, newPassword: string): Promise<void> {
+    await adminFetch(`${BASE_URL}/admin/manage/users/${userId}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ new_password: newPassword })
+    })
   },
 }
 

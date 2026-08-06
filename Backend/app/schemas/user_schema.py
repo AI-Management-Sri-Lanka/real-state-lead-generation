@@ -96,3 +96,19 @@ class PasswordChange(BaseModel):
         if self.new_password == self.current_password:
             raise ValueError('New password cannot be the same as the current password')
         return self
+
+class AdminResetPassword(BaseModel):
+    new_password: str = Field(..., min_length=8, max_length=255)
+
+    @field_validator('new_password')
+    def validate_password(cls, v):
+        return validate_strong_password(v)
+
+    model_config = {
+        "extra": "forbid",
+        "json_schema_extra": {
+            "example": {
+                "new_password": "NewSecurePassword123!"
+            }
+        }
+    }
