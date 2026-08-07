@@ -89,9 +89,17 @@ export default function AdminUsersPage() {
     const newPassword = window.prompt(`Enter a new password for "${user.full_name}":\n(Must be at least 8 chars, uppercase, lowercase, number, special char)`)
     if (!newPassword) return
     
+    const confirmPassword = window.prompt(`Confirm the new password for "${user.full_name}":`)
+    if (!confirmPassword) return
+
+    if (newPassword !== confirmPassword) {
+      alert("Passwords do not match!")
+      return
+    }
+    
     setActionId(user.id)
     try {
-      await adminUsersApi.resetUserPassword(user.id, newPassword)
+      await adminUsersApi.resetUserPassword(user.id, newPassword, confirmPassword)
       alert(`Password for ${user.full_name} has been reset successfully.`)
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Reset password failed')

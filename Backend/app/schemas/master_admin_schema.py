@@ -6,17 +6,25 @@ class MasterAdminCreate(BaseModel):
     full_name: str
     email: EmailStr
     password: str
+    confirm_password: str
 
     @field_validator('password')
     def validate_password(cls, v):
         return validate_strong_password(v)
+
+    @model_validator(mode='after')
+    def verify_passwords(self) -> 'MasterAdminCreate':
+        if self.password != self.confirm_password:
+            raise ValueError('Passwords do not match')
+        return self
 
     class Config:
         json_schema_extra = {
             "example": {
                 "full_name": "Admin Name",
                 "email": "admin@example.com",
-                "password": "SecurePassword123!"
+                "password": "SecurePassword123!",
+                "confirm_password": "SecurePassword123!"
             }
         }
 

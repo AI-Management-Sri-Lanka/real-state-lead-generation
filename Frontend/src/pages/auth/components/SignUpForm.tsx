@@ -53,7 +53,7 @@ export function SignUpForm() {
     if (!form.validate()) return;
     setLoading(true);
     try {
-      await signUp(form.values.name, form.values.email, form.values.password);
+      await signUp(form.values.name, form.values.email, form.values.password, form.values.confirmPassword);
       toast.success("Account created! Welcome.");
       navigate("/dashboard");
     } catch (err: unknown) {

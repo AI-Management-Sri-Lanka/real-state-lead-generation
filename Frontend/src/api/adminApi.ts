@@ -182,10 +182,10 @@ export const adminUsersApi = {
     })
   },
   
-  async resetUserPassword(userId: number, newPassword: string): Promise<void> {
+  async resetUserPassword(userId: number, newPassword: string, confirmPassword: string): Promise<void> {
     await adminFetch(`${BASE_URL}/admin/manage/users/${userId}/reset-password`, {
       method: 'POST',
-      body: JSON.stringify({ new_password: newPassword })
+      body: JSON.stringify({ new_password: newPassword, confirm_password: confirmPassword })
     })
   },
 }
@@ -205,7 +205,7 @@ export const adminMgmtApi = {
     return unwrap<void>(res)
   },
 
-  async createAdmin(body: { full_name: string; email: string; password: string }): Promise<AdminRecord> {
+  async createAdmin(body: { full_name: string; email: string; password: string; confirm_password: string }): Promise<AdminRecord> {
     const res = await adminFetch(`${BASE_URL}/admin/auth/create-admin`, {
       method: 'POST',
       body: JSON.stringify(body),

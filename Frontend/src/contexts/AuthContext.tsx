@@ -15,7 +15,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (full_name: string, email: string, password: string) => Promise<void>;
+  signUp: (full_name: string, email: string, password: string, confirm_password: string) => Promise<void>;
   signOut: () => void;
   error: string | null;
 }
@@ -73,11 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (full_name: string, email: string, password: string) => {
+    async (full_name: string, email: string, password: string, confirm_password: string) => {
       setLoading(true);
       setError(null);
       try {
-        const { user: userData, tokens } = await authApi.signUp({ full_name, email, password });
+        const { user: userData, tokens } = await authApi.signUp({ full_name, email, password, confirm_password });
         setUser(userData);
         localStorage.setItem("aimsl_user", JSON.stringify(userData));
         localStorage.setItem("aimsl_token", tokens.access_token);

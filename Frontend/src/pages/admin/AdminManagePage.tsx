@@ -18,7 +18,7 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
   )
 }
 
-interface InviteForm { full_name: string; email: string; password: string }
+interface InviteForm { full_name: string; email: string; password: string; confirm_password: string }
 
 export default function AdminManagePage() {
   const [admins, setAdmins] = useState<AdminRecord[]>([])
@@ -26,7 +26,7 @@ export default function AdminManagePage() {
   const [error, setError] = useState<string | null>(null)
   const [actionId, setActionId] = useState<number | null>(null)
   const [showInvite, setShowInvite] = useState(false)
-  const [form, setForm] = useState<InviteForm>({ full_name: '', email: '', password: '' })
+  const [form, setForm] = useState<InviteForm>({ full_name: '', email: '', password: '', confirm_password: '' })
   const [showPwd, setShowPwd] = useState(false)
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
@@ -72,12 +72,16 @@ export default function AdminManagePage() {
       setInviteError('Please fill all fields. Password must be at least 8 characters.')
       return
     }
+    if (form.password !== form.confirm_password) {
+      setInviteError('Passwords do not match.')
+      return
+    }
     setInviteLoading(true); setInviteError(null)
     try {
       const newAdmin = await adminMgmtApi.createAdmin(form)
       setAdmins(prev => [...prev, newAdmin])
       setInviteSuccess(true)
-      setForm({ full_name: '', email: '', password: '' })
+      setForm({ full_name: '', email: '', password: '', confirm_password: '' })
       setTimeout(() => { setShowInvite(false); setInviteSuccess(false) }, 1500)
     } catch (err: unknown) {
       setInviteError(err instanceof Error ? err.message : 'Failed to create admin')
@@ -167,6 +171,18 @@ export default function AdminManagePage() {
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
                       {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-300">Confirm Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPwd ? 'text' : 'password'}
+                      value={form.confirm_password}
+                      onChange={e => setForm(f => ({ ...f, confirm_password: e.target.value }))}
+                      placeholder="Repeat password"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 transition-colors"
+                    />
                   </div>
                 </div>
 
