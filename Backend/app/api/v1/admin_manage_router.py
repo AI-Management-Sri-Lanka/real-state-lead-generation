@@ -6,6 +6,10 @@ from app.core.errors import AppException, AppError
 from app.services.dependencies.deps import require_master_admin
 from app.crud.user_crud import get_users_db, get_user_by_id_db, toggle_user_active_status_db
 from app.crud.master_admin_crud import list_admins, toggle_admin_status
+from app.schemas.user_schema import AdminResetPassword
+from app.core.security import hash_password
+from app.crud.user_crud import update_user_db
+
 
 router = APIRouter(prefix="/admin/manage", tags=["Admin Management"])
 
@@ -78,6 +82,22 @@ async def toggle_user_status(
     if not user:
         raise AppException(error=AppError.AUTH_USER_NOT_FOUND)
     return ok(message=f"User status changed to active={is_active}", item=UserResponse.model_validate(user))
+
+@router.post("/users/{user_id}/reset-password")
+async def admin_reset_user_password(
+    payload: AdminResetPassword,
+    user_id: int = Path(...),
+    _admin: dict = Depends(require_master_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Admin forcefully resets a user's password."""
+    user = await get_user_by_id_db(db, user_id)
+    if not user:
+        raise AppException(error=AppError.AUTH_USER_NOT_FOUND)
+    
+    hashed_new = hash_password(payload.new_password)
+    await update_user_db(db, user, {"hashed_password": hashed_new})
+    return ok(message="Password reset successfully")
 
 @router.delete("/users/{user_id}", status_code=204)
 async def delete_user(
