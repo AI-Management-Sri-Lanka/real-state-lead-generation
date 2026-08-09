@@ -18,7 +18,7 @@ const EMAILJS_TEMPLATE_ID         = 'template_s0pzf6g'   // inquiry → agent
 const EMAILJS_CONFIRM_TEMPLATE_ID = 'template_v2ux0ph'   // confirmation → user
 const EMAILJS_PUBLIC_KEY          = 'd9YO9qHUQIn_CU9o-'
 
-import { Property, InquiryPayload } from '@/types/property'
+import { Property, InquiryPayload, getCoverImageUrl } from '@/types/property'
 import { propertyApi } from '@/api/propertyApi'
 import { useAuth } from '@/hooks/useAuth'
 import { BASE_URL } from '@/api/config'
@@ -277,10 +277,10 @@ export default function PropertyDetailPage() {
         </button>
 
         {/* Image placeholder */}
-        {property.images && property.images.length > 0 ? (
+        {getCoverImageUrl(property.images) ? (
           <div className="relative h-56 w-full overflow-hidden rounded-3xl bg-slate-100 sm:h-[420px] shadow-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <img
-              src={typeof property.images[0] === 'string' ? property.images[0] : property.images[0].url}
+              src={getCoverImageUrl(property.images)!}
               alt={property.title}
               className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />

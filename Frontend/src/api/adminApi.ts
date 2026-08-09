@@ -30,8 +30,18 @@ async function adminFetch(url: string, options: RequestInit = {}): Promise<Respo
   if (res.status === 401) {
     const refreshToken = localStorage.getItem('aimsl_admin_refresh_token')
     if (refreshToken) {
-      if (!isAdminRefreshing) {
-        isAdminRefreshing = true
+      const isLeader = !isAdminRefreshing
+      isAdminRefreshing = true
+
+      // Register to be notified before kicking off the refresh request, so the
+      // leader's own resolver is queued before onAdminRefreshed can fire.
+      const waitForToken = new Promise<string>((resolve, reject) => {
+        adminRefreshSubscribers.push(resolve)
+        // Basic timeout to prevent hanging
+        setTimeout(() => reject(new Error('Refresh timeout')), 5000)
+      }).catch(() => null)
+
+      if (isLeader) {
         try {
           const refreshRes = await fetch(`${BASE_URL}/admin/auth/refresh`, {
             method: 'POST',
@@ -59,12 +69,7 @@ async function adminFetch(url: string, options: RequestInit = {}): Promise<Respo
         }
       }
 
-      // Wait for refresh to complete
-      const newToken = await new Promise<string>((resolve, reject) => {
-        adminRefreshSubscribers.push(resolve)
-        // Basic timeout to prevent hanging
-        setTimeout(() => reject(new Error('Refresh timeout')), 5000)
-      }).catch(() => null)
+      const newToken = await waitForToken
 
       if (newToken) {
         // Retry with new token
