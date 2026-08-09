@@ -41,10 +41,7 @@ export function PropertyFormFields({
       {/* Listing type */}
       <Section title="Listing type">
         <FieldGroup>
-          <div className="grid grid-cols-2 gap-4">
-            <CustomSelect label="Property type" value={form.type} onChange={v => set('type', v)} options={['Apartment', 'House', 'Land', 'Commercial']} />
-            <CustomSelect label="For" value={form.listingType} onChange={v => set('listingType', v)} options={['Sale', 'Rent']} />
-          </div>
+          <CustomSelect label="Property type" value={form.type} onChange={v => set('type', v)} options={['Apartment', 'House', 'Land', 'Commercial']} />
           <label className="flex cursor-pointer select-none items-center gap-2">
             <div onClick={() => set('verified', !form.verified)} className={`relative h-5 w-9 rounded-full transition ${form.verified ? 'bg-emerald-500' : 'bg-slate-200 shadow-inner dark:bg-slate-700'}`}>
               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.verified ? 'left-4' : 'left-0.5'}`} />

@@ -23,13 +23,6 @@ function getTypeBadgeStyles(type: string) {
   return 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
 }
 
-function getListingBadgeStyles(listingType: string) {
-  const lt = listingType?.toLowerCase()
-  if (lt === 'sale' || lt === 'for sale') return 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-  if (lt === 'rent' || lt === 'for rent') return 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-  return 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-}
-
 export function PropertyCard({ property, onEdit, onDelete }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -148,9 +141,6 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
         <div className="mt-4 flex gap-2">
           <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${getTypeBadgeStyles(property.type)}`}>
             {property.type}
-          </span>
-          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${getListingBadgeStyles(property.listingType)}`}>
-            For {property.listingType}
           </span>
         </div>
       </div>

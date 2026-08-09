@@ -321,7 +321,6 @@ export default function PropertyDetailPage() {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Property details</h3>
               <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-slate-50/50 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-800/30">
                 <Row label="Property type" value={property.type} />
-                <Row label="Listing type"  value={`For ${property.listingType}`} />
                 {property.furnishing && <Row label="Furnishing" value={property.furnishing} />}
                 {property.parking    && <Row label="Parking"    value={property.parking} />}
                 <Row label="Listed by" value={property.listedBy} />
