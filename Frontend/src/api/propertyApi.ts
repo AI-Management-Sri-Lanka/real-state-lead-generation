@@ -94,6 +94,17 @@ export const propertyApi = {
     }
   },
 
+  // Remove an image from own property
+  async deletePropertyImage(propertyId: string, imageId: number): Promise<void> {
+    const res = await fetchWithAuth(`${BASE_URL}/properties/${propertyId}/images/${imageId}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body?.message ?? `Failed to remove image: ${res.statusText}`)
+    }
+  },
+
   // Delete own property
   async deleteProperty(id: string): Promise<void> {
     const res = await fetchWithAuth(`${BASE_URL}/properties/${id}`, { method: 'DELETE' })
@@ -166,6 +177,17 @@ export const adminPropertyApi = {
       throw new Error(body?.message ?? `Update failed: ${res.statusText}`)
     }
     return body.data
+  },
+
+  // Remove an image from any property
+  async deletePropertyImage(propertyId: string, imageId: number): Promise<void> {
+    const res = await adminFetch(`${ADMIN_BASE}/${propertyId}/images/${imageId}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body?.message ?? `Failed to remove image: ${res.statusText}`)
+    }
   },
 
   // Delete any property

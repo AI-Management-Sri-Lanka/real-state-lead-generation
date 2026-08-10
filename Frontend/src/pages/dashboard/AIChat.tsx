@@ -358,6 +358,12 @@ export default function AIChat() {
                 content = parsed.intro;
               }
             }
+
+            // Safety net: never let raw lead-listing markup reach the text
+            // bubble when cards are being rendered for the same leads.
+            if (leads.length > 0 && /(###\s*\d+\.\s*@|\*\*\d+\.\s*@)/.test(content)) {
+              content = "Here are the leads I found for you";
+            }
           }
 
           return {
@@ -532,6 +538,13 @@ export default function AIChat() {
       // if it gave one; otherwise show a clear explanation.
       if (leads.length === 0 && isGenericNoResultsMessage(content)) {
         content = NO_LEADS_MESSAGE;
+      }
+
+      // Safety net: never let raw lead-listing markup reach the text bubble
+      // when cards are being rendered for the same leads — the card grid is
+      // the single source of truth for that data once leads.length > 0.
+      if (leads.length > 0 && /(###\s*\d+\.\s*@|\*\*\d+\.\s*@)/.test(content)) {
+        content = "Here are the leads I found for you";
       }
 
       const aiMsg: ChatMessageType = {

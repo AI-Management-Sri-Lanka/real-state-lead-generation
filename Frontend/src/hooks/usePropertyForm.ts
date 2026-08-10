@@ -50,7 +50,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loadingProperty, setLoadingProperty] = useState(false)
-  const [originalImageUrls, setOriginalImageUrls] = useState<string[]>([])
+  const [originalImages, setOriginalImages] = useState<{ id: number; url: string }[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -84,7 +84,13 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
           description: p.description ?? '',
           images: Array.isArray(p.images) ? p.images.map((img: any) => typeof img === 'string' ? img : img.url) : [],
         })
-        setOriginalImageUrls(Array.isArray(p.images) ? p.images.map((img: any) => typeof img === 'string' ? img : img.url) : [])
+        setOriginalImages(
+          Array.isArray(p.images)
+            ? p.images
+                .filter((img: any) => img && typeof img === 'object' && 'id' in img)
+                .map((img: any) => ({ id: img.id, url: img.url }))
+            : []
+        )
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load property.')
       } finally {
@@ -102,7 +108,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
     setForm(EMPTY_PROPERTY_FORM)
     setCreatedPropertyId(null)
     setSubmitted(false)
-    setOriginalImageUrls([])
+    setOriginalImages([])
     setError(null)
   }
 
@@ -242,8 +248,18 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
         setCreatedPropertyId(propertyId)
       }
 
-      const newImageUrls = allImages.filter(url => !originalImageUrls.includes(url))
-      const startIndex = originalImageUrls.length
+      const removedImages = originalImages.filter(img => !allImages.includes(img.url))
+      for (const img of removedImages) {
+        if (isAdminMode) {
+          await adminPropertyApi.deletePropertyImage(propertyId, img.id)
+        } else {
+          await propertyApi.deletePropertyImage(propertyId, img.id)
+        }
+      }
+
+      const originalUrls = originalImages.map(img => img.url)
+      const newImageUrls = allImages.filter(url => !originalUrls.includes(url))
+      const startIndex = allImages.length - newImageUrls.length
       for (let i = 0; i < newImageUrls.length; i++) {
         if (isAdminMode) {
           await adminPropertyApi.addPropertyImage(propertyId, {
