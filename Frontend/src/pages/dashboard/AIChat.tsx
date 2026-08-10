@@ -162,29 +162,33 @@ const NO_LEADS_MESSAGE =
   "I couldn't find any leads matching that search right now. This can happen if the data sources have hit their usage limit for the month, or if there's just nothing matching those filters today. Try a different platform, location, or hashtag, or check back later.";
 
 function parseLeadsFromBakedContent(content: string): { intro: string; leads: Lead[] } {
-  const introMatch = content.match(/^([\s\S]*?)(?=\*\*\d+\.)/);
+  const introMatch = content.match(/^([\s\S]*?)(?=###\s+\d+\.\s+@)/);
   let intro = introMatch ? introMatch[1].trim() : "";
-  intro = intro.replace(/\*\*Found \d+ potential leads:\*\*/i, "").trim();
+  intro = intro.replace(/^##\s*Found\s+\d+\s+Potential\s+Leads?\s*/i, "").trim();
   if (!intro) intro = "Here are the leads I found for you";
 
-  const blocks = content.split(/(?=\*\*\d+\.\s+@)/).slice(1);
+  const blocks = content.split(/(?=###\s+\d+\.\s+@)/).slice(1);
   const leads = blocks
     .map((block) => {
-      const handleMatch = block.match(/\*\*\d+\.\s+(@[\w.]+)\*\*\s*\((\w+)\)/);
-      const nameMatch = block.match(/Name:\s*(.+)/);
-      const propMatch = block.match(/Property Type:\s*(.+)/);
-      const locMatch = block.match(/Location:\s*(.+)/);
-      const dateMatch = block.match(/Date:\s*(.+)/);
-      const descMatch = block.match(/Post:\s*"?([\s\S]+?)(?="?\s*\n\s*(?:Link:|$))/);
-      const linkMatch = block.match(/Link:\s*(https?:\/\/\S+)/);
+      const handleMatch = block.match(/###\s+\d+\.\s+@([^\s&·]+)(?:\s+(?:&middot;|·|&amp;middot;)\s+(\w+))?/);
+      const nameMatch = block.match(/-\s*\*\*Name:\*\*\s*(.+)/);
+      const propMatch = block.match(/-\s*\*\*Property type:\*\*\s*(.+)/i);
+      const locMatch = block.match(/-\s*\*\*Location:\*\*\s*(.+)/);
+      const dateMatch = block.match(/-\s*\*\*Posted:\*\*\s*(.+)/);
+      const descLines = block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.startsWith(">"))
+        .map((line) => line.substring(1).trim());
+      const linkMatch = block.match(/\[View post\]\((https?:\/\/\S+?)\)/);
       return {
-        userId: handleMatch?.[1]?.replace("@", "") ?? "unknown",
+        userId: handleMatch?.[1] ?? "unknown",
         platform: handleMatch?.[2] ?? "unknown",
         name: nameMatch?.[1]?.trim(),
         property_type: propMatch?.[1]?.trim(),
         location: locMatch?.[1]?.trim(),
         date: dateMatch?.[1]?.trim(),
-        description: descMatch?.[1]?.trim(),
+        description: descLines.length > 0 ? descLines.join(" ") : undefined,
         post_link: linkMatch?.[1]?.trim(),
       } as Lead;
     })
@@ -196,10 +200,11 @@ function parseLeadsFromBakedContent(content: string): { intro: string; leads: Le
 export default function AIChat() {
   const { user } = useAuth();
   const userName = (user as any)?.name || (user as any)?.email || "You";
+  const sessionKey = user?.id ? `leadai_sessions_${user.id}` : "leadai_sessions";
 
   const [sessions, setSessions] = useState<Session[]>(() => {
     try {
-      const stored = localStorage.getItem("leadai_sessions");
+      const stored = localStorage.getItem(sessionKey);
       return stored ? JSON.parse(stored, (key, val) => {
         if (key === "timestamp" || key === "createdAt") return val; // keep as string, convert on use
         return val;
@@ -209,9 +214,9 @@ export default function AIChat() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("leadai_sessions", JSON.stringify(sessions));
+      localStorage.setItem(sessionKey, JSON.stringify(sessions));
     } catch { /* quota exceeded or private mode */ }
-  }, [sessions]);
+  }, [sessions, sessionKey]);
 
   const [activeSessionId, setActiveSessionId] = useState<string>("");
   const [messageText, setMessageText] = useState("");
@@ -344,8 +349,8 @@ export default function AIChat() {
 
           // Parse leads out of baked-in markdown if backend stored them as text
           if (m.role === "assistant") {
-            // Match both "**Found N potential leads:**" and numbered lead blocks like "**1. @handle** (platform)"
-            const hasLeadBlock = /\*\*\d+\.\s+@/.test(content);
+            // Match numbered lead blocks like "### 1. @handle &middot; Platform"
+            const hasLeadBlock = /###\s*\d+\.\s+@/.test(content);
             if (hasLeadBlock) {
               const parsed = parseLeadsFromBakedContent(content);
               if (parsed.leads.length > 0) {
@@ -502,8 +507,14 @@ export default function AIChat() {
       // Strip the lead list block from the text — cards render it instead
       let content: string = responseData.message || json.message || "Here is what I found.";
       if (leads.length > 0) {
-        // Remove everything from "**Found N potential leads:**" onward
-        content = content.replace(/\*\*Found \d+ potential leads:\*\*[\s\S]*/i, "").trim();
+        // Live responses bake leads in as "## Found N Potential Leads" +
+        // "### i. @handle" blocks; DB-persisted messages use a
+        // "**Found N potential leads:**" heading instead. Handle both.
+        if (/###\s+\d+\.\s+@/.test(content)) {
+          content = parseLeadsFromBakedContent(content).intro;
+        } else {
+          content = content.replace(/\*\*Found \d+ potential leads:\*\*[\s\S]*/i, "").trim();
+        }
         if (!content) content = "Here are the leads I found for you";
       }
 
@@ -662,7 +673,7 @@ export default function AIChat() {
                       onClick={handleNewChat}
                       className="inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 text-sm font-semibold !text-white shadow-[0_10px_25px_rgba(14,116,144,0.24)] transition hover:from-sky-400 hover:to-indigo-500"
                     >
-                      <Plus size={16} /> 
+                      <Plus size={16} />
                     </button>
                     {/* Mobile-only close button — on desktop the rail toggle
                         to the left of the sidebar handles this instead. */}
@@ -686,8 +697,8 @@ export default function AIChat() {
                           type="button"
                           onClick={() => selectSession(session.id)}
                           className={`group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition border ${active
-                              ? "border-sky-400/40 bg-gradient-to-r from-sky-500/15 to-indigo-500/15"
-                              : "border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
+                            ? "border-sky-400/40 bg-gradient-to-r from-sky-500/15 to-indigo-500/15"
+                            : "border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
                             }`}
                         >
                           <p className="truncate text-sm font-semibold text-slate-900 flex-1 min-w-0 dark:text-white">

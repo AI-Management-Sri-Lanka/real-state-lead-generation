@@ -11,14 +11,31 @@ import { GoogleButton } from "./GoogleButton";
 import { AuthDivider } from "./AuthDivider";
 
 const INIT = { name: "", email: "", password: "", confirmPassword: "" };
+const NAME_REGEX = /^[A-Za-z\s]+$/;
+const PASSWORD_SPECIAL_REGEX = /[!@#$%^&*()_+={}[\]|\\:;"'<>,.?/~`-]/;
+
 function validate(v: typeof INIT) {
   const e: Partial<typeof INIT> = {};
   if (!v.name) e.name = "Full name is required";
   else if (v.name.length < 2) e.name = "At least 2 characters";
+  else if (!NAME_REGEX.test(v.name))
+    e.name = "Full name must contain only alphabetic characters";
+
   if (!v.email) e.email = "Email is required";
   else if (!/\S+@\S+\.\S+/.test(v.email)) e.email = "Enter a valid email";
+
   if (!v.password) e.password = "Password is required";
   else if (v.password.length < 8) e.password = "At least 8 characters";
+  else if (/\s/.test(v.password)) e.password = "Password cannot contain spaces";
+  else if (!/[A-Z]/.test(v.password))
+    e.password = "Include at least one uppercase letter";
+  else if (!/[a-z]/.test(v.password))
+    e.password = "Include at least one lowercase letter";
+  else if (!/[0-9]/.test(v.password))
+    e.password = "Include at least one number";
+  else if (!PASSWORD_SPECIAL_REGEX.test(v.password))
+    e.password = "Include at least one special character";
+
   if (!v.confirmPassword) e.confirmPassword = "Confirm your password";
   else if (v.confirmPassword !== v.password)
     e.confirmPassword = "Passwords do not match";
@@ -36,7 +53,7 @@ export function SignUpForm() {
     if (!form.validate()) return;
     setLoading(true);
     try {
-      await signUp(form.values.name, form.values.email, form.values.password);
+      await signUp(form.values.name, form.values.email, form.values.password, form.values.confirmPassword);
       toast.success("Account created! Welcome.");
       navigate("/dashboard");
     } catch (err: unknown) {
@@ -86,7 +103,7 @@ export function SignUpForm() {
           label="Full name"
           name="name"
           type="text"
-          placeholder="Kamal Silva"
+          placeholder="Enter your full name"
           autoComplete="name"
           value={form.values.name}
           onChange={form.handleChange}
@@ -114,7 +131,7 @@ export function SignUpForm() {
           onChange={form.handleChange}
           onBlur={form.handleBlur}
           error={form.touched.password ? form.errors.password : undefined}
-          hint="Use letters, numbers and symbols"
+          hint="Must include uppercase, lowercase, a number and a symbol"
         />
         <Input
           label="Confirm password"

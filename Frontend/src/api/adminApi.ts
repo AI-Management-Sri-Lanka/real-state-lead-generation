@@ -127,11 +127,11 @@ export interface AdminRecord {
 }
 
 export interface AdminSession {
-  id: string
+  session_id: string
   user_id: number
   title: string
   message_count: number
-  created_at: string
+  updated_at: string
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -177,7 +177,16 @@ export const adminUsersApi = {
   },
 
   async deleteUser(userId: number): Promise<void> {
-    await adminFetch(`${BASE_URL}/admin/manage/users/${userId}`, { method: 'DELETE' })
+    await adminFetch(`${BASE_URL}/admin/manage/users/${userId}`, {
+      method: 'DELETE'
+    })
+  },
+  
+  async resetUserPassword(userId: number, newPassword: string, confirmPassword: string): Promise<void> {
+    await adminFetch(`${BASE_URL}/admin/manage/users/${userId}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ new_password: newPassword, confirm_password: confirmPassword })
+    })
   },
 }
 
@@ -196,7 +205,7 @@ export const adminMgmtApi = {
     return unwrap<void>(res)
   },
 
-  async createAdmin(body: { full_name: string; email: string; password: string }): Promise<AdminRecord> {
+  async createAdmin(body: { full_name: string; email: string; password: string; confirm_password: string }): Promise<AdminRecord> {
     const res = await adminFetch(`${BASE_URL}/admin/auth/create-admin`, {
       method: 'POST',
       body: JSON.stringify(body),

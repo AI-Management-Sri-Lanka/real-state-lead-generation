@@ -77,22 +77,22 @@ export default function AdminSessionsPage() {
       </div>
 
       {/* Stats */}
-      <div className="rounded-2xl border border-white/5 bg-[#13152a] px-5 py-4 flex items-center gap-4 w-fit">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900 px-5 py-4 flex items-center gap-4 w-fit shadow-sm">
         <MessageSquare size={20} className="text-cyan-400" />
         <div>
-          <p className="text-xs text-slate-500">Total Sessions</p>
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Sessions</p>
           <p className="text-2xl font-extrabold text-white">{sessions.length}</p>
         </div>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by session title or user ID..."
-          className="w-full rounded-xl border border-white/10 bg-[#13152a] py-3 pl-11 pr-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-indigo-500 transition-colors"
+          className="w-full rounded-xl border border-slate-700/80 bg-slate-900 py-3 pl-11 pr-4 text-sm text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors shadow-sm"
         />
       </div>
 
@@ -106,50 +106,50 @@ export default function AdminSessionsPage() {
           <AlertCircle size={20} className="shrink-0" /> {error}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-20 text-center text-slate-600">
+        <div className="py-20 text-center text-slate-400 font-medium">
           {search ? 'No sessions match your search.' : 'No chat sessions found.'}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/5">
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-md">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-[#13152a] text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-5 py-3">Session</th>
-                <th className="px-5 py-3">User ID</th>
-                <th className="px-5 py-3">Messages</th>
-                <th className="px-5 py-3 hidden md:table-cell">Created</th>
-                <th className="px-5 py-3 text-right">Actions</th>
+              <tr className="border-b border-slate-800 bg-slate-800/60 text-left text-xs font-bold uppercase tracking-wider text-slate-300">
+                <th className="px-5 py-3.5">Session</th>
+                <th className="px-5 py-3.5">User ID</th>
+                <th className="px-5 py-3.5">Messages</th>
+                <th className="px-5 py-3.5 hidden md:table-cell">Created</th>
+                <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-800/60">
               {filtered.map(s => (
-                <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={s.session_id} className="hover:bg-slate-800/40 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 h-9 w-9 rounded-xl bg-cyan-600/20 flex items-center justify-center">
                         <MessageSquare size={16} className="text-cyan-400" />
                       </div>
                       <div>
-                        <p className="font-medium text-white truncate max-w-xs">{s.title || 'Untitled Session'}</p>
-                        <p className="text-xs text-slate-600 font-mono truncate w-24">{s.id}</p>
+                        <p className="font-semibold text-white truncate max-w-xs">{s.title || 'Untitled Session'}</p>
+                        <p className="text-xs text-slate-400 font-mono truncate w-24">{s.session_id}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-slate-400">#{s.user_id || 'Guest'}</td>
+                  <td className="px-5 py-4 text-slate-300 font-medium">#{s.user_id || 'Guest'}</td>
                   <td className="px-5 py-4">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-2.5 py-1 text-xs font-semibold text-indigo-400">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-1 text-xs font-semibold text-indigo-400">
                       {s.message_count ?? 0} msgs
                     </span>
                   </td>
-                  <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-600">
-                    {s.created_at ? new Date(s.created_at).toLocaleDateString('en-US', {
+                  <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-300 font-medium">
+                    {s.updated_at ? new Date(s.updated_at).toLocaleDateString('en-US', {
                       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                     }) : '—'}
                   </td>
                   <td className="px-5 py-4 text-right">
                     <button
-                      onClick={() => setSelectedSessionId(s.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+                      onClick={() => setSelectedSessionId(s.session_id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
                     >
                       <Eye size={14} /> Transcript
                     </button>
@@ -158,7 +158,7 @@ export default function AdminSessionsPage() {
               ))}
             </tbody>
           </table>
-          <div className="border-t border-white/5 bg-[#13152a] px-5 py-3 text-xs text-slate-600 text-right">
+          <div className="border-t border-slate-800 bg-slate-900 px-5 py-3 text-xs text-slate-400 font-semibold text-right">
             Showing {filtered.length} of {sessions.length} sessions
           </div>
         </div>
@@ -166,9 +166,9 @@ export default function AdminSessionsPage() {
 
       {/* Transcript Modal */}
       {selectedSessionId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl h-[80vh] flex flex-col rounded-2xl border border-white/10 bg-[#0d0f1e] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-white/5 bg-[#13152a] p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl h-[80vh] flex flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-800/60 p-4">
               <div>
                 <h2 className="text-base font-bold text-white">Session Transcript</h2>
                 <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedSessionId}</p>

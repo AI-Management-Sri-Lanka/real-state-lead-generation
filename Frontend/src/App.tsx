@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AIChat from '@/pages/dashboard/AIChat'
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/hooks/useTheme'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import HomePage from './pages/home/HomePage'
 import Dashboard from './pages/dashboard/Dashboard'
@@ -40,6 +41,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useTheme()
+
   return (
     <SidebarProvider>
       <BackToTopButton />

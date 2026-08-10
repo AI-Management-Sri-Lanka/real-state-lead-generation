@@ -21,10 +21,17 @@ class UserCreate(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=255)
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=255)
+    confirm_password: str = Field(..., min_length=8, max_length=255)
 
     @field_validator('password')
     def validate_password(cls, v):
         return validate_strong_password(v)
+
+    @model_validator(mode='after')
+    def verify_passwords(self) -> 'UserCreate':
+        if self.password != self.confirm_password:
+            raise ValueError('Passwords do not match')
+        return self
 
     model_config = {
         "extra": "forbid",
@@ -33,7 +40,8 @@ class UserCreate(BaseModel):
                 {
                     "full_name": "John Doe",
                     "email": "user@example.com",
-                    "password": "SecurePassword123!"
+                    "password": "SecurePassword123!",
+                    "confirm_password": "SecurePassword123!"
                 }
             ]
         }
@@ -96,3 +104,27 @@ class PasswordChange(BaseModel):
         if self.new_password == self.current_password:
             raise ValueError('New password cannot be the same as the current password')
         return self
+
+class AdminResetPassword(BaseModel):
+    new_password: str = Field(..., min_length=8, max_length=255)
+    confirm_password: str = Field(..., min_length=8, max_length=255)
+
+    @field_validator('new_password')
+    def validate_password(cls, v):
+        return validate_strong_password(v)
+
+    @model_validator(mode='after')
+    def verify_passwords(self) -> 'AdminResetPassword':
+        if self.new_password != self.confirm_password:
+            raise ValueError('Passwords do not match')
+        return self
+
+    model_config = {
+        "extra": "forbid",
+        "json_schema_extra": {
+            "example": {
+                "new_password": "NewSecurePassword123!",
+                "confirm_password": "NewSecurePassword123!"
+            }
+        }
+    }
