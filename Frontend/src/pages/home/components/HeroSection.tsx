@@ -96,7 +96,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
         <div className="mx-auto max-w-4xl">
           {/* Tabs */}
           <div className="flex justify-center mb-4 space-x-2">
-            {['ALL', 'FOR RENT', 'FOR SALE'].map((tab) => (
+            {['ALL', 'FOR RENT'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}

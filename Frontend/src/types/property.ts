@@ -26,7 +26,14 @@ export interface Property {
   phoneNumber: string | null
   verified: boolean
   description: string | null
-  images: string[] | { url: string; isPrimary: boolean }[]
+  images: PropertyImage[]
+}
+
+export interface PropertyImage {
+  id: number
+  url: string
+  isPrimary: boolean
+  sortOrder: number
 }
 
 export interface InquiryPayload {
@@ -37,11 +44,8 @@ export interface InquiryPayload {
   message: string
 }
 
-// The API returns images in DB insertion order, and edits always append the
-// newly uploaded image at the end — so the most recently added image (last
-// in the array) is the one that should represent the property, not the first.
 export function getCoverImageUrl(images: Property['images'] | undefined | null): string | null {
   if (!images || images.length === 0) return null
-  const latest = images[images.length - 1]
-  return typeof latest === 'string' ? latest : latest.url
+  const primary = images.find(img => img.isPrimary)
+  return (primary ?? images[0]).url
 }
