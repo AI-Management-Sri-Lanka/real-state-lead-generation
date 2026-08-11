@@ -72,7 +72,7 @@ export default function PropertiesPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by location, e.g. Downtown"
+              placeholder="Search by Title, Location, Property Type"
               className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none"
             />
           </div>
