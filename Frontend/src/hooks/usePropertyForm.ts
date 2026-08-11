@@ -162,9 +162,10 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
     try {
       // Use uploadApi instead of base64
       const urls = await Promise.all(validFiles.map(file => uploadApi.uploadImage(file)))
-      // If relative URL is returned, construct full URL. 
-      // But uploadApi.uploadImage returns relative, which works for static files? 
-      // Or we can just store the relative URL. The backend stores relative URL strings now.
+      // uploadApi.uploadImage() returns a URL relative to the backend (e.g. "/uploads/x.jpg").
+      // We store it as-is here; resolveImageUrl() in types/property.ts prefixes it with
+      // API_ROOT wherever it's displayed, so it always resolves against the backend, not
+      // the frontend's own origin.
       set('images', [...form.images, ...urls])
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Failed to upload one or more files.')
