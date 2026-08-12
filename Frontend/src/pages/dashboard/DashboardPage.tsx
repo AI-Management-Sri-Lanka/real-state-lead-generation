@@ -95,8 +95,8 @@ export default function DashboardPage() {
     },
     {
       value: stats?.aiMatchRate ?? "0%",
-      label: "AI match rate",
-      trend: "Priority confidence",
+      label: "Qualified leads %",
+      trend: "High/medium priority",
       trendPositive: true,
       accent: "#edfaf3",
       icon: (
