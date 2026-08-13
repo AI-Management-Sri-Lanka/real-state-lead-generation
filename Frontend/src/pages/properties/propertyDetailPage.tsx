@@ -347,7 +347,7 @@ export default function PropertyDetailPage() {
                     name="income"
                     value={formik.values.income}
                     onChange={formik.handleChange}
-                    options={["$120K – $150K", "$150K – $180K", "$180K+", "Below $120K"]}
+                    options={["$120K – $150K", "$150K – $180K", "$180K+", "Under $120,000"]}
                   />
                   <SelectField
                     label="Do you own a property? (With $300K+ equity?)"
