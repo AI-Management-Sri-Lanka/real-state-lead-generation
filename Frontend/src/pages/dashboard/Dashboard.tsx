@@ -64,6 +64,15 @@ function buildStatCards(stats: OwnerDashboardStats | null, navigate: ReturnType<
 type LeadScore = 'High' | 'Medium' | 'Low'
 type Lead = { id: string; initials: string; name: string; location: string; amount: string; score: LeadScore }
 
+// Backend values aren't guaranteed to match the exact 'High' | 'Medium' | 'Low' casing
+// (or may be missing entirely), so normalize before comparing/displaying.
+function normalizeScore(raw: unknown): LeadScore {
+  const s = String(raw ?? '').trim().toLowerCase()
+  if (s === 'high') return 'High'
+  if (s === 'medium') return 'Medium'
+  return 'Low'
+}
+
 
 
 const scoreLegend = [
@@ -119,12 +128,13 @@ export default function Dashboard() {
     const leadsToFilter = stats?.recentLeads ?? initialLeads
     const q = query.trim().toLowerCase()
     return leadsToFilter.filter(l => {
-      if (priorityFilter !== 'All' && l.score !== priorityFilter) return false
+      const score = normalizeScore(l.score)
+      if (priorityFilter !== 'All' && score !== priorityFilter) return false
       if (!q) return true
       return (
         l.name.toLowerCase().includes(q) ||
         l.location.toLowerCase().includes(q) ||
-        l.score.toLowerCase().includes(q)
+        score.toLowerCase().includes(q)
       )
     })
   }, [query, stats, priorityFilter])

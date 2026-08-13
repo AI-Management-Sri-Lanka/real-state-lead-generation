@@ -23,8 +23,15 @@ type LeadItemProps = {
   isActive?: boolean
 }
 
+function normalizeScore(raw: unknown): LeadScore {
+  const s = String(raw ?? '').trim().toLowerCase()
+  if (s === 'high') return 'High'
+  if (s === 'medium') return 'Medium'
+  return 'Low'
+}
+
 export function LeadItem({ lead, onSelect, isActive = false }: LeadItemProps) {
-  const score = scoreMeta[lead.score] || scoreMeta.Low
+  const score = scoreMeta[normalizeScore(lead.score)]
   const ScoreIcon = score.icon
 
   return (
