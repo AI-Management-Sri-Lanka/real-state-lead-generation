@@ -62,6 +62,20 @@ class AppError:
         http_status=401
     )
     
+    AUTH_GOOGLE_TOKEN_INVALID = ErrorDefinition(
+        code="AUTH-004",
+        name="Invalid Google Token",
+        category="authentication_error",
+        severity="medium",
+        module="auth",
+        user_message="Google sign-in failed. Please try again.",
+        internal_message="Google access token could not be verified.",
+        recommended_action="Retry Google sign-in or use email/password.",
+        log_level="warn",
+        alert_required=False,
+        http_status=401
+    )
+
     # DB Errors
     DB_INTEGRITY_ERROR = ErrorDefinition(
         code="DB-001",

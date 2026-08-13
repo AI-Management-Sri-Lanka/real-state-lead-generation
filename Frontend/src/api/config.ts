@@ -1,7 +1,10 @@
 // Centralized API configuration
 // Ensures consistent BASE_URL across all API calls
 
-const envApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+// Note: VITE_API_URL is intentionally set to "" in the Docker build so calls
+// go through nginx on the same origin - only fall back when it's truly unset.
+const rawApiUrl = import.meta.env.VITE_API_URL
+const envApiUrl = (rawApiUrl === undefined ? 'http://localhost:8000' : rawApiUrl).replace(/\/$/, '')
 
 // If the env variable already includes /api/v1, use it directly. Otherwise, append it.
 export const BASE_URL = envApiUrl.endsWith('/api/v1') 

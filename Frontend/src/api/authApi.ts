@@ -125,6 +125,30 @@ export const authApi = {
     return { user: userData.data, tokens };
   },
   
+  async signInWithGoogle(accessToken: string): Promise<{ user: UserResponse, tokens: TokenResponse }> {
+    const res = await fetch(`${BASE_URL}/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: accessToken }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const errorMessage = err.error?.message || err.detail || err.message || "Google sign-in failed";
+      throw new Error(errorMessage);
+    }
+    const resData = await res.json() as ApiResponse<TokenResponse>;
+    const tokens = resData.data;
+
+    const userRes = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${tokens.access_token}` },
+    });
+    if (!userRes.ok) throw new Error("Failed to fetch user after Google sign-in");
+    const userData = await userRes.json() as ApiResponse<UserResponse>;
+
+    return { user: userData.data, tokens };
+  },
+
   async getMe(token?: string): Promise<UserResponse> {
     // We can use fetchWithAuth which handles the token automatically
     const res = await fetchWithAuth(`${BASE_URL}/auth/me`, { method: "GET" });

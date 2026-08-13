@@ -3,10 +3,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 
-from app.schemas.user_schema import UserCreate, UserResponse, UserLogin, UserUpdate, PasswordChange
+from app.schemas.user_schema import UserCreate, UserResponse, UserLogin, UserUpdate, PasswordChange, GoogleAuthRequest
 from app.schemas.token_schema import TokenResponse, RefreshTokenRequest
 from app.schemas.response_schema import ResponseSchema
-from app.services.auth.auth_service import create_user, authenticate_user
+from app.services.auth.auth_service import create_user, authenticate_user, authenticate_or_create_google_user
 from app.crud.token_crud import create_refresh_token_db, get_refresh_token_db, revoke_refresh_token_db
 from app.crud.user_crud import update_user_db, delete_user_db
 from app.core.security import create_access_token, create_refresh_token, decode_token, verify_password, hash_password
@@ -53,6 +53,14 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
     db_user = await authenticate_user(db, user.email, user.password)
     tokens = await generate_tokens_for_user(db_user.id, db)
     return ok(message="Login successful", item=tokens)
+
+
+@router.post("/google", response_model=ResponseSchema[TokenResponse])
+async def google_auth(payload: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    """Authenticate (or create) a user from a Google OAuth access token and return tokens."""
+    db_user = await authenticate_or_create_google_user(db, payload.access_token)
+    tokens = await generate_tokens_for_user(db_user.id, db)
+    return ok(message="Google sign-in successful", item=tokens)
 
 
 @router.post("/refresh", response_model=ResponseSchema[TokenResponse])

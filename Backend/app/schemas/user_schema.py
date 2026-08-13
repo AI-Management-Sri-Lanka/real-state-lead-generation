@@ -84,6 +84,9 @@ class UserLogin(BaseModel):
         }
     }
 
+class GoogleAuthRequest(BaseModel):
+    access_token: str
+
 class UserUpdate(BaseModel):
     full_name: str | None = Field(None, min_length=2, max_length=255)
     email: EmailStr | None = None
