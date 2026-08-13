@@ -139,6 +139,17 @@ export interface AdminSession {
   updated_at: string
 }
 
+// The backend has been observed to key sessions as either `session_id` or
+// plain `id` (every other admin resource — users, admins, messages — uses
+// `id`). Normalize here so the UI never receives an undefined identifier,
+// which previously made the Transcript button a silent no-op.
+function normalizeSession(raw: any): AdminSession {
+  return {
+    ...raw,
+    session_id: raw.session_id ?? raw.id ?? raw._id ?? '',
+  }
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export const adminDashboardApi = {
   async getStats(): Promise<DashboardStats> {
@@ -226,7 +237,8 @@ export const adminSessionsApi = {
     if (params?.skip != null) url.searchParams.set('skip', String(params.skip))
     if (params?.limit != null) url.searchParams.set('limit', String(params.limit))
     const res = await adminFetch(url.toString())
-    return unwrap<{ sessions: AdminSession[] }>(res)
+    const { sessions } = await unwrap<{ sessions: AdminSession[] }>(res)
+    return { sessions: sessions.map(normalizeSession) }
   },
 }
 
@@ -265,7 +277,10 @@ export interface AdminMessage {
 export const adminChatApi = {
   async getSessionMessages(sessionId: string): Promise<AdminMessage[]> {
     const res = await adminFetch(`${BASE_URL}/admin/manage/sessions/${sessionId}/messages`)
-    return unwrap<AdminMessage[]>(res)
+    const data = await unwrap<AdminMessage[] | { messages: AdminMessage[] }>(res)
+    // Defensive: some endpoints in this API wrap arrays as { messages: [...] }
+    // instead of returning the array directly.
+    return Array.isArray(data) ? data : (data?.messages ?? [])
   }
 }
 
