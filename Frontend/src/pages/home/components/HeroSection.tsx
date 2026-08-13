@@ -10,7 +10,6 @@ const HERO_IMAGES = [
 ]
 
 export interface HeroSearchData {
-  activeTab: string
   keyword: string
   propertyType: string
   location: string
@@ -27,7 +26,6 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   
   // Search form state
-  const [activeTab, setActiveTab] = useState('ALL')
   const [keyword, setKeyword] = useState('')
   const [propertyType, setPropertyType] = useState('')
   const [location, setLocation] = useState('')
@@ -45,9 +43,9 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
   // Live search effect
   useEffect(() => {
     if (onSearch) {
-      onSearch({ activeTab, keyword, propertyType, location, beds, maxPrice })
+      onSearch({ keyword, propertyType, location, beds, maxPrice })
     }
-  }, [activeTab, keyword, propertyType, location, beds, maxPrice, onSearch])
+  }, [keyword, propertyType, location, beds, maxPrice, onSearch])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,23 +92,6 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
 
         {/* Search Widget */}
         <div className="mx-auto max-w-4xl">
-          {/* Tabs */}
-          <div className="flex justify-center mb-4 space-x-2">
-            {['ALL', 'FOR RENT', 'FOR SALE'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  color: 'white',
-                  background: activeTab === tab ? '#37b754' : 'rgba(0,0,0,0.5)',
-                }}
-                className={`px-8 py-2 rounded-full text-xs font-bold transition-colors tracking-wide backdrop-blur-sm`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
           {/* Form */}
           <form 
             onSubmit={handleSearch}

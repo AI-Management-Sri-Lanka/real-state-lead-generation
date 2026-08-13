@@ -17,8 +17,9 @@ import {
   RefreshCw, Pencil,
 } from 'lucide-react'
 import { adminPropertiesApi } from '@/api/adminApi'
-import { Property } from '@/types/property'
+import { Property, getCoverImageUrl } from '@/types/property'
 import { AddPropertyModal } from '@/components/properties/AddPropertyModal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 function StatusBadge({ verified }: { verified: boolean }) {
   return verified ? (
@@ -41,6 +42,8 @@ export default function AdminPropertiesPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null) // property id being actioned
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Property | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -83,16 +86,20 @@ export default function AdminPropertiesPage() {
     }
   }
 
-  const handleDelete = async (p: Property) => {
-    if (!window.confirm(`Delete "${p.title}"?\nThis cannot be undone.`)) return
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    const p = deleteTarget
     setActionLoading(p.id)
+    setDeleting(true)
     try {
       await adminPropertiesApi.delete(p.id)
       setProperties(prev => prev.filter(x => x.id !== p.id))
+      setDeleteTarget(null)
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Delete failed')
     } finally {
       setActionLoading(null)
+      setDeleting(false)
     }
   }
 
@@ -188,8 +195,8 @@ export default function AdminPropertiesPage() {
                     {/* Property info */}
                     <td className="px-4 py-3">
                       <div className="flex items-start gap-3">
-                        {p.images?.[0] ? (
-                          <img src={typeof p.images[0] === 'string' ? p.images[0] : p.images[0].url} alt={p.title} className="h-12 w-16 rounded-lg object-cover shrink-0" />
+                        {getCoverImageUrl(p.images) ? (
+                          <img src={getCoverImageUrl(p.images)!} alt={p.title} className="h-12 w-16 rounded-lg object-cover shrink-0" />
                         ) : (
                           <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400">
                             <Building2 size={20} />
@@ -281,7 +288,7 @@ export default function AdminPropertiesPage() {
 
                         {/* Delete */}
                         <button
-                          onClick={() => handleDelete(p)}
+                          onClick={() => setDeleteTarget(p)}
                           disabled={actionLoading === p.id}
                           title="Delete property"
                           className="rounded-lg border border-slate-700 p-1.5 text-slate-400 transition hover:border-red-700 hover:text-red-400 disabled:opacity-40"
@@ -321,6 +328,16 @@ export default function AdminPropertiesPage() {
         isAdminMode={true}
         editId={editId}
         onSaved={() => load()}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete property"
+        description={deleteTarget ? `Delete "${deleteTarget.title}"? This cannot be undone.` : undefined}
+        confirmLabel="Delete"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
       />
     </div>
   )

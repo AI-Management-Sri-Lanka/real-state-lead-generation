@@ -122,8 +122,8 @@ export default function AdminSessionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {filtered.map(s => (
-                <tr key={s.session_id} className="hover:bg-slate-800/40 transition-colors">
+              {filtered.map((s, i) => (
+                <tr key={s.session_id || i} className="hover:bg-slate-800/40 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 h-9 w-9 rounded-xl bg-cyan-600/20 flex items-center justify-center">
@@ -148,8 +148,16 @@ export default function AdminSessionsPage() {
                   </td>
                   <td className="px-5 py-4 text-right">
                     <button
-                      onClick={() => setSelectedSessionId(s.session_id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+                      onClick={() => {
+                        if (!s.session_id) {
+                          console.error('Session is missing an id — cannot open transcript', s)
+                          return
+                        }
+                        setSelectedSessionId(s.session_id)
+                      }}
+                      disabled={!s.session_id}
+                      title={!s.session_id ? 'This session is missing an id' : undefined}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <Eye size={14} /> Transcript
                     </button>

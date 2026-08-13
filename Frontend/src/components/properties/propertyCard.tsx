@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { BedDouble, Bath, Ruler, MapPin, BadgeCheck, MoreVertical, Pencil, Trash2, Heart } from 'lucide-react'
-import { Property } from '@/types/property'
+import { Property, getCoverImageUrl } from '@/types/property'
 
 interface Props {
   property: Property
@@ -21,13 +21,6 @@ function getTypeBadgeStyles(type: string) {
   if (t === 'land') return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
   if (t === 'commercial') return 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
   return 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-}
-
-function getListingBadgeStyles(listingType: string) {
-  const lt = listingType?.toLowerCase()
-  if (lt === 'sale' || lt === 'for sale') return 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-  if (lt === 'rent' || lt === 'for rent') return 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-  return 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
 }
 
 export function PropertyCard({ property, onEdit, onDelete }: Props) {
@@ -100,8 +93,8 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
 
       {/* ── Image / placeholder ─────────────────────────────── */}
       <div className="relative h-44 w-full overflow-hidden bg-slate-900">
-        {property.images && property.images.length > 0 ? (
-          <img src={typeof property.images[0] === 'string' ? property.images[0] : property.images[0].url} alt={property.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        {getCoverImageUrl(property.images) ? (
+          <img src={getCoverImageUrl(property.images)!} alt={property.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-slate-600">
             <MapPin size={28} />
@@ -148,9 +141,6 @@ export function PropertyCard({ property, onEdit, onDelete }: Props) {
         <div className="mt-4 flex gap-2">
           <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${getTypeBadgeStyles(property.type)}`}>
             {property.type}
-          </span>
-          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${getListingBadgeStyles(property.listingType)}`}>
-            For {property.listingType}
           </span>
         </div>
       </div>

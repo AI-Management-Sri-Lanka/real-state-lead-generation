@@ -30,8 +30,18 @@ async function adminFetch(url: string, options: RequestInit = {}): Promise<Respo
   if (res.status === 401) {
     const refreshToken = localStorage.getItem('aimsl_admin_refresh_token')
     if (refreshToken) {
-      if (!isAdminRefreshing) {
-        isAdminRefreshing = true
+      const isLeader = !isAdminRefreshing
+      isAdminRefreshing = true
+
+      // Register to be notified before kicking off the refresh request, so the
+      // leader's own resolver is queued before onAdminRefreshed can fire.
+      const waitForToken = new Promise<string>((resolve, reject) => {
+        adminRefreshSubscribers.push(resolve)
+        // Basic timeout to prevent hanging
+        setTimeout(() => reject(new Error('Refresh timeout')), 5000)
+      }).catch(() => null)
+
+      if (isLeader) {
         try {
           const refreshRes = await fetch(`${BASE_URL}/admin/auth/refresh`, {
             method: 'POST',
@@ -59,12 +69,7 @@ async function adminFetch(url: string, options: RequestInit = {}): Promise<Respo
         }
       }
 
-      // Wait for refresh to complete
-      const newToken = await new Promise<string>((resolve, reject) => {
-        adminRefreshSubscribers.push(resolve)
-        // Basic timeout to prevent hanging
-        setTimeout(() => reject(new Error('Refresh timeout')), 5000)
-      }).catch(() => null)
+      const newToken = await waitForToken
 
       if (newToken) {
         // Retry with new token
@@ -132,6 +137,17 @@ export interface AdminSession {
   title: string
   message_count: number
   updated_at: string
+}
+
+// The backend has been observed to key sessions as either `session_id` or
+// plain `id` (every other admin resource — users, admins, messages — uses
+// `id`). Normalize here so the UI never receives an undefined identifier,
+// which previously made the Transcript button a silent no-op.
+function normalizeSession(raw: any): AdminSession {
+  return {
+    ...raw,
+    session_id: raw.session_id ?? raw.id ?? raw._id ?? '',
+  }
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -221,7 +237,8 @@ export const adminSessionsApi = {
     if (params?.skip != null) url.searchParams.set('skip', String(params.skip))
     if (params?.limit != null) url.searchParams.set('limit', String(params.limit))
     const res = await adminFetch(url.toString())
-    return unwrap<{ sessions: AdminSession[] }>(res)
+    const { sessions } = await unwrap<{ sessions: AdminSession[] }>(res)
+    return { sessions: sessions.map(normalizeSession) }
   },
 }
 
@@ -260,7 +277,10 @@ export interface AdminMessage {
 export const adminChatApi = {
   async getSessionMessages(sessionId: string): Promise<AdminMessage[]> {
     const res = await adminFetch(`${BASE_URL}/admin/manage/sessions/${sessionId}/messages`)
-    return unwrap<AdminMessage[]>(res)
+    const data = await unwrap<AdminMessage[] | { messages: AdminMessage[] }>(res)
+    // Defensive: some endpoints in this API wrap arrays as { messages: [...] }
+    // instead of returning the array directly.
+    return Array.isArray(data) ? data : (data?.messages ?? [])
   }
 }
 

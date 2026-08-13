@@ -1,7 +1,18 @@
 // src/api/propertyApi.ts
 import { fetchWithAuth } from './authApi'
 import { BASE_URL } from './config'
-import { Property } from '@/types/property'
+import { Property, normalizeImages } from '@/types/property'
+
+// Backend responses aren't always consistent about how they shape/name image
+// fields (missing images on list endpoints, snake_case keys, relative URLs).
+// Normalize every property that comes through this API layer so the rest of
+// the app can trust `property.images` is always well-formed.
+function normalizeProperty(p: Property): Property {
+  return { ...p, images: normalizeImages(p.images) }
+}
+function normalizeProperties(list: Property[]): Property[] {
+  return Array.isArray(list) ? list.map(normalizeProperty) : list
+}
 
 const ADMIN_BASE = `${BASE_URL}/admin/properties`
 
@@ -42,7 +53,7 @@ export const propertyApi = {
     const res = await fetchWithAuth(url.toString())
     if (!res.ok) throw new Error(`Failed to load properties: ${res.statusText}`)
     const body = await res.json()
-    return body.data
+    return normalizeProperties(body.data)
   },
 
   // Fetch single property (public — includes nested owner profile)
@@ -50,7 +61,7 @@ export const propertyApi = {
     const res = await fetchWithAuth(`${BASE_URL}/properties/${id}`)
     if (!res.ok) throw new Error(`Could not load property: ${res.statusText}`)
     const body = await res.json()
-    return body.data
+    return normalizeProperty(body.data)
   },
 
   // Create a new property (owner)
@@ -64,7 +75,7 @@ export const propertyApi = {
     if (!res.ok) {
       throw new Error(body?.message ?? `Server error: ${res.statusText}`)
     }
-    return body.data
+    return normalizeProperty(body.data)
   },
 
   // Edit own property
@@ -78,7 +89,7 @@ export const propertyApi = {
     if (!res.ok) {
       throw new Error(body?.message ?? `Server error: ${res.statusText}`)
     }
-    return body.data
+    return normalizeProperty(body.data)
   },
 
   // Add image to own property
@@ -91,6 +102,17 @@ export const propertyApi = {
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
       throw new Error(body?.message ?? `Failed to add image: ${res.statusText}`)
+    }
+  },
+
+  // Remove an image from own property
+  async deletePropertyImage(propertyId: string, imageId: number): Promise<void> {
+    const res = await fetchWithAuth(`${BASE_URL}/properties/${propertyId}/images/${imageId}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body?.message ?? `Failed to remove image: ${res.statusText}`)
     }
   },
 
@@ -129,7 +151,7 @@ export const adminPropertyApi = {
     const res = await adminFetch(url.toString())
     if (!res.ok) throw new Error(`Failed to load properties: ${res.statusText}`)
     const body = await res.json()
-    return body.data
+    return normalizeProperties(body.data)
   },
 
   // Get single property
@@ -137,7 +159,7 @@ export const adminPropertyApi = {
     const res = await adminFetch(`${ADMIN_BASE}/${id}`)
     if (!res.ok) throw new Error(`Property not found`)
     const body = await res.json()
-    return body.data
+    return normalizeProperty(body.data)
   },
 
   // Create property (optionally on behalf of an owner)
@@ -152,7 +174,7 @@ export const adminPropertyApi = {
     if (!res.ok) {
       throw new Error(body?.message ?? `Create failed: ${res.statusText}`)
     }
-    return body.data
+    return normalizeProperty(body.data)
   },
 
   // Edit any property
@@ -165,7 +187,18 @@ export const adminPropertyApi = {
     if (!res.ok) {
       throw new Error(body?.message ?? `Update failed: ${res.statusText}`)
     }
-    return body.data
+    return normalizeProperty(body.data)
+  },
+
+  // Remove an image from any property
+  async deletePropertyImage(propertyId: string, imageId: number): Promise<void> {
+    const res = await adminFetch(`${ADMIN_BASE}/${propertyId}/images/${imageId}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body?.message ?? `Failed to remove image: ${res.statusText}`)
+    }
   },
 
   // Delete any property

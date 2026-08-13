@@ -50,7 +50,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loadingProperty, setLoadingProperty] = useState(false)
-  const [originalImageUrls, setOriginalImageUrls] = useState<string[]>([])
+  const [originalImages, setOriginalImages] = useState<{ id: number; url: string }[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -84,7 +84,13 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
           description: p.description ?? '',
           images: Array.isArray(p.images) ? p.images.map((img: any) => typeof img === 'string' ? img : img.url) : [],
         })
-        setOriginalImageUrls(Array.isArray(p.images) ? p.images.map((img: any) => typeof img === 'string' ? img : img.url) : [])
+        setOriginalImages(
+          Array.isArray(p.images)
+            ? p.images
+                .filter((img: any) => img && typeof img === 'object' && 'id' in img)
+                .map((img: any) => ({ id: img.id, url: img.url }))
+            : []
+        )
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load property.')
       } finally {
@@ -102,7 +108,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
     setForm(EMPTY_PROPERTY_FORM)
     setCreatedPropertyId(null)
     setSubmitted(false)
-    setOriginalImageUrls([])
+    setOriginalImages([])
     setError(null)
   }
 
@@ -156,9 +162,10 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
     try {
       // Use uploadApi instead of base64
       const urls = await Promise.all(validFiles.map(file => uploadApi.uploadImage(file)))
-      // If relative URL is returned, construct full URL. 
-      // But uploadApi.uploadImage returns relative, which works for static files? 
-      // Or we can just store the relative URL. The backend stores relative URL strings now.
+      // uploadApi.uploadImage() returns a URL relative to the backend (e.g. "/uploads/x.jpg").
+      // We store it as-is here; resolveImageUrl() in types/property.ts prefixes it with
+      // API_ROOT wherever it's displayed, so it always resolves against the backend, not
+      // the frontend's own origin.
       set('images', [...form.images, ...urls])
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Failed to upload one or more files.')
@@ -242,8 +249,18 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
         setCreatedPropertyId(propertyId)
       }
 
-      const newImageUrls = allImages.filter(url => !originalImageUrls.includes(url))
-      const startIndex = originalImageUrls.length
+      const removedImages = originalImages.filter(img => !allImages.includes(img.url))
+      for (const img of removedImages) {
+        if (isAdminMode) {
+          await adminPropertyApi.deletePropertyImage(propertyId, img.id)
+        } else {
+          await propertyApi.deletePropertyImage(propertyId, img.id)
+        }
+      }
+
+      const originalUrls = originalImages.map(img => img.url)
+      const newImageUrls = allImages.filter(url => !originalUrls.includes(url))
+      const startIndex = allImages.length - newImageUrls.length
       for (let i = 0; i < newImageUrls.length; i++) {
         if (isAdminMode) {
           await adminPropertyApi.addPropertyImage(propertyId, {

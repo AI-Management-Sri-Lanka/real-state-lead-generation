@@ -3,6 +3,7 @@ import { Building2, Plus, Loader2, Search } from 'lucide-react'
 import { propertyApi } from '@/api/propertyApi'
 import { Property } from '@/types/property'
 import { PropertyCard } from '@/components/properties/propertyCard'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAuth } from '@/hooks/useAuth'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { AddPropertyModal } from '@/components/properties/AddPropertyModal'
@@ -14,6 +15,8 @@ export default function MyPropertiesList() {
   const [error, setError] = useState<string | null>(null)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Property | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const load = useCallback(async () => {
     if (!user) return
@@ -31,13 +34,17 @@ export default function MyPropertiesList() {
 
   useEffect(() => { load() }, [load])
 
-  const handleDelete = async (property: Property) => {
-    if (!window.confirm(`Are you sure you want to delete "${property.title}"?`)) return
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await propertyApi.deleteProperty(property.id)
-      setProperties(prev => prev.filter(p => p.id !== property.id))
+      await propertyApi.deleteProperty(deleteTarget.id)
+      setProperties(prev => prev.filter(p => p.id !== deleteTarget.id))
+      setDeleteTarget(null)
     } catch (err) {
       alert('Error deleting property.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -84,7 +91,7 @@ export default function MyPropertiesList() {
                 key={p.id}
                 property={p}
                 onEdit={() => setEditId(p.id)}
-                onDelete={() => handleDelete(p)}
+                onDelete={() => setDeleteTarget(p)}
               />
             ))}
           </div>
@@ -105,6 +112,16 @@ export default function MyPropertiesList() {
         isAdminMode={false}
         editId={editId}
         onSaved={() => load()}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete property"
+        description={deleteTarget ? `Are you sure you want to delete "${deleteTarget.title}"? This cannot be undone.` : undefined}
+        confirmLabel="Delete"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
       />
     </DashboardLayout>
   )
