@@ -48,48 +48,41 @@ class InquiryService:
             return "Low"
             
         msg_lower = message.lower()
-        score_points = 0
         
-        # 1. Length weight
-        if len(message) < 15:
-            score_points -= 2
-        elif len(message) > 50:
-            score_points += 1
+        # 1. STRICT RULE: MUST have ALL 3 specific options to be "High"
+        has_180k = "180k+" in msg_lower
+        has_300k_equity = "300k+ equity" in msg_lower
+        has_40k_deposit = "yes – $40k" in msg_lower
         
-        if len(message) > 100:
-            score_points += 1
+        if has_180k and has_300k_equity and has_40k_deposit:
+            return "High"
             
-        # 2. Timeline / Urgency Intent
-        urgency_keywords = ["immediate", "urgent", "ready", "now", "quick", "asap", "this week", "next month", "soon"]
-        if any(kw in msg_lower for kw in urgency_keywords):
-            score_points += 2
-            
-        # 3. Financial / Buying Intent
-        financial_keywords = ["buy", "purchase", "invest", "budget", "price", "cash", "loan", "mortgage", "$", "aud", "rs", "lkr", "usd"]
-        if any(kw in msg_lower for kw in financial_keywords):
-            score_points += 2
-            
-        # 4. Specificity / Property terms
-        property_keywords = ["bedroom", "bathroom", "sqft", "viewing", "inspect", "tour", "visit", "location"]
-        if any(kw in msg_lower for kw in property_keywords):
-            score_points += 1
-            
-        # 5. Verified Buyer Qualification
-        # Automatically boost leads who submitted top-tier questionnaire answers
+        # 2. Medium Priority (Other Verified Options or General Intent)
         verified_keywords = [
             "120k", "150k", "180k+",
-            "300k+ equity",
+            "300k+ equity", "less than $300k",
             "yes – $40k", "yes – $80k+",
             "superannuation ($230k+): yes"
         ]
         if any(kw in msg_lower for kw in verified_keywords):
-            score_points += 3
-            
-        # Classify based on points
-        if score_points >= 3:
-            return "High"
-        elif score_points >= 1:
             return "Medium"
+            
+        # 3. General Keywords / Intent -> Medium
+        urgency_keywords = ["immediate", "urgent", "ready", "now", "quick", "asap", "this week", "next month", "soon"]
+        financial_keywords = ["buy", "purchase", "invest", "budget", "price", "cash", "loan", "mortgage", "$", "aud", "rs", "lkr", "usd"]
+        property_keywords = ["bedroom", "bathroom", "sqft", "viewing", "inspect", "tour", "visit", "location"]
+        
+        has_intent = (
+            any(kw in msg_lower for kw in urgency_keywords) or
+            any(kw in msg_lower for kw in financial_keywords) or
+            any(kw in msg_lower for kw in property_keywords) or
+            len(message) > 50
+        )
+        
+        if has_intent:
+            return "Medium"
+            
+        # 3. Very short or no keywords -> Low
         return "Low"
 
     async def get_owner_stats(self, db: AsyncSession, owner_id: int) -> OwnerDashboardStats:

@@ -297,8 +297,8 @@ export default function Dashboard() {
 
             <div className="rounded-[28px] border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.95),rgba(238,242,255,0.95))] p-5 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:border-sky-800/40 dark:bg-[linear-gradient(135deg,#020617_0%,#0f172a_50%,#111827_100%)] dark:shadow-[0_16px_35px_rgba(2,6,23,0.35)] sm:p-6 flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg">
                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest dark:text-slate-400">AI Match Rate</p>
-                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">% of qualified vs total leads</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest dark:text-slate-400">Qualified Leads %</p>
+                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Percentage of high/medium leads</p>
                   <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{stats?.aiMatchRate ?? '0%'}</p>
                </div>
                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 ring-1 ring-indigo-200/50">
