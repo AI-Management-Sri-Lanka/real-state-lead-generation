@@ -61,10 +61,6 @@ export default function HomePage() {
     }
 
     if (heroSearch) {
-      if (heroSearch.activeTab === 'FOR RENT') {
-        result = result.filter(p => p.listingType?.toLowerCase() === 'rent')
-      }
-
       if (heroSearch.keyword) {
         const kw = heroSearch.keyword.toLowerCase()
         result = result.filter(p => p.title.toLowerCase().includes(kw) || p.description?.toLowerCase().includes(kw))
