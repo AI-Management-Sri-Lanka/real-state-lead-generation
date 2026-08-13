@@ -26,7 +26,7 @@ const questions = [
     label: "What category of income do you earn?",
     sub: "Single or combined as a couple",
     type: "single",
-    options: ["$120K – $150K", "$150K – $180K", "$180K+", "Below $120K"],
+    options: ["$120K – $150K", "$150K – $180K", "$180K+", "Under $120,000"],
   },
   {
     id: "property_equity",
