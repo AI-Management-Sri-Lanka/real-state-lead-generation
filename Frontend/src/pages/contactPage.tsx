@@ -135,7 +135,8 @@ function loadRecipients(): string {
 // (covers names like "Anne-Marie" or "O'Brien", 2–50 chars total).
 const NAME_PATTERN = /^[A-Za-z][A-Za-z\s'-]{1,49}$/;
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Lowercase only: local part, domain labels, and TLD must not contain capital letters.
+const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
 
 // Mobile (04XX XXX XXX) or landline (0[2378] XXXX XXXX), domestic "0..." or
 // international "+61.../61..." form.
@@ -160,7 +161,7 @@ function validate(values: FormValues) {
       } else if (q.id === "name" && !NAME_PATTERN.test((val as string).trim())) {
         newErrors[q.id] = "Please enter a valid name (letters only, 2–50 characters).";
       } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
-        newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
+        newErrors[q.id] = "Please enter a valid email address in lowercase (e.g. name@example.com).";
       } else if (q.id === "phone" && !PHONE_PATTERN.test((val as string).trim())) {
         newErrors[q.id] = "Please enter a valid phone number (e.g. 0412345678).";
       }
@@ -277,6 +278,7 @@ export default function ContactPage() {
 
   const setText = (id: string, value: string) => {
     setFieldValue(id, value);
+    setFieldTouched(id, true, false);
   };
 
   if (submitted) {
