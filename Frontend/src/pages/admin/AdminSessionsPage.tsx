@@ -9,6 +9,7 @@ export default function AdminSessionsPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
+  const [transcriptOpen, setTranscriptOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<AdminMessage[]>([])
   const [messagesLoading, setMessagesLoading] = useState(false)
@@ -149,15 +150,18 @@ export default function AdminSessionsPage() {
                   <td className="px-5 py-4 text-right">
                     <button
                       onClick={() => {
+                        setTranscriptOpen(true)
                         if (!s.session_id) {
                           console.error('Session is missing an id — cannot open transcript', s)
+                          setSelectedSessionId(null)
+                          setMessages([])
+                          setMessagesLoading(false)
+                          setMessagesError('This session is missing an id, so its transcript cannot be loaded.')
                           return
                         }
                         setSelectedSessionId(s.session_id)
                       }}
-                      disabled={!s.session_id}
-                      title={!s.session_id ? 'This session is missing an id' : undefined}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
                     >
                       <Eye size={14} /> Transcript
                     </button>
@@ -173,22 +177,24 @@ export default function AdminSessionsPage() {
       )}
 
       {/* Transcript Modal */}
-      {selectedSessionId && (
+      {transcriptOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-2xl h-[80vh] flex flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-800 bg-slate-800/60 p-4">
               <div>
                 <h2 className="text-base font-bold text-white">Session Transcript</h2>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedSessionId}</p>
+                {selectedSessionId && (
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedSessionId}</p>
+                )}
               </div>
-              <button 
-                onClick={() => setSelectedSessionId(null)}
+              <button
+                onClick={() => { setTranscriptOpen(false); setSelectedSessionId(null) }}
                 className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {messagesLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
