@@ -40,6 +40,9 @@ const NAME_REGEX  = /^[A-Za-z][A-Za-z\s'-]*$/
 // Australian phone numbers: mobile (04XX XXX XXX) or landline (0[2378] XXXX XXXX),
 // either in domestic "0..." form or international "+61..."/"61..." form.
 const PHONE_REGEX = /^(?:\+?61|0)[2-478]\d{8}$/
+// Lowercase only: local part, domain labels, and TLD must not contain capital
+// letters (mirrors the contact page's EMAIL_PATTERN).
+const EMAIL_REGEX = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/
 
 const inquiryValidationSchema = Yup.object({
   name: Yup.string()
@@ -51,7 +54,7 @@ const inquiryValidationSchema = Yup.object({
   email: Yup.string()
     .trim()
     .required('Email is required.')
-    .email('Please enter a valid email address.'),
+    .matches(EMAIL_REGEX, 'Please enter a valid email address in lowercase (e.g. name@example.com).'),
   phone: Yup.string()
     .trim()
     .required('Phone number is required.')
@@ -347,7 +350,7 @@ export default function PropertyDetailPage() {
                     name="income"
                     value={formik.values.income}
                     onChange={formik.handleChange}
-                    options={["$120K – $150K", "$150K – $180K", "$180K+", "Below $120K"]}
+                    options={["$120K – $150K", "$150K – $180K", "$180K+", "Under $120,000"]}
                   />
                   <SelectField
                     label="Do you own a property? (With $300K+ equity?)"
@@ -539,7 +542,10 @@ export default function PropertyDetailPage() {
                       label="Email"
                       placeholder="you@email.com"
                       value={formik.values.email}
-                      onChange={v => formik.setFieldValue('email', v)}
+                      onChange={v => {
+                        formik.setFieldValue('email', v)
+                        formik.setFieldTouched('email', true, false)
+                      }}
                       onBlur={formik.handleBlur}
                       name="email"
                       type="email"

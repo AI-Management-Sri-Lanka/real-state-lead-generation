@@ -58,7 +58,7 @@ function parseLeadsFromContent(content: string): Lead[] {
   if (middotBlocks.length > 0) {
     middotBlocks.forEach((block) => {
       // Match "### N. @handle &middot; Platform" or "### N. @handle · Platform"
-      const headMatch = block.match(/###\s+\d+\.\s+(@[\w.]+)\s*(?:&middot;|·|-|–)\s*(\w+)/)
+      const headMatch = block.match(/###\s+\d+\.\s+(@.+?)\s*(?:&middot;|·|-|–)\s*(\w+)/)
       if (!headMatch) return
 
       // Fields use bold labels: "- **Name:** value" or "- **Property type:** value"
@@ -72,7 +72,7 @@ function parseLeadsFromContent(content: string): Lead[] {
       const linkMatch   = block.match(/\[.*?\]\((https?:\/\/[^\s)]+)\)/)
 
       leads.push({
-        userId:        headMatch[1].replace('@', ''),
+        userId:        headMatch[1].replace('@', '').trim(),
         platform:      headMatch[2].toLowerCase(),
         name:          nameMatch?.[1]?.trim(),
         property_type: propMatch?.[1]?.trim(),
@@ -89,7 +89,7 @@ function parseLeadsFromContent(content: string): Lead[] {
   const headingBlocks = content.split(/(?=###\s+\d+\.\s+@)/).slice(1)
   if (headingBlocks.length > 0) {
     headingBlocks.forEach((block) => {
-      const headMatch = block.match(/###\s+\d+\.\s+(@[\w.]+)\s*[-–(]\s*(\w+)/)
+      const headMatch = block.match(/###\s+\d+\.\s+(@.+?)\s*[-–(]\s*(\w+)/)
       if (!headMatch) return
 
       const nameMatch  = block.match(/[-*]\s*(?:\*\*)?Name:(?:\*\*)?\s*(.+)/i)
@@ -100,7 +100,7 @@ function parseLeadsFromContent(content: string): Lead[] {
       const linkMatch  = block.match(/\[.*?\]\((https?:\/\/[^\s)]+)\)/)
 
       leads.push({
-        userId:        headMatch[1].replace('@', ''),
+        userId:        headMatch[1].replace('@', '').trim(),
         platform:      headMatch[2].toLowerCase(),
         name:          nameMatch?.[1]?.trim(),
         property_type: propMatch?.[1]?.trim(),
@@ -116,7 +116,7 @@ function parseLeadsFromContent(content: string): Lead[] {
   // ── Format 3: "**N. @handle** (platform)" — older bold format
   const boldBlocks = content.split(/(?=\*\*\d+\.\s+@)/).slice(1)
   boldBlocks.forEach((block) => {
-    const handleMatch = block.match(/\*\*\d+\.\s+(@[\w.]+)\*\*\s*\((\w+)\)/)
+    const handleMatch = block.match(/\*\*\d+\.\s+(@.+?)\*\*\s*\((\w+)\)/)
     if (!handleMatch) return
 
     const nameMatch  = block.match(/Name:\s*(.+)/i)

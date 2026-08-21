@@ -76,7 +76,7 @@ export default function App() {
           <Route path="properties"     element={<AdminPropertiesPage />} />
           <Route path="properties/add" element={<ErrorBoundary><PropertyManager /></ErrorBoundary>} />
           <Route path="users"          element={<AdminUsersPage />} />
-          <Route path="sessions"       element={<AdminSessionsPage />} />
+          <Route path="sessions"       element={<ErrorBoundary><AdminSessionsPage /></ErrorBoundary>} />
           <Route path="inquiries"      element={<AdminInquiriesPage />} />
           <Route path="manage"         element={<AdminManagePage />} />
         </Route>
