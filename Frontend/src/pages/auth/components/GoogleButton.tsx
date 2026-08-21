@@ -1,5 +1,9 @@
 // src/pages/auth/components/GoogleButton.tsx
+import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/Button'
+import { useAuth } from '@/hooks/useAuth'
 const GIcon = (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
     <path d="M17.64 9.2A10.3 10.3 0 0 0 17.52 8H9v3.38h4.84A4.14 4.14 0 0 1 12.08 14v2.34h2.88C16.66 14.6 17.64 12.11 17.64 9.2z" fill="#4285F4"/>
@@ -8,7 +12,24 @@ const GIcon = (
     <path d="M9 3.58c1.32 0 2.5.45 3.44 1.34L14.96 2.4C13.46.99 11.42.18 9 .18 5.39.18 2.22 2.09.77 5L3.64 7.3A5.38 5.38 0 0 1 9 3.58z" fill="#EA4335"/>
   </svg>
 )
-interface GoogleButtonProps { label?: string; onClick?: () => void }
-export function GoogleButton({ label='Continue with Google', onClick }: GoogleButtonProps) {
-  return <Button variant="secondary" fullWidth size="lg" icon={GIcon} onClick={onClick}>{label}</Button>
+interface GoogleButtonProps { label?: string }
+export function GoogleButton({ label='Continue with Google' }: GoogleButtonProps) {
+  const { signInWithGoogle } = useAuth()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+
+  const handleClick = useCallback(async () => {
+    setLoading(true)
+    try {
+      await signInWithGoogle()
+      toast.success('Welcome!')
+      navigate('/dashboard')
+    } catch (err: unknown) {
+      toast.error((err as Error).message ?? 'Google sign-in failed', { id: 'google-signin-error' })
+    } finally {
+      setLoading(false)
+    }
+  }, [signInWithGoogle, navigate])
+
+  return <Button variant="secondary" fullWidth size="lg" icon={GIcon} onClick={handleClick} loading={loading}>{label}</Button>
 }
