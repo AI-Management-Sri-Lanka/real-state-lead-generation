@@ -125,6 +125,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://169.58.213.78",
+        "http://169.58.213.78:3000",
         "http://localhost",
         "http://localhost:5173",  # React/Vite dev server
         "http://localhost:3000",  # Alternative dev port
