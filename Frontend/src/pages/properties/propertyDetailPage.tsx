@@ -37,9 +37,12 @@ function formatPrice(price: number, currency: string, listingType: string) {
 // Must start with a letter, then letters/spaces/hyphens/apostrophes (mirrors
 // the contact page's NAME_PATTERN so both forms reject the same inputs).
 const NAME_REGEX  = /^[A-Za-z][A-Za-z\s'-]*$/
-// Australian phone numbers: mobile (04XX XXX XXX) or landline (0[2378] XXXX XXXX),
-// either in domestic "0..." form or international "+61..."/"61..." form.
-const PHONE_REGEX = /^(?:\+?61|0)[2-478]\d{8}$/
+// Phone validation helper: require exactly 10 local digits (e.g. 0412345678)
+// or international +61 equivalent (digits start with 61 and total 11 digits).
+function isValidPhone(input: string) {
+  const digits = String(input || '').replace(/\D/g, '')
+  return digits.length === 10
+}
 // Lowercase only: local part, domain labels, and TLD must not contain capital
 // letters (mirrors the contact page's EMAIL_PATTERN).
 const EMAIL_REGEX = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/
@@ -58,7 +61,7 @@ const inquiryValidationSchema = Yup.object({
   phone: Yup.string()
     .trim()
     .required('Phone number is required.')
-    .matches(PHONE_REGEX, 'Please enter a valid phone number (e.g. 0412345678).'),
+    .test('phone-valid', 'Please enter a valid phone number (10 digits, e.g. 0412345678).', value => isValidPhone(String(value || ''))),
   message: Yup.string()
     .trim()
     .required('Message is required.'),

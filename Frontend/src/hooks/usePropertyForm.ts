@@ -39,6 +39,7 @@ type UsePropertyFormOptions = {
 
 export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyFormOptions) {
   const [form, setForm] = useState<PropertyFormState>(EMPTY_PROPERTY_FORM)
+  const [fieldErrors, setFieldErrors] = useState<{ phoneNumber?: string }>({})
   const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null)
 
   const actualEditId = editId || createdPropertyId
@@ -101,7 +102,21 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
   }, [editId])
 
   function set<K extends keyof PropertyFormState>(key: K, value: PropertyFormState[K]) {
+    const next = { ...form, [key]: value }
     setForm(prev => ({ ...prev, [key]: value }))
+    // Validate phone number on change: require exactly 10 local digits
+    if (key === 'phoneNumber') {
+      const v = (value as string).trim()
+      const digits = v.replace(/\D/g, '')
+      const valid = digits.length === 10 || (digits.length === 11 && digits.startsWith('61'))
+      if (v === '') {
+        setFieldErrors(prev => ({ ...prev, phoneNumber: undefined }))
+      } else if (!valid) {
+        setFieldErrors(prev => ({ ...prev, phoneNumber: 'Please enter a valid phone number (10 digits, e.g. 0412345678).' }))
+      } else {
+        setFieldErrors(prev => ({ ...prev, phoneNumber: undefined }))
+      }
+    }
   }
 
   function resetForm() {
@@ -207,6 +222,18 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
       setError('Title, price, location and listed-by are required.')
       return
     }
+
+    // Final phone validation before submit: ensure 10 local digits or +61 equivalent
+    const phoneVal = form.phoneNumber.trim()
+    if (phoneVal) {
+      const digits = phoneVal.replace(/\D/g, '')
+      const valid = digits.length === 10
+      if (!valid) {
+        setFieldErrors(prev => ({ ...prev, phoneNumber: 'Please enter a valid phone number (10 digits, e.g. 0412345678 or +61412345678).' }))
+        setError('Please fix form errors before saving.')
+        return
+      }
+    }
     setError(null)
     setSubmitting(true)
 
@@ -288,6 +315,7 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
 
   return {
     form, set,
+    fieldErrors,
     isEditMode, isActuallyEditMode, actualEditId,
     imageInput, setImageInput,
     submitting, submitted, error,

@@ -26,6 +26,7 @@ export function AddPropertyModal({ open, onClose, isAdminMode, editId = null, on
     handleAddButtonClick, removeImage,
     handleDrop, handleDragOver, handleDragLeave, handleFileInputChange,
     handleSubmit, resetForm,
+    fieldErrors,
   } = usePropertyForm({
     editId,
     isAdminMode,
@@ -54,6 +55,8 @@ export function AddPropertyModal({ open, onClose, isAdminMode, editId = null, on
           <PropertyFormFields
             form={form}
             set={set}
+            // pass field-level errors so form fields can display inline messages
+            fieldErrors={fieldErrors}
             imageInput={imageInput}
             setImageInput={setImageInput}
             fileInputRef={fileInputRef}
