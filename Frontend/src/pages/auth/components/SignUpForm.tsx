@@ -44,9 +44,10 @@ function validate(v: typeof INIT) {
 }
 
 export function SignUpForm() {
-  const { signUp } = useAuth();
+  const { signUp, googleSignIn } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const form = useForm(INIT, validate);
 
   async function handleSubmit(e: FormEvent) {
@@ -62,6 +63,23 @@ export function SignUpForm() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleGoogleSuccess(idToken: string) {
+    setGoogleLoading(true);
+    try {
+      await googleSignIn(idToken);
+      toast.success("Account created! Welcome.");
+      navigate("/dashboard");
+    } catch (err: unknown) {
+      toast.error((err as Error).message ?? "Google sign-up failed", { id: "google-signup-error" });
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
+  function handleGoogleError() {
+    toast.error("Google sign-up was cancelled or failed", { id: "google-signup-error" });
   }
 
   return (
@@ -168,7 +186,12 @@ export function SignUpForm() {
       </form>
 
       <AuthDivider label="or" />
-      <GoogleButton label="Sign up with Google" />
+      <GoogleButton
+        label="Sign up with Google"
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        disabled={loading || googleLoading}
+      />
       <p
         style={{
           textAlign: "center",

@@ -47,12 +47,28 @@ class UserCreate(BaseModel):
         }
     }
 
+class GoogleAuthRequest(BaseModel):
+    """Payload sent by the frontend after Google Identity Services returns
+    an ID token for the signed-in Google account."""
+    id_token: str = Field(..., min_length=10)
+
+    model_config = {
+        "extra": "forbid",
+        "json_schema_extra": {
+            "example": {
+                "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij..."
+            }
+        }
+    }
+
+
 class UserResponse(BaseModel):
     id: int
     full_name: str
     email: str
     is_active: bool
     created_at: datetime
+    auth_provider: str = "local"
     
     model_config = {
         "from_attributes": True,
@@ -83,6 +99,50 @@ class UserLogin(BaseModel):
             ]
         }
     }
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+    model_config = {
+        "extra": "forbid",
+        "json_schema_extra": {
+            "example": {
+                "email": "user@example.com"
+            }
+        }
+    }
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+
+    @field_validator('otp')
+    def validate_otp(cls, v):
+        if not v.isdigit():
+            raise ValueError('OTP must contain only digits')
+        return v
+
+class ResetPasswordWithOTP(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=8, max_length=255)
+    confirm_password: str = Field(..., min_length=8, max_length=255)
+
+    @field_validator('new_password')
+    def validate_password(cls, v):
+        return validate_strong_password(v)
+
+    @field_validator('otp')
+    def validate_otp(cls, v):
+        if not v.isdigit():
+            raise ValueError('OTP must contain only digits')
+        return v
+
+    @model_validator(mode='after')
+    def verify_passwords(self) -> 'ResetPasswordWithOTP':
+        if self.new_password != self.confirm_password:
+            raise ValueError('Passwords do not match')
+        return self
 
 class UserUpdate(BaseModel):
     full_name: str | None = Field(None, min_length=2, max_length=255)

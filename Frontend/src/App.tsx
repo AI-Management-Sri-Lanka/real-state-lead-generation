@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { BackToTopButton } from '@/components/ui/BackToTopButton'
 import SignInPage from './pages/auth/SignInPage'
 import SignUpPage from './pages/auth/SignUpPage'
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 import PropertiesPage from '@/pages/properties/propertiesPage'
 import PropertyDetailPage from '@/pages/properties/propertyDetailPage'
 import MyPropertiesList from '@/pages/dashboard/properties/MyPropertiesList'
@@ -56,6 +57,7 @@ export default function App() {
         {/* ── Auth ───────────────────────────────────────────────────── */}
         <Route path="/auth/signin"       element={<SignInPage />} />
         <Route path="/auth/signup"       element={<SignUpPage />} />
+        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* ── Owner Dashboard ────────────────────────────────────────── */}
         <Route path="/dashboard" element={<PrivateRoute><ErrorBoundary><Dashboard /></ErrorBoundary></PrivateRoute>} />

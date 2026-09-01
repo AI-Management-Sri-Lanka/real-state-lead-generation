@@ -22,9 +22,10 @@ function validate(v: typeof INIT) {
 }
 
 export function SignInForm() {
-  const { signIn } = useAuth()
+  const { signIn, googleSignIn } = useAuth()
   const navigate   = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const form = useForm(INIT, validate)
 
   async function handleSubmit(e: FormEvent) {
@@ -34,6 +35,17 @@ export function SignInForm() {
     try { await signIn(form.values.email, form.values.password); toast.success('Welcome back!'); navigate('/dashboard') }
     catch (err: unknown) { toast.error((err as Error).message ?? 'Sign in failed', { id: 'signin-error' }) }
     finally { setLoading(false) }
+  }
+
+  async function handleGoogleSuccess(idToken: string) {
+    setGoogleLoading(true)
+    try { await googleSignIn(idToken); toast.success('Welcome back!'); navigate('/dashboard') }
+    catch (err: unknown) { toast.error((err as Error).message ?? 'Google sign-in failed', { id: 'google-signin-error' }) }
+    finally { setGoogleLoading(false) }
+  }
+
+  function handleGoogleError() {
+    toast.error('Google sign-in was cancelled or failed', { id: 'google-signin-error' })
   }
 
   return (
@@ -54,7 +66,7 @@ export function SignInForm() {
         <div>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
             <label style={{ fontSize:13, fontWeight:500, color:'var(--color-text-primary)' }}>Password</label>
-            <a href="#" style={{ fontSize:13, color:'var(--color-brand)', textDecoration:'none', fontWeight:500 }}>Forgot password?</a>
+            <Link to="/auth/forgot-password" style={{ fontSize:13, color:'var(--color-brand)', textDecoration:'none', fontWeight:500 }}>Forgot password?</Link>
           </div>
           <Input name="password" type="password" placeholder="Your password"
             autoComplete="current-password" value={form.values.password} onChange={form.handleChange} onBlur={form.handleBlur}
@@ -67,7 +79,7 @@ export function SignInForm() {
       </form>
 
       <AuthDivider label="or continue with" />
-      <GoogleButton />
+      <GoogleButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} disabled={loading || googleLoading} />
 
       <p style={{ textAlign:'center', marginTop:24, fontSize:14, color:'var(--color-text-secondary)' }}>
         Don't have an account?{' '}
