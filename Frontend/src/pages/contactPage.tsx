@@ -135,11 +135,15 @@ function loadRecipients(): string {
 // (covers names like "Anne-Marie" or "O'Brien", 2–50 chars total).
 const NAME_PATTERN = /^[A-Za-z][A-Za-z\s'-]{1,49}$/;
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Lowercase only: local part, domain labels, and TLD must not contain capital letters.
+const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
 
-// Mobile (04XX XXX XXX) or landline (0[2378] XXXX XXXX), domestic "0..." or
-// international "+61.../61..." form.
-const PHONE_PATTERN = /^(?:\+?61|0)[2-478]\d{8}$/;
+// Phone validation helper: require exactly 10 local digits (e.g. 0412345678)
+// or international +61 equivalent (digits start with 61 and total 11 digits).
+function isValidPhone(input: string) {
+  const digits = String(input || '').replace(/\D/g, '')
+  return digits.length === 10
+}
 
 // Resolved once per page load from recipients.yaml.
 const TO_EMAILS = loadRecipients();
@@ -160,9 +164,9 @@ function validate(values: FormValues) {
       } else if (q.id === "name" && !NAME_PATTERN.test((val as string).trim())) {
         newErrors[q.id] = "Please enter a valid name (letters only, 2–50 characters).";
       } else if (q.id === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
-        newErrors[q.id] = "Please enter a valid email address (e.g. name@example.com).";
-      } else if (q.id === "phone" && !PHONE_PATTERN.test((val as string).trim())) {
-        newErrors[q.id] = "Please enter a valid phone number (e.g. 0412345678).";
+        newErrors[q.id] = "Please enter a valid email address in lowercase (e.g. name@example.com).";
+      } else if (q.id === "phone" && !isValidPhone((val as string).trim())) {
+        newErrors[q.id] = "Please enter a valid phone number (10 digits, e.g. 0412345678).";
       }
     } else if (q.type === "multi") {
       if (!val || (val as string[]).length === 0) newErrors[q.id] = "Please select at least one option.";
@@ -277,6 +281,7 @@ export default function ContactPage() {
 
   const setText = (id: string, value: string) => {
     setFieldValue(id, value);
+    setFieldTouched(id, true, false);
   };
 
   if (submitted) {

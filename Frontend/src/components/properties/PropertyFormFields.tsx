@@ -17,11 +17,13 @@ type PropertyFormFieldsProps = {
   handleDragOver: (e: React.DragEvent<HTMLDivElement>) => void
   handleDragLeave: (e: React.DragEvent<HTMLDivElement>) => void
   handleFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  fieldErrors?: { phoneNumber?: string }
 }
 
 export function PropertyFormFields({
   form, set, imageInput, setImageInput, fileInputRef, isDragging, isUploading, uploadError,
   handleAddButtonClick, removeImage, handleDrop, handleDragOver, handleDragLeave, handleFileInputChange,
+  fieldErrors,
 }: PropertyFormFieldsProps) {
   return (
     <div className="space-y-8">
@@ -72,7 +74,7 @@ export function PropertyFormFields({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <TextInput label="Listed by *" placeholder="Agent or owner name" value={form.listedBy} onChange={v => set('listedBy', v)} />
-            <TextInput label="Phone number" placeholder="e.g. +1 234 567 8900" value={form.phoneNumber} onChange={v => set('phoneNumber', v)} />
+            <TextInput label="Phone number" placeholder="e.g. 0412345678" value={form.phoneNumber} onChange={v => set('phoneNumber', v)} error={fieldErrors?.phoneNumber} />
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Description</label>
@@ -175,14 +177,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function FieldGroup({ children }: { children: React.ReactNode }) {
   return <div className="space-y-4">{children}</div>
 }
-function TextInput({ label, value, onChange, placeholder, type = 'text' }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder: string; type?: string
+function TextInput({ label, value, onChange, placeholder, type = 'text', error }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder: string; type?: string; error?: string | undefined
 }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500" />
+      {error && <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
     </div>
   )
 }
