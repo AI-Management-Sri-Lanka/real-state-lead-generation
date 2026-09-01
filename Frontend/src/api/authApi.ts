@@ -147,11 +147,14 @@ export const authApi = {
     return resData.data;
   },
 
-  async changePassword(payload: { current_password: string; new_password: string }): Promise<void> {
+  async changePassword(payload: { current_password: string; new_password: string; confirm_password?: string }): Promise<void> {
+    // The backend expects `confirm_password` in the body (PasswordChange schema).
+    // If the caller didn't provide it, default it to the new password.
+    const body = { ...payload, confirm_password: payload.confirm_password ?? payload.new_password }
     const res = await fetchWithAuth(`${BASE_URL}/auth/change-password`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

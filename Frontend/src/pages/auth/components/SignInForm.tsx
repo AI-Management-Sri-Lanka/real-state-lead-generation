@@ -9,12 +9,13 @@ import { useAuth }              from '@/hooks/useAuth'
 import { useForm }              from '@/hooks/useForm'
 import { GoogleButton }         from './GoogleButton'
 import { AuthDivider }          from './AuthDivider'
+import { isValidEmail }         from '@/utils/validation'
 
 const INIT = { email:'', password:'' }
 function validate(v: typeof INIT) {
   const e: Partial<typeof INIT> = {}
   if (!v.email) e.email='Email is required'
-  else if (!/\S+@\S+\.\S+/.test(v.email)) e.email='Enter a valid email'
+  else if (!isValidEmail(v.email)) e.email='Enter a valid email in lowercase (e.g. name@example.com)'
   if (!v.password) e.password='Password is required'
   else if (v.password.length<6) e.password='At least 6 characters'
   return e

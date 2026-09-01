@@ -5,6 +5,7 @@ import {
   CheckCircle2, XCircle, Eye, EyeOff, X,
 } from 'lucide-react'
 import { adminMgmtApi, AdminRecord } from '@/api/adminApi'
+import { isValidEmail } from '@/utils/validation'
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return isActive ? (
@@ -70,6 +71,10 @@ export default function AdminManagePage() {
   const handleInvite = async () => {
     if (!form.full_name.trim() || !form.email.trim() || form.password.length < 8) {
       setInviteError('Please fill all fields. Password must be at least 8 characters.')
+      return
+    }
+    if (!isValidEmail(form.email)) {
+      setInviteError('Enter a valid email address in lowercase (e.g. admin@example.com).')
       return
     }
     if (form.password !== form.confirm_password) {
