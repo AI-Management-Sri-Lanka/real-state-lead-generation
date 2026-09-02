@@ -182,7 +182,15 @@ async def run_tavily_scraper(scraper_input: dict) -> List[ScrapedLead]:
 
     leads: List[ScrapedLead] = [l for l in extracted if l]
     for lead in leads:
-        lead.platform = Platform.google
+        url_lower = (lead.post_link or "").lower()
+        if "facebook.com" in url_lower:
+            lead.platform = Platform.facebook
+        elif "instagram.com" in url_lower:
+            lead.platform = Platform.instagram
+        elif "tiktok.com" in url_lower:
+            lead.platform = Platform.tiktok
+        elif not lead.platform or lead.platform == Platform.unknown:
+            lead.platform = Platform.google
 
     print(f"[Tavily] ✓ {len(leads)} buyer leads from {len(raw_results)} raw results")
     return leads

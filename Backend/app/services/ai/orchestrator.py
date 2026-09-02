@@ -96,12 +96,16 @@ class Orchestrator:
 
         logger.info("Scraper input: %s", scraper_input)
 
-        # Try Apify first
-        scraped_leads: List[ScrapedLead] = run_apify_scraper(scraper_input)
-        # If Apify returned no leads, fall back to Tavily
-        if not scraped_leads:
-            logger.warning("[Orchestrator] Apify returned no leads – falling back to Tavily scraper")
-            scraped_leads = await run_tavily_scraper(scraper_input)
+        # Run Apify scraper first
+        scraped_leads: List[ScrapedLead] = run_apify_scraper(scraper_input) or []
+        
+        # Always run Tavily search to pull Google-indexed Facebook, Instagram, and Web results
+        try:
+            tavily_leads = await run_tavily_scraper(scraper_input)
+            if tavily_leads:
+                scraped_leads.extend(tavily_leads)
+        except Exception as e:
+            logger.warning("[Orchestrator] Tavily search error: %s", e)
         # Rank leads (whether from Apify or Tavily)
         ranked_leads: List[ScrapedLead] = RankLeads().rank_leads(query=user_query, leads=scraped_leads)
 
