@@ -1,4 +1,5 @@
 // src/pages/auth/components/GoogleButton.tsx
+import { useEffect, useRef, useState } from 'react'
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import { Button } from '@/components/ui/Button'
 
@@ -11,9 +12,16 @@ const GIcon = (
   </svg>
 )
 
+// Google's identity widget only renders reliably at a few discrete widths.
+// We render it at this "native" width, then CSS-scale it horizontally to
+// exactly match our button's actual (responsive) width, so the invisible
+// click target lines up with our custom-styled button underneath.
+const GOOGLE_NATIVE_WIDTH = 400
+const BUTTON_HEIGHT = 50 // matches Button size="lg"
+
 interface GoogleButtonProps {
-  /** Used only for the fallback (unconfigured) button text, and to pick
-   * "signup_with" vs "continue_with" copy on Google's own button. */
+  /** Used for the button label, and to pick "signup_with" vs "continue_with"
+   * copy that Google's widget reports (not shown, since it's invisible). */
   label?: string
   /** Called with the verified Google ID token (JWT) once the user picks an
    * account. Pass this straight to `authApi.googleAuth` / `googleSignIn`. */
@@ -24,9 +32,20 @@ interface GoogleButtonProps {
 
 export function GoogleButton({ label = 'Continue with Google', onSuccess, onError, disabled }: GoogleButtonProps) {
   const clientIdConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
 
-  // No client ID set up yet -> show a disabled look-alike instead of a
-  // button that would silently fail when clicked.
+  useEffect(() => {
+    if (!clientIdConfigured || !containerRef.current) return
+    const el = containerRef.current
+    const update = () => setScale(el.clientWidth / GOOGLE_NATIVE_WIDTH)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [clientIdConfigured])
+
+  // No client ID configured -> plain disabled look, nothing to click.
   if (!clientIdConfigured) {
     return (
       <Button
@@ -45,28 +64,53 @@ export function GoogleButton({ label = 'Continue with Google', onSuccess, onErro
 
   return (
     <div
+      ref={containerRef}
       style={{
-        display: 'flex',
-        justifyContent: 'center',
+        position: 'relative',
         width: '100%',
+        height: BUTTON_HEIGHT,
         opacity: disabled ? 0.6 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
       }}
     >
-      <GoogleLogin
-        theme="outline"
-        shape="pill"
-        size="large"
-        text={label.toLowerCase().includes('sign up') ? 'signup_with' : 'continue_with'}
-        onSuccess={(credentialResponse: CredentialResponse) => {
-          if (credentialResponse.credential) {
-            onSuccess(credentialResponse.credential)
-          } else {
-            onError?.()
-          }
+      {/* What the user actually sees: our app's real Button, pixel-identical
+          to every other button in the form. Purely decorative -- clicks
+          pass through to the real Google widget underneath. */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <Button type="button" variant="secondary" fullWidth size="lg" icon={GIcon}>
+          {label}
+        </Button>
+      </div>
+
+      {/* The real, functional Google button: fully transparent, scaled to
+          cover the same area, so clicks anywhere on our styled button
+          trigger the actual Google sign-in flow. */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          transform: `scaleX(${scale || 1})`,
+          transformOrigin: 'top left',
+          opacity: 0,
+          overflow: 'hidden',
         }}
-        onError={() => onError?.()}
-      />
+      >
+        <GoogleLogin
+          width={GOOGLE_NATIVE_WIDTH}
+          theme="outline"
+          size="large"
+          text={label.toLowerCase().includes('sign up') ? 'signup_with' : 'continue_with'}
+          onSuccess={(credentialResponse: CredentialResponse) => {
+            if (credentialResponse.credential) {
+              onSuccess(credentialResponse.credential)
+            } else {
+              onError?.()
+            }
+          }}
+          onError={() => onError?.()}
+        />
+      </div>
     </div>
   )
 }
