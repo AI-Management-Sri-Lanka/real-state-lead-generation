@@ -7,8 +7,12 @@ if (rawApiUrl === '""' || rawApiUrl === "''") {
   rawApiUrl = '';
 }
 
-// Fallback to localhost:8000 for local dev if empty
-const envApiUrl = (rawApiUrl || 'http://localhost:8000').replace(/\/$/, '');
+// Fallback to dynamic window.location.hostname:8000 if VITE_API_URL is not set
+const defaultApiUrl = typeof window !== 'undefined'
+  ? `${window.location.protocol}//${window.location.hostname}:8000`
+  : 'http://localhost:8000';
+
+const envApiUrl = (rawApiUrl || defaultApiUrl).replace(/\/$/, '');
 
 // Ensure absolute URL so `new URL()` doesn't crash on relative paths
 const absoluteApiUrl = envApiUrl.startsWith('http')
