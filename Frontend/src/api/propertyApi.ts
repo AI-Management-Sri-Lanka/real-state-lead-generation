@@ -46,9 +46,10 @@ export interface PropertyImagePayload {
 // ─────────────────────────────────────────────────────────────────────────────
 export const propertyApi = {
   // Fetch list (public or filtered by ownerId for owner dashboard)
-  async getProperties(params?: { ownerId?: string | number; limit?: number }): Promise<Property[]> {
+  async getProperties(params?: { ownerId?: string | number; limit?: number; skip?: number }): Promise<Property[]> {
     const url = new URL(`${BASE_URL}/properties`)
     if (params?.limit)   url.searchParams.append('limit',   String(params.limit))
+    if (params?.skip)    url.searchParams.append('skip',    String(params.skip))
     if (params?.ownerId) url.searchParams.append('ownerId', String(params.ownerId))
     const res = await fetchWithAuth(url.toString())
     if (!res.ok) throw new Error(`Failed to load properties: ${res.statusText}`)
