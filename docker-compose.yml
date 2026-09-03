@@ -63,6 +63,7 @@ services:
       args:
         # Set to "" so API calls go to the same origin (nginx proxies them)
         VITE_API_URL: ""
+        VITE_GOOGLE_CLIENT_ID: "761194679237-tf979b3cd0fknc96qp74jimp1s135c0u.apps.googleusercontent.com"
     container_name: aimsl_frontend
     restart: always
     ports:

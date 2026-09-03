@@ -15,6 +15,9 @@ COPY . .
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
+ARG VITE_GOOGLE_CLIENT_ID="761194679237-tf979b3cd0fknc96qp74jimp1s135c0u.apps.googleusercontent.com"
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 RUN npm run build
 
 # ---- Runtime Stage (Nginx) ----
