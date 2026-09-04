@@ -2,7 +2,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
   Search, Loader2, UserCheck, UserX, Trash2, RefreshCw,
-  AlertCircle, Users, CheckCircle2, Key, ChevronLeft, ChevronRight
+  AlertCircle, Users, CheckCircle2, Key, ChevronLeft, ChevronRight, X,
+  Eye, EyeOff, ShieldCheck
 } from 'lucide-react'
 import { adminUsersApi, AdminUser } from '@/api/adminApi'
 
@@ -30,6 +31,7 @@ function Avatar({ name }: { name: string }) {
 }
 
 const PAGE_SIZE = 10
+const PASSWORD_RULE_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
 
 function getPageNumbers(current: number, total: number): (number | '…')[] {
   const delta = 1
@@ -91,6 +93,316 @@ function Pagination({
   )
 }
 
+/**
+ * App-themed confirmation modal used in place of window.confirm().
+ * Generic enough to reuse for any destructive/confirm action later.
+ */
+function ConfirmDialog({
+  open,
+  title,
+  description,
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  destructive = false,
+  loading = false,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean
+  title: string
+  description: string
+  confirmLabel?: string
+  cancelLabel?: string
+  destructive?: boolean
+  loading?: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open, onCancel])
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={loading ? undefined : onCancel}
+      />
+
+      {/* Panel */}
+      <div className="relative w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-black/40 animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+              destructive
+                ? 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+                : 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400'
+            }`}>
+              <AlertCircle size={18} />
+            </div>
+            <h2 id="confirm-dialog-title" className="pt-1.5 text-base font-bold text-white">
+              {title}
+            </h2>
+          </div>
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300 disabled:opacity-40"
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-400">
+          {description}
+        </p>
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white disabled:opacity-40"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-60 ${
+              destructive
+                ? 'bg-rose-600 hover:bg-rose-500'
+                : 'bg-indigo-600 hover:bg-indigo-500'
+            }`}
+          >
+            {loading && <Loader2 size={13} className="animate-spin" />}
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * App-themed replacement for the window.prompt()/window.alert() pair
+ * previously used to force-reset a user's password. Handles both
+ * password entry (with live validation) and the success confirmation,
+ * so no native browser dialogs are shown at any point in the flow.
+ */
+function ResetPasswordDialog({
+  open,
+  userName,
+  loading,
+  onSubmit,
+  onClose,
+}: {
+  open: boolean
+  userName: string
+  loading: boolean
+  onSubmit: (password: string, confirmPassword: string) => Promise<boolean>
+  onClose: () => void
+}) {
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [touched, setTouched] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  // Reset all local state whenever the dialog is opened for a (new) user
+  useEffect(() => {
+    if (open) {
+      setPassword('')
+      setConfirmPassword('')
+      setShowPassword(false)
+      setTouched(false)
+      setFormError(null)
+      setSuccess(false)
+    }
+  }, [open, userName])
+
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !loading) onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open, loading, onClose])
+
+  if (!open) return null
+
+  const meetsRules = PASSWORD_RULE_REGEX.test(password)
+  const passwordsMatch = password.length > 0 && password === confirmPassword
+
+  const handleSubmit = async () => {
+    setTouched(true)
+    setFormError(null)
+
+    if (!meetsRules) {
+      setFormError('Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.')
+      return
+    }
+    if (!passwordsMatch) {
+      setFormError('Passwords do not match.')
+      return
+    }
+
+    const ok = await onSubmit(password, confirmPassword)
+    if (ok) {
+      setSuccess(true)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reset-password-dialog-title"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={loading ? undefined : onClose}
+      />
+
+      {/* Panel */}
+      <div className="relative w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-black/40 animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+              success
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+            }`}>
+              {success ? <ShieldCheck size={18} /> : <Key size={18} />}
+            </div>
+            <h2 id="reset-password-dialog-title" className="pt-1.5 text-base font-bold text-white">
+              {success ? 'Password reset' : 'Reset password'}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300 disabled:opacity-40"
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {success ? (
+          <>
+            <p className="mt-3 text-sm leading-relaxed text-slate-400">
+              The password for <span className="font-semibold text-slate-200">{userName}</span> has been reset successfully.
+            </p>
+            <div className="mt-5 flex items-center justify-end">
+              <button
+                onClick={onClose}
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-500"
+              >
+                Done
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-3 text-sm leading-relaxed text-slate-400">
+              Set a new password for <span className="font-semibold text-slate-200">{userName}</span>.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-400">New password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                    placeholder="Enter new password"
+                    className="w-full rounded-xl border border-slate-700/80 bg-slate-950 py-2.5 pl-3.5 pr-10 text-sm text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(s => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+                {touched && password.length > 0 && !meetsRules && (
+                  <p className="mt-1.5 text-[11px] text-rose-400">
+                    Min 8 chars, with uppercase, lowercase, a number, and a special character.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-400">Confirm password</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  disabled={loading}
+                  placeholder="Re-enter new password"
+                  onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }}
+                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950 py-2.5 px-3.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                />
+                {touched && confirmPassword.length > 0 && !passwordsMatch && (
+                  <p className="mt-1.5 text-[11px] text-rose-400">Passwords do not match.</p>
+                )}
+              </div>
+
+              {formError && (
+                <div className="flex items-start gap-2 rounded-xl border border-rose-900/50 bg-rose-950/20 p-2.5 text-xs text-rose-400">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0" /> {formError}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                onClick={onClose}
+                disabled={loading}
+                className="rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-60"
+              >
+                {loading && <Loader2 size={13} className="animate-spin" />}
+                Reset Password
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [total, setTotal] = useState(0)
@@ -99,6 +411,8 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [actionId, setActionId] = useState<number | null>(null)
   const [page, setPage] = useState(1)
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
+  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null)
 
   const load = async () => {
     try {
@@ -145,12 +459,20 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleDelete = async (user: AdminUser) => {
-    if (!window.confirm(`Permanently delete "${user.full_name}" and all their data?\nThis CANNOT be undone.`)) return
+  // Opens the custom confirm dialog instead of window.confirm
+  const handleDelete = (user: AdminUser) => {
+    setDeleteTarget(user)
+  }
+
+  // Runs the actual deletion once the user confirms in the dialog
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    const user = deleteTarget
     setActionId(user.id)
     try {
       await adminUsersApi.deleteUser(user.id)
       setUsers(prev => prev.filter(u => u.id !== user.id))
+      setDeleteTarget(null)
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Delete failed')
     } finally {
@@ -158,24 +480,24 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleResetPassword = async (user: AdminUser) => {
-    const newPassword = window.prompt(`Enter a new password for "${user.full_name}":\n(Must be at least 8 chars, uppercase, lowercase, number, special char)`)
-    if (!newPassword) return
-    
-    const confirmPassword = window.prompt(`Confirm the new password for "${user.full_name}":`)
-    if (!confirmPassword) return
+  // Opens the custom reset-password dialog instead of window.prompt
+  const handleResetPassword = (user: AdminUser) => {
+    setResetTarget(user)
+  }
 
-    if (newPassword !== confirmPassword) {
-      alert("Passwords do not match!")
-      return
-    }
-    
+  // Runs the actual reset once the user submits the dialog form.
+  // Returns true on success so the dialog can switch to its success state,
+  // and false on failure so the dialog stays open and shows the error.
+  const submitResetPassword = async (password: string, confirmPassword: string): Promise<boolean> => {
+    if (!resetTarget) return false
+    const user = resetTarget
     setActionId(user.id)
     try {
-      await adminUsersApi.resetUserPassword(user.id, newPassword, confirmPassword)
-      alert(`Password for ${user.full_name} has been reset successfully.`)
+      await adminUsersApi.resetUserPassword(user.id, password, confirmPassword)
+      return true
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Reset password failed')
+      return false
     } finally {
       setActionId(null)
     }
@@ -399,6 +721,32 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      {/* Custom-styled delete confirmation, replacing window.confirm */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete user"
+        description={
+          deleteTarget
+            ? `Permanently delete "${deleteTarget.full_name}" and all their data?\nThis cannot be undone.`
+            : ''
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        destructive
+        loading={deleteTarget !== null && actionId === deleteTarget.id}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      {/* Custom-styled reset-password flow, replacing window.prompt/alert */}
+      <ResetPasswordDialog
+        open={resetTarget !== null}
+        userName={resetTarget?.full_name ?? ''}
+        loading={resetTarget !== null && actionId === resetTarget.id}
+        onSubmit={submitResetPassword}
+        onClose={() => setResetTarget(null)}
+      />
     </div>
   )
 }
