@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Building2, Plus, Loader2, Search } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Building2, Plus, Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { propertyApi } from '@/api/propertyApi'
 import { Property } from '@/types/property'
 import { PropertyCard } from '@/components/properties/propertyCard'
@@ -7,6 +7,71 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAuth } from '@/hooks/useAuth'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { AddPropertyModal } from '@/components/properties/AddPropertyModal'
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 12 // 3 full rows at the widest (xl:grid-cols-4) breakpoint
+
+/** Builds a compact page-number list with ellipses, e.g. 1 … 4 5 [6] 7 8 … 12 */
+function getPageNumbers(current: number, total: number): (number | '…')[] {
+  const delta = 1
+  const range: (number | '…')[] = []
+  const left = Math.max(2, current - delta)
+  const right = Math.min(total - 1, current + delta)
+
+  range.push(1)
+  if (left > 2) range.push('…')
+  for (let i = left; i <= right; i++) range.push(i)
+  if (right < total - 1) range.push('…')
+  if (total > 1) range.push(total)
+
+  return range
+}
+
+function Pagination({
+  page, totalPages, onChange,
+}: { page: number; totalPages: number; onChange: (p: number) => void }) {
+  if (totalPages <= 1) return null
+
+  return (
+    <nav className="flex flex-wrap items-center justify-center gap-1.5 pt-4" aria-label="Properties pagination">
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-slate-300 transition hover:border-indigo-500 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-800 disabled:hover:text-slate-300"
+      >
+        <ChevronLeft size={14} /> Previous
+      </button>
+
+      {getPageNumbers(page, totalPages).map((p, i) =>
+        p === '…' ? (
+          <span key={`ellipsis-${i}`} className="px-2 text-xs text-slate-500 select-none">…</span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onChange(p)}
+            aria-current={p === page ? 'page' : undefined}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold transition ${
+              p === page
+                ? 'bg-indigo-600 text-white shadow-[0_4px_12px_rgba(79,70,229,0.4)]'
+                : 'border border-slate-800 bg-slate-900 text-slate-300 hover:border-indigo-500 hover:text-indigo-300'
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page === totalPages}
+        className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-slate-300 transition hover:border-indigo-500 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-800 disabled:hover:text-slate-300"
+      >
+        Next <ChevronRight size={14} />
+      </button>
+    </nav>
+  )
+}
 
 export default function MyPropertiesList() {
   const { user } = useAuth()
@@ -17,14 +82,26 @@ export default function MyPropertiesList() {
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [page, setPage] = useState(1)
 
   const load = useCallback(async () => {
     if (!user) return
     try {
       setLoading(true)
-      // Fetch properties owned by current user
-      const data = await propertyApi.getProperties({ ownerId: user.id, limit: 100 })
-      setProperties(data)
+      // The backend caps `limit` at 100 per request, so an owner with more
+      // than 100 listings would silently get truncated with a single call.
+      // Page through the API (skip/limit) until a short page comes back, so
+      // "My Properties" always has the complete list to paginate over.
+      const FETCH_BATCH = 100
+      const all: Property[] = []
+      let skip = 0
+      while (true) {
+        const batch = await propertyApi.getProperties({ ownerId: user.id, limit: FETCH_BATCH, skip })
+        all.push(...batch)
+        if (batch.length < FETCH_BATCH) break
+        skip += FETCH_BATCH
+      }
+      setProperties(all)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error loading properties')
     } finally {
@@ -33,6 +110,18 @@ export default function MyPropertiesList() {
   }, [user])
 
   useEffect(() => { load() }, [load])
+
+  // Snap back to page 1 whenever the underlying list changes (fresh load,
+  // add, delete) so we never strand the admin on a now-empty page.
+  useEffect(() => {
+    setPage(1)
+  }, [properties.length])
+
+  const totalPages = Math.max(1, Math.ceil(properties.length / PAGE_SIZE))
+  const paginated = useMemo(
+    () => properties.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [properties, page]
+  )
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
@@ -85,15 +174,26 @@ export default function MyPropertiesList() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {properties.map(p => (
-              <PropertyCard
-                key={p.id}
-                property={p}
-                onEdit={() => setEditId(p.id)}
-                onDelete={() => setDeleteTarget(p)}
-              />
-            ))}
+          <div className="flex min-h-full flex-col">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {paginated.map(p => (
+                <PropertyCard
+                  key={p.id}
+                  property={p}
+                  onEdit={() => setEditId(p.id)}
+                  onDelete={() => setDeleteTarget(p)}
+                />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="mt-auto flex flex-col items-center gap-2 pt-10">
+                <p className="text-xs text-slate-500">
+                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, properties.length)} of {properties.length} properties
+                </p>
+                <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+              </div>
+            )}
           </div>
         )}
       </div>

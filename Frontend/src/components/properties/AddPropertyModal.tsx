@@ -72,7 +72,10 @@ export function AddPropertyModal({ open, onClose, isAdminMode, editId = null, on
           />
 
           {error && (
-            <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400">{error}</p>
+            <p
+              className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium dark:border-red-900/50 dark:bg-red-950/40"
+              style={{ color: 'var(--color-error, #DC2626)' }}
+            >{error}</p>
           )}
 
           <div className="mt-8 flex justify-end gap-3">

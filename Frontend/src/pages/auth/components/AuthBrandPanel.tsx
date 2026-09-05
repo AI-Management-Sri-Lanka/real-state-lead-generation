@@ -8,9 +8,12 @@ interface AuthBrandPanelProps {
   subheading: string
   bullets:    string[]
   className?: string
+  /** Optional badge shown next to the logo, e.g. "ADMIN". Omit for the
+   * regular user-facing auth pages. */
+  logoSuffix?: string
 }
 
-export function AuthBrandPanel({ heading, subheading, bullets, className }: AuthBrandPanelProps) {
+export function AuthBrandPanel({ heading, subheading, bullets, className, logoSuffix }: AuthBrandPanelProps) {
   return (
     <div className={`auth-brand-panel ${className ?? ""}`} style={{
       position:'relative', overflow:'hidden',
@@ -28,6 +31,15 @@ export function AuthBrandPanel({ heading, subheading, bullets, className }: Auth
             </svg>
           </div>
           <span className="auth-brand-logo-text" style={{ color:'white', fontWeight:700, fontFamily:'var(--font-sans)' }}>LeadAI</span>
+          {logoSuffix && (
+            <span style={{
+              marginLeft:8, padding:'3px 8px', borderRadius:6,
+              background:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.9)',
+              fontSize:11, fontWeight:700, letterSpacing:'0.06em', fontFamily:'var(--font-sans)',
+            }}>
+              {logoSuffix}
+            </span>
+          )}
         </Link>
       </div>
 

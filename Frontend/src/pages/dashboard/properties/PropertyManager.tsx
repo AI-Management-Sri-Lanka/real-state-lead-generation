@@ -138,7 +138,10 @@ export default function PropertyManager() {
         </div>
 
         {error && (
-          <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>
+          <p
+            className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium"
+            style={{ color: 'var(--color-error, #DC2626)' }}
+          >{error}</p>
         )}
 
         {isEditMode && (
