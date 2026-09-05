@@ -19,6 +19,7 @@ export interface UserResponse {
   email: string;
   is_active: boolean;
   created_at: string;
+  auth_provider?: string;
 }
 
 export interface TokenResponse {
@@ -31,6 +32,26 @@ export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface GoogleAuthPayload {
+  id_token: string;
+}
+
+export interface VerifyOtpPayload {
+  email: string;
+  otp: string;
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  otp: string;
+  new_password: string;
+  confirm_password: string;
 }
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
@@ -124,6 +145,31 @@ export const authApi = {
     
     return { user: userData.data, tokens };
   },
+
+  async googleAuth(payload: GoogleAuthPayload): Promise<{ user: UserResponse, tokens: TokenResponse }> {
+    const res = await fetch(`${BASE_URL}/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const errorMessage = err.error?.message || err.detail || err.message || "Google sign-in failed";
+      throw new Error(errorMessage);
+    }
+    const resData = await res.json() as ApiResponse<TokenResponse>;
+    const tokens = resData.data;
+
+    // Fetch user info with the new token
+    const userRes = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${tokens.access_token}` },
+    });
+    if (!userRes.ok) throw new Error("Failed to fetch user after Google sign-in");
+    const userData = await userRes.json() as ApiResponse<UserResponse>;
+
+    return { user: userData.data, tokens };
+  },
   
   async getMe(token?: string): Promise<UserResponse> {
     // We can use fetchWithAuth which handles the token automatically
@@ -145,6 +191,44 @@ export const authApi = {
     }
     const resData = await res.json() as ApiResponse<UserResponse>;
     return resData.data;
+  },
+
+  async forgotPassword(payload: ForgotPasswordPayload): Promise<{ email: string; expires_in_minutes: number; otp?: string }> {
+    const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || err.detail || err.message || "Failed to send OTP");
+    }
+    const resData = await res.json() as ApiResponse<{ email: string; expires_in_minutes: number; otp?: string }>;
+    return resData.data;
+  },
+
+  async verifyOTP(payload: VerifyOtpPayload): Promise<void> {
+    const res = await fetch(`${BASE_URL}/auth/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || err.detail || err.message || "OTP verification failed");
+    }
+  },
+
+  async resetPassword(payload: ResetPasswordPayload): Promise<void> {
+    const res = await fetch(`${BASE_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || err.detail || err.message || "Password reset failed");
+    }
   },
 
   async changePassword(payload: { current_password: string; new_password: string; confirm_password?: string }): Promise<void> {

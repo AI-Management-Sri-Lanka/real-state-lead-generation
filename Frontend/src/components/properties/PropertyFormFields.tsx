@@ -130,7 +130,7 @@ export function PropertyFormFields({
             <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">Drop image files anywhere in that box to upload.</p>
           )}
           {uploadError && (
-            <p className="text-xs font-medium text-red-500 dark:text-red-400">{uploadError}</p>
+            <p className="text-xs font-medium" style={{ color: 'var(--color-error, #DC2626)' }}>{uploadError}</p>
           )}
 
           {/* Image previews with thumbnails */}
@@ -185,7 +185,7 @@ function TextInput({ label, value, onChange, placeholder, type = 'text', error }
       <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500" />
-      {error && <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="mt-1 text-xs font-medium" style={{ color: 'var(--color-error, #DC2626)' }}>{error}</p>}
     </div>
   )
 }

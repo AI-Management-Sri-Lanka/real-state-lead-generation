@@ -8,6 +8,7 @@ export interface User {
   email: string;
   is_active: boolean;
   created_at: string;
+  auth_provider?: string;
 }
 
 export interface AuthContextType {
@@ -16,6 +17,7 @@ export interface AuthContextType {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (full_name: string, email: string, password: string, confirm_password: string) => Promise<void>;
+  googleSignIn: (idToken: string) => Promise<void>;
   signOut: () => void;
   error: string | null;
 }
@@ -93,6 +95,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const googleSignIn = useCallback(async (idToken: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { user: userData, tokens } = await authApi.googleAuth({ id_token: idToken });
+      setUser(userData);
+      localStorage.setItem("aimsl_user", JSON.stringify(userData));
+      localStorage.setItem("aimsl_token", tokens.access_token);
+      localStorage.setItem("aimsl_refresh_token", tokens.refresh_token);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Google sign-in failed";
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const signOut = useCallback(() => {
     setUser(null);
     setError(null);
@@ -109,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         signIn,
         signUp,
+        googleSignIn,
         signOut,
         error,
       }}

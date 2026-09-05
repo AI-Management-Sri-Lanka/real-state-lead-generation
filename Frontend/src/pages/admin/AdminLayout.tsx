@@ -1,6 +1,6 @@
 // src/pages/admin/AdminLayout.tsx
 // Shared sidebar + topbar shell for all Master Admin pages
-import { useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, Users, MessageSquare, Shield,
@@ -18,14 +18,39 @@ const NAV_ITEMS = [
   { to: '/admin/manage',      icon: Shield,           label: 'Admins'      },
 ]
 
+// Tailwind's `md` breakpoint (768px) — below this we treat the sidebar as an
+// off-canvas mobile drawer instead of a collapsible desktop rail.
+const MOBILE_BREAKPOINT = 768
+
 export default function AdminLayout() {
   const navigate = useNavigate()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  // On desktop this means "expanded rail" (vs icon-only). On mobile this means
+  // "drawer open" (vs fully hidden off-canvas). Defaults to open on desktop,
+  // closed on mobile so the drawer never covers the screen on first load.
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window === 'undefined' || window.innerWidth >= MOBILE_BREAKPOINT
+  )
   const mainRef = useRef<HTMLElement>(null)
   const admin = (() => {
     try { return JSON.parse(localStorage.getItem('aimsl_admin') ?? '{}') }
     catch { return {} }
   })()
+
+  // Keep the sidebar state sane across resizes (e.g. rotating a tablet, or
+  // resizing a desktop browser window down past the breakpoint).
+  useEffect(() => {
+    const handleResize = () => {
+      setSidebarOpen(window.innerWidth >= MOBILE_BREAKPOINT)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const closeOnMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT) {
+      setSidebarOpen(false)
+    }
+  }
 
   const handleLogout = async () => {
     await adminAuthApi.logout()
@@ -42,10 +67,22 @@ export default function AdminLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
 
+      {/* ── Mobile backdrop ─────────────────────────────────────────────── */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm md:hidden"
+          aria-hidden="true"
+        />
+      )}
+
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside
-        className={`flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out border-r border-slate-800/80 bg-slate-900
-          ${sidebarOpen ? 'w-56' : 'w-16'}`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-shrink-0 flex-col border-r border-slate-800/80 bg-slate-900
+          shadow-2xl transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:static md:z-0 md:shadow-none md:transition-[width] md:duration-300 md:translate-x-0
+          ${sidebarOpen ? 'md:w-56' : 'md:w-16'}`}
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-800/80">
@@ -58,6 +95,14 @@ export default function AdminLayout() {
               <p className="text-[10px] text-indigo-400 font-semibold tracking-widest uppercase mt-0.5">Admin</p>
             </div>
           )}
+          {/* Close button, mobile-only */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="ml-auto flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors md:hidden"
+            aria-label="Close menu"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Nav links */}
@@ -66,6 +111,7 @@ export default function AdminLayout() {
             <NavLink
               key={to}
               to={to}
+              onClick={closeOnMobile}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
                 ${isActive
@@ -113,30 +159,39 @@ export default function AdminLayout() {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
         {/* Top bar */}
-        <header className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur">
+        <header className="flex-shrink-0 flex items-center justify-between gap-2 px-3 py-3 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur sm:px-6">
           <button
             onClick={() => setSidebarOpen(v => !v)}
-            className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
+            className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
+            aria-label="Toggle menu"
           >
             {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-500 hover:text-white hover:border-white/20 cursor-pointer transition-colors">
               <Bell size={14} />
             </div>
             <a
               href="/"
               target="_blank"
-              className="text-xs font-medium text-slate-500 hover:text-white transition-colors"
+              className="text-xs font-medium text-slate-500 hover:text-white transition-colors whitespace-nowrap"
             >
               ← View site
             </a>
+            {/* Quick logout, visible even when the sidebar is collapsed/closed */}
+            <button
+              onClick={handleLogout}
+              title="Logout"
+              className="flex-shrink-0 p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         </header>
 
         {/* Page outlet */}
-        <main ref={mainRef} className="flex-1 overflow-y-auto p-6">
+        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 flex flex-col">
           <Outlet />
         </main>
 

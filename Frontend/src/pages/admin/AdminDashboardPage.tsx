@@ -48,7 +48,7 @@ function DonutChart({ verified, unverified }: { verified: number; unverified: nu
   const verifiedDash = (verified / total) * circumference
 
   return (
-    <div className="flex items-center gap-8">
+    <div className="flex flex-wrap items-center gap-6 sm:gap-8">
       <div className="relative w-28 h-28 flex-shrink-0">
         <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
           <circle cx="50" cy="50" r="40" fill="none" stroke="#334155" strokeWidth="12" />
@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-8 max-w-7xl mx-auto">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-slate-500">Platform overview and analytics</p>
@@ -158,7 +158,7 @@ export default function AdminDashboardPage() {
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-400 hover:text-white hover:border-white/20 transition-colors disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-400 hover:text-white hover:border-white/20 transition-colors disabled:opacity-50 self-start sm:self-auto"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Refresh
@@ -242,21 +242,23 @@ export default function AdminDashboardPage() {
                 {analytics.top_properties.length === 0 ? (
                   <p className="p-6 text-sm text-slate-400 font-medium text-center">No leads generated yet.</p>
                 ) : (
-                  <table className="w-full text-sm">
-                    <tbody className="divide-y divide-slate-800">
-                      {analytics.top_properties.map((p, idx) => (
-                        <tr key={p.property_id} className="hover:bg-slate-800/40 transition-colors">
-                          <td className="p-4 w-8 text-slate-400 font-mono text-xs font-semibold">{idx + 1}</td>
-                          <td className="p-4 text-white font-medium truncate max-w-[200px]">{p.title}</td>
-                          <td className="p-4 text-right">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 text-xs font-semibold text-emerald-400">
-                              {p.lead_count} Leads
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <tbody className="divide-y divide-slate-800">
+                        {analytics.top_properties.map((p, idx) => (
+                          <tr key={p.property_id} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="p-4 w-8 text-slate-400 font-mono text-xs font-semibold">{idx + 1}</td>
+                            <td className="p-4 text-white font-medium truncate max-w-[140px] sm:max-w-[200px]">{p.title}</td>
+                            <td className="p-4 text-right whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                                {p.lead_count} Leads
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 
@@ -269,24 +271,26 @@ export default function AdminDashboardPage() {
                 {analytics.top_owners.length === 0 ? (
                   <p className="p-6 text-sm text-slate-400 font-medium text-center">No owners have received leads yet.</p>
                 ) : (
-                  <table className="w-full text-sm">
-                    <tbody className="divide-y divide-slate-800">
-                      {analytics.top_owners.map((o, idx) => (
-                        <tr key={o.user_id} className="hover:bg-slate-800/40 transition-colors">
-                          <td className="p-4 w-8 text-slate-400 font-mono text-xs font-semibold">{idx + 1}</td>
-                          <td className="p-4">
-                            <p className="text-white font-medium">{o.full_name}</p>
-                            <p className="text-[10px] text-slate-400 font-mono">User ID: {o.user_id}</p>
-                          </td>
-                          <td className="p-4 text-right">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/30 px-2.5 py-1 text-xs font-semibold text-orange-400">
-                              {o.lead_count} Leads
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <tbody className="divide-y divide-slate-800">
+                        {analytics.top_owners.map((o, idx) => (
+                          <tr key={o.user_id} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="p-4 w-8 text-slate-400 font-mono text-xs font-semibold">{idx + 1}</td>
+                            <td className="p-4">
+                              <p className="text-white font-medium">{o.full_name}</p>
+                              <p className="text-[10px] text-slate-400 font-mono">User ID: {o.user_id}</p>
+                            </td>
+                            <td className="p-4 text-right whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/30 px-2.5 py-1 text-xs font-semibold text-orange-400">
+                                {o.lead_count} Leads
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 

@@ -62,6 +62,34 @@ class AppError:
         http_status=401
     )
     
+    AUTH_GOOGLE_TOKEN_INVALID = ErrorDefinition(
+        code="AUTH-004",
+        name="Invalid Google Token",
+        category="authentication_error",
+        severity="medium",
+        module="auth",
+        user_message="Google sign-in failed. Please try again.",
+        internal_message="Google ID token verification failed (bad signature, audience, issuer, or expired).",
+        recommended_action="Retry Google sign-in or use email/password instead.",
+        log_level="warn",
+        alert_required=False,
+        http_status=401
+    )
+
+    AUTH_GOOGLE_NOT_CONFIGURED = ErrorDefinition(
+        code="AUTH-005",
+        name="Google Sign-In Not Configured",
+        category="system_error",
+        severity="high",
+        module="auth",
+        user_message="Google sign-in is not available right now.",
+        internal_message="GOOGLE_CLIENT_ID is not configured on the server.",
+        recommended_action="Set GOOGLE_CLIENT_ID in the backend environment configuration.",
+        log_level="error",
+        alert_required=True,
+        http_status=503
+    )
+
     # DB Errors
     DB_INTEGRITY_ERROR = ErrorDefinition(
         code="DB-001",

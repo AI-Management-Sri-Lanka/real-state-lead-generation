@@ -1,14 +1,82 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { getOwnerInquiries, Inquiry } from '@/api/inquiryApi'
-import { Loader2, Inbox, Calendar, User, Mail, Phone, Home } from 'lucide-react'
+import { Loader2, Inbox, Calendar, User, Mail, Phone, Home, ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { InquiryMessage } from '@/components/InquiryMessage'
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 8
+
+/** Builds a compact page-number list with ellipses, e.g. 1 … 4 5 [6] 7 8 … 12 */
+function getPageNumbers(current: number, total: number): (number | '…')[] {
+  const delta = 1
+  const range: (number | '…')[] = []
+  const left = Math.max(2, current - delta)
+  const right = Math.min(total - 1, current + delta)
+
+  range.push(1)
+  if (left > 2) range.push('…')
+  for (let i = left; i <= right; i++) range.push(i)
+  if (right < total - 1) range.push('…')
+  if (total > 1) range.push(total)
+
+  return range
+}
+
+function Pagination({
+  page, totalPages, onChange,
+}: { page: number; totalPages: number; onChange: (p: number) => void }) {
+  if (totalPages <= 1) return null
+
+  return (
+    <nav className="flex flex-wrap items-center justify-center gap-1.5" aria-label="Requests pagination">
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-indigo-400 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+      >
+        <ChevronLeft size={14} /> Previous
+      </button>
+
+      {getPageNumbers(page, totalPages).map((p, i) =>
+        p === '…' ? (
+          <span key={`ellipsis-${i}`} className="px-2 text-xs text-slate-400 select-none">…</span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onChange(p)}
+            aria-current={p === page ? 'page' : undefined}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold transition ${
+              p === page
+                ? 'bg-indigo-600 text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)]'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-400 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page === totalPages}
+        className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-indigo-400 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+      >
+        Next <ChevronRight size={14} />
+      </button>
+    </nav>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function InquiriesList() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     async function fetchInquiries() {
@@ -24,6 +92,17 @@ export default function InquiriesList() {
     }
     fetchInquiries()
   }, [])
+
+  // Reset to page 1 whenever the underlying list changes (e.g. after a refetch)
+  useEffect(() => {
+    setPage(1)
+  }, [inquiries.length])
+
+  const totalPages = Math.max(1, Math.ceil(inquiries.length / PAGE_SIZE))
+  const paginated = useMemo(
+    () => inquiries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [inquiries, page]
+  )
 
   return (
     <DashboardLayout activeNav="Requests">
@@ -51,7 +130,7 @@ export default function InquiriesList() {
             </div>
           ) : (
             <div className="space-y-4 max-w-5xl mx-auto">
-              {inquiries.map((inquiry) => (
+              {paginated.map((inquiry) => (
                 <div key={inquiry.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-indigo-100 hover:shadow-md dark:border-slate-800/90 dark:bg-slate-900/70 dark:hover:border-indigo-900/60">
                   <div className="flex flex-col lg:flex-row gap-6 justify-between">
                     <div className="space-y-4 flex-1">
@@ -101,6 +180,15 @@ export default function InquiriesList() {
                   </div>
                 </div>
               ))}
+
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center gap-3 pt-4">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, inquiries.length)} of {inquiries.length} requests
+                  </p>
+                  <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+                </div>
+              )}
             </div>
           )}
         </div>

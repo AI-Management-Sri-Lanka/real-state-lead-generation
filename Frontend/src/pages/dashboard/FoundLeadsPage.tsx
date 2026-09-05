@@ -4,7 +4,7 @@ import { fetchWithAuth } from '@/api/authApi'
 import { BASE_URL } from '@/api/config'
 import {
   Loader2, Zap, Search, ExternalLink, MapPin, Calendar,
-  Tag, User, ArrowRight, Filter, X
+  Tag, User, ArrowRight, Filter, X, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -241,6 +241,71 @@ function LeadCard({ lead, index }: { lead: EnrichedLead; index: number }) {
   )
 }
 
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 12 // matches the 3-column grid nicely (4 full rows per page)
+
+/** Builds a compact page-number list with ellipses, e.g. 1 … 4 5 [6] 7 8 … 12 */
+function getPageNumbers(current: number, total: number): (number | '…')[] {
+  const delta = 1
+  const range: (number | '…')[] = []
+  const left = Math.max(2, current - delta)
+  const right = Math.min(total - 1, current + delta)
+
+  range.push(1)
+  if (left > 2) range.push('…')
+  for (let i = left; i <= right; i++) range.push(i)
+  if (right < total - 1) range.push('…')
+  if (total > 1) range.push(total)
+
+  return range
+}
+
+function Pagination({
+  page, totalPages, onChange,
+}: { page: number; totalPages: number; onChange: (p: number) => void }) {
+  if (totalPages <= 1) return null
+
+  return (
+    <nav className="flex flex-wrap items-center justify-center gap-1.5" aria-label="Leads pagination">
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        className="inline-flex h-9 items-center gap-1 rounded-xl border border-sky-200/80 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-sky-400 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-sky-200/80 disabled:hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+      >
+        <ChevronLeft size={14} /> Previous
+      </button>
+
+      {getPageNumbers(page, totalPages).map((p, i) =>
+        p === '…' ? (
+          <span key={`ellipsis-${i}`} className="px-2 text-xs text-slate-400 select-none">…</span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onChange(p)}
+            aria-current={p === page ? 'page' : undefined}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold transition ${
+              p === page
+                ? 'bg-sky-500 text-white shadow-[0_4px_12px_rgba(14,116,144,0.3)]'
+                : 'border border-sky-200/80 bg-white text-slate-600 hover:border-sky-400 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page === totalPages}
+        className="inline-flex h-9 items-center gap-1 rounded-xl border border-sky-200/80 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-sky-400 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-sky-200/80 disabled:hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+      >
+        Next <ChevronRight size={14} />
+      </button>
+    </nav>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const PLATFORMS = ['All', 'Instagram', 'TikTok', 'Facebook', 'Twitter', 'LinkedIn', 'Reddit']
@@ -253,6 +318,7 @@ export default function FoundLeadsPage() {
   const [query,         setQuery]         = useState('')
   const [platform,      setPlatform]      = useState('All')
   const [showFilters,   setShowFilters]   = useState(false)
+  const [page,          setPage]          = useState(1)
 
   useEffect(() => {
     async function loadLeads() {
@@ -330,6 +396,19 @@ export default function FoundLeadsPage() {
     })
     return counts
   }, [leads])
+
+  // Whenever the underlying result set changes (search, platform filter, or
+  // a fresh data load), snap back to page 1 -- otherwise the user could get
+  // stuck on a page number that no longer has any leads on it.
+  useEffect(() => {
+    setPage(1)
+  }, [query, platform, leads])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page]
+  )
 
   return (
     <DashboardLayout activeNav="Found Leads">
@@ -437,11 +516,22 @@ export default function FoundLeadsPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((lead, i) => (
-                <LeadCard key={`${lead.userId}-${lead.platform}-${i}`} lead={lead} index={i + 1} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {paginated.map((lead, i) => (
+                  <LeadCard key={`${lead.userId}-${lead.platform}-${(page - 1) * PAGE_SIZE + i}`} lead={lead} index={(page - 1) * PAGE_SIZE + i + 1} />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center gap-3 pt-2">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} leads
+                  </p>
+                  <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+                </div>
+              )}
+            </>
           )}
 
         </div>
