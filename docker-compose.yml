@@ -61,12 +61,8 @@ services:
       context: ./Frontend
       dockerfile: Dockerfile
       args:
-        # Set to "" so API calls go to the same origin (nginx proxies them)
-        VITE_API_URL: ""
-        # Pulled from a root-level .env (next to this compose file) or the
-        # shell environment when you run `docker compose build`. This is a
-        # SEPARATE mechanism from Frontend/.env -- that file never reaches
-        # the Docker build context (see Frontend/.dockerignore).
+        # Set to "/api/v1" so API calls use relative paths (nginx proxies them)
+        VITE_API_URL: "/api/v1"
         VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
     container_name: aimsl_frontend
     restart: always
