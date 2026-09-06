@@ -130,6 +130,14 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
   function addImage() {
     const url = imageInput.trim()
     if (!url) return
+    if (url.startsWith('data:')) {
+      setUploadError('Pasting raw image data isn\'t supported here — use the Upload button to add a file from your device instead.')
+      return
+    }
+    if (url.length > 500) {
+      setUploadError('That image link is too long (max 500 characters). Use a shorter URL, or upload the file directly instead.')
+      return
+    }
     set('images', [...form.images, url])
     setImageInput('')
   }
@@ -175,8 +183,10 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
 
     setIsUploading(true)
     try {
-      // Use uploadApi instead of base64
-      const urls = await Promise.all(validFiles.map(file => uploadApi.uploadImage(file)))
+      // Use uploadApi instead of base64. isAdminMode is passed through so the
+      // upload authenticates with the correct token (admin vs regular user) --
+      // without it, admin-mode uploads would silently send the wrong/no auth.
+      const urls = await Promise.all(validFiles.map(file => uploadApi.uploadImage(file, isAdminMode)))
       // uploadApi.uploadImage() returns a URL relative to the backend (e.g. "/uploads/x.jpg").
       // We store it as-is here; resolveImageUrl() in types/property.ts prefixes it with
       // API_ROOT wherever it's displayed, so it always resolves against the backend, not
@@ -220,6 +230,21 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
 
     if (!form.title.trim() || !form.price || !form.location.trim() || !form.listedBy.trim()) {
       setError('Title, price, location and listed-by are required.')
+      return
+    }
+
+    // Guard against raw base64 data URIs or oversized links making it into
+    // the images list (e.g. pasted directly into the URL field). The backend
+    // column caps at 512 chars, so anything longer fails with an opaque 422
+    // partway through saving -- catch it up front instead, before any
+    // network calls, so the property's other fields don't get half-saved.
+    const oversizedImages = allImages.filter(url => url.startsWith('data:') || url.length > 500)
+    if (oversizedImages.length > 0) {
+      setError(
+        oversizedImages.some(u => u.startsWith('data:'))
+          ? 'One of the images is raw pasted image data, which isn\'t supported. Remove it and use the Upload button instead.'
+          : 'One of the image links is too long (max 500 characters). Remove it and use a shorter link or upload the file directly.'
+      )
       return
     }
 
@@ -288,17 +313,23 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
       const originalUrls = originalImages.map(img => img.url)
       const newImageUrls = allImages.filter(url => !originalUrls.includes(url))
       const startIndex = allImages.length - newImageUrls.length
+      // Whichever image is newly added first becomes the property's cover
+      // photo. Without this, uploading a new image while existing ones are
+      // still present never marks it primary (it only landed at index 0 in
+      // the old logic if it happened to be the very first image overall),
+      // so the old cover kept showing even though the upload "worked".
+      const newPrimaryIndex = newImageUrls.length > 0 ? 0 : -1
       for (let i = 0; i < newImageUrls.length; i++) {
         if (isAdminMode) {
           await adminPropertyApi.addPropertyImage(propertyId, {
             url: newImageUrls[i],
-            isPrimary: startIndex + i === 0,
+            isPrimary: i === newPrimaryIndex,
             sortOrder: startIndex + i,
           })
         } else {
           await propertyApi.addPropertyImage(propertyId, {
             url: newImageUrls[i],
-            isPrimary: startIndex + i === 0,
+            isPrimary: i === newPrimaryIndex,
             sortOrder: startIndex + i,
           })
         }
