@@ -17,7 +17,7 @@ export interface AuthContextType {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (full_name: string, email: string, password: string, confirm_password: string) => Promise<void>;
-  googleSignIn: (idToken: string) => Promise<void>;
+  googleSignIn: (idToken: string, mode?: 'signin' | 'signup') => Promise<void>;
   signOut: () => void;
   error: string | null;
 }
@@ -95,11 +95,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const googleSignIn = useCallback(async (idToken: string) => {
+  const googleSignIn = useCallback(async (idToken: string, mode: 'signin' | 'signup' = 'signin') => {
     setLoading(true);
     setError(null);
     try {
-      const { user: userData, tokens } = await authApi.googleAuth({ id_token: idToken });
+      const { user: userData, tokens } = await authApi.googleAuth({ id_token: idToken, mode });
       setUser(userData);
       localStorage.setItem("aimsl_user", JSON.stringify(userData));
       localStorage.setItem("aimsl_token", tokens.access_token);

@@ -579,12 +579,12 @@ export default function PropertyDetailPage() {
                         className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                       />
                       {formik.touched.message && formik.errors.message && (
-                        <p className="mt-1.5 text-xs font-medium text-red-500 dark:text-red-400">{formik.errors.message}</p>
+                        <p className="mt-1.5 text-xs font-medium" style={{ color: 'var(--color-error, #DC2626)' }}>{formik.errors.message}</p>
                       )}
                     </div>
 
                     {sendError && (
-                      <p className="text-sm font-medium text-red-500 bg-red-50 p-3 rounded-lg border border-red-100 dark:text-red-400 dark:bg-red-950/20 dark:border-red-900/40">{sendError}</p>
+                      <p className="text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100 dark:bg-red-950/20 dark:border-red-900/40" style={{ color: 'var(--color-error, #DC2626)' }}>{sendError}</p>
                     )}
 
                     <button
@@ -664,7 +664,7 @@ function Field({
             : 'border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700'
         }`}
       />
-      {error && <p className="mt-1.5 text-xs font-medium text-red-500 dark:text-red-400">{error}</p>}
+      {error && <p className="mt-1.5 text-xs font-medium" style={{ color: 'var(--color-error, #DC2626)' }}>{error}</p>}
     </div>
   )
 }

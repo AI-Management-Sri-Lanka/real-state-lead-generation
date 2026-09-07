@@ -20,7 +20,7 @@ export const uploadApi = {
     let res: Response;
     if (isAdminMode) {
       const adminToken = localStorage.getItem('aimsl_admin_token');
-      res = await fetch(`${BASE_URL}/upload`, {
+      res = await fetch(`${BASE_URL}/admin/upload`, {
         method: 'POST',
         headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {},
         // DO NOT set Content-Type header here;

@@ -83,7 +83,12 @@ async def google_auth(payload: GoogleAuthRequest, db: AsyncSession = Depends(get
     login, so the frontend can treat it identically after this call.
     """
     try:
-        db_user = await authenticate_or_create_google_user(db, payload.id_token, commit=False)
+        db_user = await authenticate_or_create_google_user(
+            db,
+            payload.id_token,
+            commit=False,
+            allow_create=payload.mode == "signup",
+        )
         tokens = await generate_tokens_for_user(db_user.id, db, commit=False)
         await db.commit()
         return ok(message="Google sign-in successful", item=tokens)
@@ -180,7 +185,10 @@ async def forgot_password(payload: ForgotPasswordRequest, db: AsyncSession = Dep
     """
     user = await get_user_by_email_db(db, payload.email)
     if not user:
-        return ok(message="If an account exists for this email, a one-time password has been generated.")
+        raise AppException(
+            error=AppError.AUTH_USER_NOT_FOUND,
+            custom_message="No account is registered with this email. Please sign up first before resetting your password.",
+        )
 
     otp = generate_otp()
     expires_at = get_otp_expiration(minutes=settings.OTP_EXPIRE_MINUTES)

@@ -32,13 +32,23 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User:
     """Authenticate a user by email and password."""
     user = await get_user_by_email(db, email)
+    if not user:
+        raise AppException(
+            error=AppError.AUTH_USER_NOT_FOUND,
+            custom_message="No account is registered with this email. Please sign up first before signing in.",
+        )
     # Google-only accounts have no hashed_password to check against.
-    if not user or not user.hashed_password or not verify_password(password, user.hashed_password):
+    if not user.hashed_password or not verify_password(password, user.hashed_password):
         raise AppException(error=AppError.AUTH_INVALID_CREDENTIALS)
     return user
 
 
-async def authenticate_or_create_google_user(db: AsyncSession, id_token: str, commit: bool = True) -> User:
+async def authenticate_or_create_google_user(
+    db: AsyncSession,
+    id_token: str,
+    commit: bool = True,
+    allow_create: bool = True,
+) -> User:
     """Sign in with Google: verify the ID token, then either
 
     1. return the user already linked to this Google account, or
@@ -62,6 +72,12 @@ async def authenticate_or_create_google_user(db: AsyncSession, id_token: str, co
         # they can sign in either way going forward.
         return await user_crud.update_user_db(
             db, existing_by_email, {"google_id": profile.google_id}, commit=commit
+        )
+
+    if not allow_create:
+        raise AppException(
+            error=AppError.AUTH_USER_NOT_FOUND,
+            custom_message="No account is registered with this Google email. Please sign up first.",
         )
 
     # Brand-new account, Google-only (no local password set).

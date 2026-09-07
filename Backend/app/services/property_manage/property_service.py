@@ -112,6 +112,9 @@ async def add_image(
     prop = await get_property(db, property_id)
     if not is_admin and prop.owner_id != actor_id:
         raise HTTPException(status_code=403, detail="Not authorized to update this property")
+    if payload.is_primary:
+        for existing_image in prop.images:
+            existing_image.is_primary = False
     img = PropertyImage(property_id=property_id, **payload.model_dump())
     db.add(img)
     await db.commit()

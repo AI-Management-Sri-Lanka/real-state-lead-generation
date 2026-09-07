@@ -68,7 +68,7 @@ export function SignUpForm() {
   async function handleGoogleSuccess(idToken: string) {
     setGoogleLoading(true);
     try {
-      await googleSignIn(idToken);
+      await googleSignIn(idToken, 'signup');
       toast.success("Account created! Welcome.");
       navigate("/dashboard");
     } catch (err: unknown) {
