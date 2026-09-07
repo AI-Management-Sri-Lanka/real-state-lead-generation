@@ -464,7 +464,7 @@ export default function ContactPage() {
 
                   {/* Error */}
                   {showError && (
-                    <p className="sm:ml-9 mt-2 text-xs text-red-500 dark:text-red-400">{errors[q.id]}</p>
+                    <p className="sm:ml-9 mt-2 text-xs" style={{ color: 'var(--color-error, #DC2626)' }}>{errors[q.id]}</p>
                   )}
                 </div>
               );
@@ -473,7 +473,7 @@ export default function ContactPage() {
             {/* Submit */}
             <div className="pb-10">
               {sendError && (
-                <p className="mb-3 text-center text-sm text-red-500">{sendError}</p>
+                <p className="mb-3 text-center text-sm" style={{ color: 'var(--color-error, #DC2626)' }}>{sendError}</p>
               )}
               <button
                 type="submit"

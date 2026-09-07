@@ -40,6 +40,7 @@ export interface ForgotPasswordPayload {
 
 export interface GoogleAuthPayload {
   id_token: string;
+  mode?: 'signin' | 'signup';
 }
 
 export interface VerifyOtpPayload {
@@ -150,7 +151,7 @@ export const authApi = {
     const res = await fetch(`${BASE_URL}/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ mode: 'signin', ...payload }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

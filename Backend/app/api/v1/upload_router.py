@@ -6,6 +6,7 @@ import hashlib
 from app.api.v1.auth import get_current_user
 from app.models.user import User
 from app.core.config import settings
+from app.services.dependencies.deps import require_master_admin
 
 router = APIRouter(tags=["upload"])
 
@@ -16,22 +17,15 @@ def get_user_dir_name(user_id: int) -> str:
     hashed = hmac.new(key, msg, hashlib.sha256).hexdigest()
     return hashed[:16] # Use first 16 chars for directory name
 
-@router.post("/upload")
-async def upload_file(
-    request: Request,
-    file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user)
-):
-    if not file.content_type.startswith("image/"):
+async def _save_upload(request: Request, file: UploadFile, user_id: int):
+    if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
-    # Generate user-specific encrypted directory
-    user_dir_name = get_user_dir_name(current_user.id)
+    user_dir_name = get_user_dir_name(user_id)
     upload_dir = os.path.join("uploads", user_dir_name)
     os.makedirs(upload_dir, exist_ok=True)
 
-    # Generate unique filename
-    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
     unique_filename = f"{uuid.uuid4().hex}.{ext}"
     file_path = os.path.join(upload_dir, unique_filename)
 
@@ -42,8 +36,23 @@ async def upload_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
-    # Return the full URL path
-    base_url = str(request.base_url)
-    if base_url.endswith("/"):
-        base_url = base_url[:-1]
+    base_url = str(request.base_url).rstrip("/")
     return {"url": f"{base_url}/uploads/{user_dir_name}/{unique_filename}"}
+
+
+@router.post("/upload")
+async def upload_file(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    return await _save_upload(request, file, current_user.id)
+
+
+@router.post("/admin/upload")
+async def admin_upload_file(
+    request: Request,
+    file: UploadFile = File(...),
+    admin: dict = Depends(require_master_admin),
+):
+    return await _save_upload(request, file, admin["admin_id"])

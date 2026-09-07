@@ -1,12 +1,13 @@
 // src/pages/admin/AdminLayout.tsx
 // Shared sidebar + topbar shell for all Master Admin pages
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, Users, MessageSquare, Shield,
   LogOut, Menu, X, ChevronRight, Bell, Star
 } from 'lucide-react'
 import { BackToTopButton } from '@/components/ui/BackToTopButton'
+import { Logo } from '@/components/ui/Logo'
 import { adminAuthApi } from '@/api/adminApi'
 
 const NAV_ITEMS = [
@@ -84,21 +85,24 @@ export default function AdminLayout() {
           md:static md:z-0 md:shadow-none md:transition-[width] md:duration-300 md:translate-x-0
           ${sidebarOpen ? 'md:w-56' : 'md:w-16'}`}
       >
-        {/* Logo */}
+        {/* Logo -- clicking it takes you to the public home page */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-800/80">
-          <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-900/50">
-            <Shield size={16} className="text-white" />
-          </div>
+          <Link to="/" className="flex items-center gap-3 min-w-0" title="Go to home page">
+            {sidebarOpen ? (
+              <Logo size="sm" showText={true} whiteText={true} />
+            ) : (
+              <Logo size="sm" showText={false} />
+            )}
+          </Link>
           {sidebarOpen && (
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold text-white leading-none">LeadAI</p>
-              <p className="text-[10px] text-indigo-400 font-semibold tracking-widest uppercase mt-0.5">Admin</p>
-            </div>
+            <span className="ml-auto flex-shrink-0 rounded-md bg-indigo-600/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
+              Admin
+            </span>
           )}
           {/* Close button, mobile-only */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="ml-auto flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors md:hidden"
+            className="ml-2 flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors md:hidden"
             aria-label="Close menu"
           >
             <X size={18} />

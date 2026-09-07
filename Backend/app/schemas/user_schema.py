@@ -51,12 +51,14 @@ class GoogleAuthRequest(BaseModel):
     """Payload sent by the frontend after Google Identity Services returns
     an ID token for the signed-in Google account."""
     id_token: str = Field(..., min_length=10)
+    mode: str = Field(default="signin", pattern="^(signin|signup)$")
 
     model_config = {
         "extra": "forbid",
         "json_schema_extra": {
             "example": {
-                "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij..."
+                "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...",
+                "mode": "signin"
             }
         }
     }

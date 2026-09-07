@@ -78,7 +78,7 @@ class PropertyResponse(PropertyBase):
     id: str
     owner_id: Optional[int] = Field(None, serialization_alias="ownerId")
     owner: Optional[OwnerProfile] = None
-    images: List[PropertyImageResponse] = []
+    images: List[PropertyImageResponse] = Field(default_factory=list)
 
     @field_validator("id", mode="before")
     @classmethod
@@ -86,6 +86,27 @@ class PropertyResponse(PropertyBase):
         if isinstance(v, int):
             return f"prop-{v:03d}"
         return v
+
+    @field_validator("images", mode="before")
+    @classmethod
+    def convert_images(cls, v):
+        if not v:
+            return []
+        result = []
+        for img in v:
+            if hasattr(img, "url"):
+                result.append(img)
+            elif isinstance(img, dict) and "url" in img:
+                result.append(img)
+            elif isinstance(img, str):
+                result.append({
+                    "id": 0,
+                    "property_id": 0,
+                    "url": img,
+                    "isPrimary": len(result) == 0,
+                    "sortOrder": len(result),
+                })
+        return result
 
     class Config:
         from_attributes = True
