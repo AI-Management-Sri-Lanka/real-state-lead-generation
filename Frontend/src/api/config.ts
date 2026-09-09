@@ -7,8 +7,12 @@ if (rawApiUrl === '""' || rawApiUrl === "''") {
   rawApiUrl = '';
 }
 
-// Fallback to localhost:8000 for local dev if empty
-const envApiUrl = (rawApiUrl || 'http://localhost:8000').replace(/\/$/, '');
+const defaultApiUrl = typeof window !== 'undefined'
+  ? `${window.location.protocol}//${window.location.hostname}:8000`
+  : 'http://localhost:8000';
+
+// Fallback to defaultApiUrl (not a hardcoded string) for local dev/deploys if empty
+const envApiUrl = (rawApiUrl || defaultApiUrl).replace(/\/$/, '');
 
 // Ensure absolute URL so `new URL()` doesn't crash on relative paths
 const absoluteApiUrl = envApiUrl.startsWith('http')

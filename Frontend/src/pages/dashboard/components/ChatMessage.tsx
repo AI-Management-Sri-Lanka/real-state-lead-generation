@@ -24,7 +24,10 @@ function renderContent(text: string) {
       return (
         <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 3 }}>
           <span style={{ color: 'var(--color-brand)', flexShrink: 0 }}>•</span>
-          <span dangerouslySetInnerHTML={{ __html: line.slice(2).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+          <span
+            style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
+            dangerouslySetInnerHTML={{ __html: line.slice(2).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
+          />
         </div>
       )
 
@@ -37,7 +40,7 @@ function renderContent(text: string) {
     return (
       <p
         key={i}
-        style={{ marginBottom: 2 }}
+        style={{ marginBottom: 2, overflowWrap: 'break-word', wordBreak: 'break-word' }}
         dangerouslySetInnerHTML={{
           __html: withLinks.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'),
         }}
@@ -57,6 +60,7 @@ export function ChatMessage({ message, userName = 'You' }: Props) {
         flexDirection: isUser ? 'row-reverse' : 'row',
         alignItems: 'flex-start',
         animation: 'fadeIn 0.2s ease-out',
+        minWidth: 0,
       }}
     >
       {/* Avatar */}
@@ -76,7 +80,7 @@ export function ChatMessage({ message, userName = 'You' }: Props) {
       )}
 
       {/* Bubble */}
-      <div style={{ maxWidth: '72%' }}>
+      <div style={{ maxWidth: '72%', minWidth: 0 }}>
         {/* AI label */}
         {!isUser && (
           <div
@@ -108,6 +112,8 @@ export function ChatMessage({ message, userName = 'You' }: Props) {
             boxShadow: isUser
               ? '0 12px 30px rgba(61,59,243,0.18)'
               : '0 12px 30px rgba(3,13,33,0.07)',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
           }}
         >
           {message.isTyping ? (

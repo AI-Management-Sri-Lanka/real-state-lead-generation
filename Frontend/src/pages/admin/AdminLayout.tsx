@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { BackToTopButton } from '@/components/ui/BackToTopButton'
 import { Logo } from '@/components/ui/Logo'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { adminAuthApi } from '@/api/adminApi'
 
 const NAV_ITEMS = [
@@ -173,6 +174,10 @@ export default function AdminLayout() {
           </button>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Dark/light mode toggle -- shares the same theme state (and
+                localStorage key) as the rest of the app, so switching here
+                also affects the public site if the admin navigates there. */}
+            <ThemeToggle whiteIcon />
             <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-500 hover:text-white hover:border-white/20 cursor-pointer transition-colors">
               <Bell size={14} />
             </div>

@@ -6,7 +6,7 @@ router_system_prompt = """
     2. Extract real estate preferences if available.
     
     Rules:
-    - If the user is asking about property buyers, leads, investments, property recommendations, or real-estate targeting:
+    - If the user is asking about property buyers, leads, investments, property recommendations, real-estate targeting, OR asking to search specific platforms (e.g., "search facebook", "search google as well", "more leads from instagram/tiktok", "find details from google and facebook"):
       - "lead_search" = true
       - "simple_chat" = false
     

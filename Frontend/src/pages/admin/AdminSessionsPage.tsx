@@ -147,20 +147,20 @@ export default function AdminSessionsPage() {
   )
 
   return (
-    <div className="flex flex-1 flex-col max-w-7xl mx-auto w-full relative">
+    <div className="flex flex-1 flex-col max-w-7xl mx-auto w-full min-w-0 relative">
 
-      <div className="space-y-6">
+      <div className="space-y-6 min-w-0">
 
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className="min-w-0">
             <h1 className="text-2xl font-extrabold text-white tracking-tight">Chat Sessions</h1>
             <p className="mt-1 text-sm text-slate-500">Monitor all AI conversations across the platform</p>
           </div>
           <button
             onClick={load}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-400 hover:text-white hover:border-white/20 transition-colors disabled:opacity-50 self-start sm:self-auto"
+            className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-400 hover:text-white hover:border-white/20 transition-colors disabled:opacity-50 self-start sm:self-auto flex-shrink-0"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             Refresh
@@ -169,8 +169,8 @@ export default function AdminSessionsPage() {
 
         {/* Stats */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900 px-5 py-4 flex items-center gap-4 w-full sm:w-fit shadow-sm">
-          <MessageSquare size={20} className="text-cyan-400" />
-          <div>
+          <MessageSquare size={20} className="text-cyan-400 flex-shrink-0" />
+          <div className="min-w-0">
             <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Sessions</p>
             <p className="text-2xl font-extrabold text-white">{sessions.length}</p>
           </div>
@@ -194,7 +194,7 @@ export default function AdminSessionsPage() {
           </div>
         ) : error ? (
           <div className="flex items-center gap-3 rounded-2xl border border-red-900/50 bg-red-950/20 p-5 text-sm text-red-400">
-            <AlertCircle size={20} className="shrink-0" /> {error}
+            <AlertCircle size={20} className="shrink-0" /> <span className="break-words">{error}</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center text-slate-400 font-medium">
@@ -206,7 +206,7 @@ export default function AdminSessionsPage() {
           <div className="space-y-3 md:hidden">
             {paginated.map((s, i) => (
               <div key={s.session_id || i} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-sm">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="flex-shrink-0 h-9 w-9 rounded-xl bg-cyan-600/20 flex items-center justify-center">
                     <MessageSquare size={16} className="text-cyan-400" />
                   </div>
@@ -216,10 +216,10 @@ export default function AdminSessionsPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between border-t border-slate-800 pt-3">
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
-                    <span>#{s.user_id || 'Guest'}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 font-semibold text-indigo-400">
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-800 pt-3">
+                  <div className="flex items-center gap-3 text-xs text-slate-400 min-w-0">
+                    <span className="flex-shrink-0">#{s.user_id || 'Guest'}</span>
+                    <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 font-semibold text-indigo-400">
                       {s.message_count ?? 0} msgs
                     </span>
                   </div>
@@ -235,7 +235,7 @@ export default function AdminSessionsPage() {
                       }
                       setSelectedSessionId(s.session_id)
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-200"
+                    className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-200"
                   >
                     <Eye size={13} /> View
                   </button>
@@ -247,7 +247,14 @@ export default function AdminSessionsPage() {
           {/* Desktop table */}
           <div className="hidden overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-md md:block">
             <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-[38%]" />
+                <col className="w-[16%]" />
+                <col className="w-[14%]" />
+                <col className="w-[18%]" />
+                <col className="w-[14%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-slate-800 bg-slate-800/60 text-left text-xs font-bold uppercase tracking-wider text-slate-300">
                   <th className="px-5 py-3.5">Session</th>
@@ -260,24 +267,25 @@ export default function AdminSessionsPage() {
               <tbody className="divide-y divide-slate-800/60">
                 {paginated.map((s, i) => (
                   <tr key={s.session_id || i} className="hover:bg-slate-800/40 transition-colors">
+                    {/* Session title/id */}
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="flex-shrink-0 h-9 w-9 rounded-xl bg-cyan-600/20 flex items-center justify-center">
                           <MessageSquare size={16} className="text-cyan-400" />
                         </div>
-                        <div>
-                          <p className="font-semibold text-white truncate max-w-xs">{s.title || 'Untitled Session'}</p>
-                          <p className="text-xs text-slate-400 font-mono truncate w-24">{s.session_id}</p>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-white">{s.title || 'Untitled Session'}</p>
+                          <p className="truncate text-xs text-slate-400 font-mono">{s.session_id}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-slate-300 font-medium">#{s.user_id || 'Guest'}</td>
+                    <td className="px-5 py-4 text-slate-300 font-medium truncate">#{s.user_id || 'Guest'}</td>
                     <td className="px-5 py-4">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-1 text-xs font-semibold text-indigo-400">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-1 text-xs font-semibold text-indigo-400 whitespace-nowrap">
                         {s.message_count ?? 0} msgs
                       </span>
                     </td>
-                    <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-300 font-medium">
+                    <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-300 font-medium truncate">
                       {s.updated_at ? new Date(s.updated_at).toLocaleDateString('en-US', {
                         year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                       }) : '—'}
@@ -296,7 +304,7 @@ export default function AdminSessionsPage() {
                           }
                           setSelectedSessionId(s.session_id)
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors whitespace-nowrap"
                       >
                         <Eye size={14} /> Transcript
                       </button>
@@ -327,16 +335,16 @@ export default function AdminSessionsPage() {
       {transcriptOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-2xl h-[80vh] flex flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-800/60 p-4">
-              <div>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-800/60 p-4">
+              <div className="min-w-0">
                 <h2 className="text-base font-bold text-white">Session Transcript</h2>
                 {selectedSessionId && (
-                  <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedSessionId}</p>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5 break-all">{selectedSessionId}</p>
                 )}
               </div>
               <button
                 onClick={() => { setTranscriptOpen(false); setSelectedSessionId(null) }}
-                className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+                className="flex-shrink-0 rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
               >
                 <X size={18} />
               </button>
@@ -345,7 +353,7 @@ export default function AdminSessionsPage() {
             {/* Same ChatMessage component used in the live AI Assistant chat --
                 so a transcript containing a lead-listing response renders as
                 the same card grid here, instead of raw markdown text. */}
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 flex flex-col gap-6 min-w-0">
               {messagesLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
                   <Loader2 size={24} className="animate-spin text-cyan-500" />
@@ -353,7 +361,7 @@ export default function AdminSessionsPage() {
                 </div>
               ) : messagesError ? (
                 <div className="flex items-center gap-3 rounded-2xl border border-red-900/50 bg-red-950/20 p-5 text-sm text-red-400">
-                  <AlertCircle size={20} className="shrink-0" /> {messagesError}
+                  <AlertCircle size={20} className="shrink-0" /> <span className="break-words">{messagesError}</span>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-slate-500">

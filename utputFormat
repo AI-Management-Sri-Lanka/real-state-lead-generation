@@ -1,8 +1,0 @@
-HTTP/1.1 404 Not Found
-date: Mon, 31 Aug 2026 14:46:51 GMT
-server: uvicorn
-content-length: 235
-content-type: application/json
-x-request-id: 2bc58a2d-7945-49d8-8e40-b23170dd998a
-
-{"success":false,"error":{"code":"HTTP-001","message":"Not Found","category":"http_error","severity":"medium","module":"http","recommended_action":"Check request parameters or URL.","request_id":"2bc58a2d-7945-49d8-8e40-b23170dd998a"}}
