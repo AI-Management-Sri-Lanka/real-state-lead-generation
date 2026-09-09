@@ -117,6 +117,64 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
         setFieldErrors(prev => ({ ...prev, phoneNumber: undefined }))
       }
     }
+    // Clear area and land size errors when user corrects the values
+    if (key === 'areaSqft') {
+      const v = (value as string).trim()
+      if (v === '') {
+        setFieldErrors(prev => ({ ...prev, areaSqft: undefined }))
+      } else {
+        const num = Number(v)
+        if (!isNaN(num) && num > 0) {
+          setFieldErrors(prev => ({ ...prev, areaSqft: undefined }))
+        }
+      }
+    }
+    if (key === 'landSizePerches') {
+      const v = (value as string).trim()
+      if (v === '') {
+        setFieldErrors(prev => ({ ...prev, landSizePerches: undefined }))
+      } else {
+        const num = Number(v)
+        if (!isNaN(num) && num > 0) {
+          setFieldErrors(prev => ({ ...prev, landSizePerches: undefined }))
+        }
+      }
+    }
+    // Clear bedrooms and bathrooms errors when user corrects the values
+    if (key === 'bedrooms') {
+      const v = (value as string).trim()
+      if (v === '') {
+        setFieldErrors(prev => ({ ...prev, bedrooms: undefined }))
+      } else {
+        const num = Number(v)
+        if (!isNaN(num) && num >= 0) {
+          setFieldErrors(prev => ({ ...prev, bedrooms: undefined }))
+        }
+      }
+    }
+    if (key === 'bathrooms') {
+      const v = (value as string).trim()
+      if (v === '') {
+        setFieldErrors(prev => ({ ...prev, bathrooms: undefined }))
+      } else {
+        const num = Number(v)
+        if (!isNaN(num) && num >= 0) {
+          setFieldErrors(prev => ({ ...prev, bathrooms: undefined }))
+        }
+      }
+    }
+    // Clear price error when user corrects the value
+    if (key === 'price') {
+      const v = (value as string).trim()
+      if (v === '') {
+        setFieldErrors(prev => ({ ...prev, price: undefined }))
+      } else {
+        const num = Number(v)
+        if (!isNaN(num) && num > 0) {
+          setFieldErrors(prev => ({ ...prev, price: undefined }))
+        }
+      }
+    }
   }
 
   function resetForm() {
@@ -233,6 +291,14 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
       return
     }
 
+    // Validate price is greater than 0
+    const priceNum = Number(form.price)
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setFieldErrors(prev => ({ ...prev, price: 'Price must be greater than 0.' }))
+      setError('Please fix form errors before saving.')
+      return
+    }
+
     // Guard against raw base64 data URIs or oversized links making it into
     // the images list (e.g. pasted directly into the URL field). The backend
     // column caps at 512 chars, so anything longer fails with an opaque 422
@@ -246,6 +312,50 @@ export function usePropertyForm({ editId, isAdminMode, onSuccess }: UsePropertyF
           : 'One of the image links is too long (max 500 characters). Remove it and use a shorter link or upload the file directly.'
       )
       return
+    }
+
+    // Validate bedrooms and bathrooms fields
+    const bedroomsVal = form.bedrooms.trim()
+    const bathroomsVal = form.bathrooms.trim()
+    
+    if (bedroomsVal) {
+      const bedroomsNum = Number(bedroomsVal)
+      if (isNaN(bedroomsNum) || bedroomsNum < 0) {
+        setFieldErrors(prev => ({ ...prev, bedrooms: 'Bedrooms cannot be a negative number.' }))
+        setError('Please fix form errors before saving.')
+        return
+      }
+    }
+    
+    if (bathroomsVal) {
+      const bathroomsNum = Number(bathroomsVal)
+      if (isNaN(bathroomsNum) || bathroomsNum < 0) {
+        setFieldErrors(prev => ({ ...prev, bathrooms: 'Bathrooms cannot be a negative number.' }))
+        setError('Please fix form errors before saving.')
+        return
+      }
+    }
+
+    // Validate area and land size fields
+    const areaSqftVal = form.areaSqft.trim()
+    const landSizeVal = form.landSizePerches.trim()
+    
+    if (areaSqftVal) {
+      const areaNum = Number(areaSqftVal)
+      if (isNaN(areaNum) || areaNum <= 0) {
+        setFieldErrors(prev => ({ ...prev, areaSqft: 'Area must be greater than 0 sqft.' }))
+        setError('Please fix form errors before saving.')
+        return
+      }
+    }
+    
+    if (landSizeVal) {
+      const landNum = Number(landSizeVal)
+      if (isNaN(landNum) || landNum <= 0) {
+        setFieldErrors(prev => ({ ...prev, landSizePerches: 'Land area must be greater than 0 perches.' }))
+        setError('Please fix form errors before saving.')
+        return
+      }
     }
 
     // Final phone validation before submit: ensure 10 local digits or +61 equivalent

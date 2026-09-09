@@ -89,7 +89,7 @@ export default function AdminLayout() {
         <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-800/80">
           <Link to="/" className="flex items-center gap-3 min-w-0" title="Go to home page">
             {sidebarOpen ? (
-              <Logo size="sm" showText={true} whiteText={true} />
+              <Logo size="sm" showText={true} />
             ) : (
               <Logo size="sm" showText={false} />
             )}

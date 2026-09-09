@@ -1,7 +1,8 @@
 // src/pages/admin/AdminSessionsPage.tsx
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Loader2, MessageSquare, AlertCircle, RefreshCw, Eye, X, Bot, User, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Loader2, MessageSquare, AlertCircle, RefreshCw, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { adminSessionsApi, adminChatApi, AdminSession, AdminMessage } from '@/api/adminApi'
+import { ChatMessage } from '@/components/dashboard/ChatMessage'
 
 const PAGE_SIZE = 10
 
@@ -63,6 +64,20 @@ function Pagination({
       </button>
     </nav>
   )
+}
+
+/** Maps a backend AdminMessage (id: number, timestamp: string) onto the
+ * shape ChatMessage expects (id: string, timestamp: Date), and coerces any
+ * non-'user' role (e.g. 'assistant', 'system', 'bot') to 'assistant' so the
+ * card-parsing / bubble-alignment logic in ChatMessage behaves the same way
+ * it does in the live AI Assistant chat. */
+function toChatMessage(msg: AdminMessage) {
+  return {
+    id: String(msg.id),
+    role: (msg.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+    content: msg.content,
+    timestamp: new Date(msg.timestamp),
+  }
 }
 
 export default function AdminSessionsPage() {
@@ -327,7 +342,10 @@ export default function AdminSessionsPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Same ChatMessage component used in the live AI Assistant chat --
+                so a transcript containing a lead-listing response renders as
+                the same card grid here, instead of raw markdown text. */}
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
               {messagesLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
                   <Loader2 size={24} className="animate-spin text-cyan-500" />
@@ -343,30 +361,7 @@ export default function AdminSessionsPage() {
                 </div>
               ) : (
                 messages.map(msg => (
-                  <div key={msg.id} className={`flex gap-2 sm:gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {msg.role !== 'user' && (
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-cyan-600/20 flex items-center justify-center mt-1">
-                        <Bot size={16} className="text-cyan-400" />
-                      </div>
-                    )}
-                    
-                    <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 text-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-indigo-600 text-white rounded-br-sm'
-                        : 'bg-[#1a1c30] text-slate-300 rounded-bl-sm border border-white/5'
-                    }`}>
-                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                      <p className={`text-[10px] mt-2 font-medium ${msg.role === 'user' ? 'text-indigo-200' : 'text-slate-500'}`}>
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </p>
-                    </div>
-
-                    {msg.role === 'user' && (
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-600/20 flex items-center justify-center mt-1">
-                        <User size={16} className="text-indigo-400" />
-                      </div>
-                    )}
-                  </div>
+                  <ChatMessage key={msg.id} message={toChatMessage(msg)} />
                 ))
               )}
             </div>

@@ -40,6 +40,41 @@ class PropertyBase(BaseModel):
     phone_number: Optional[str] = Field(None, max_length=50, example="+1234567890", serialization_alias="phoneNumber", validation_alias="phoneNumber")
     description: Optional[str] = Field(None, max_length=1024, example="A bright, modern apartment in the heart of Sydney...")
 
+    @field_validator('price')
+    @classmethod
+    def validate_price(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('Price must be greater than 0.')
+        return v
+
+    @field_validator('area_sqft')
+    @classmethod
+    def validate_area_sqft(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('Area must be greater than 0 sqft.')
+        return v
+
+    @field_validator('land_size_perches')
+    @classmethod
+    def validate_land_size_perches(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('Land area must be greater than 0 perches.')
+        return v
+
+    @field_validator('bedrooms')
+    @classmethod
+    def validate_bedrooms(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Bedrooms cannot be a negative number.')
+        return v
+
+    @field_validator('bathrooms')
+    @classmethod
+    def validate_bathrooms(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Bathrooms cannot be a negative number.')
+        return v
+
 
 class PropertyCreate(PropertyBase):
     images: List[str] = Field(default=[])
@@ -62,6 +97,41 @@ class PropertyUpdate(BaseModel):
     listed_by: Optional[str] = Field(None, max_length=255, serialization_alias="listedBy", validation_alias="listedBy")
     phone_number: Optional[str] = Field(None, max_length=50, serialization_alias="phoneNumber", validation_alias="phoneNumber")
     description: Optional[str] = Field(None, max_length=1024)
+
+    @field_validator('price')
+    @classmethod
+    def validate_price(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('Price must be greater than 0.')
+        return v
+
+    @field_validator('area_sqft')
+    @classmethod
+    def validate_area_sqft(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('Area must be greater than 0 sqft.')
+        return v
+
+    @field_validator('land_size_perches')
+    @classmethod
+    def validate_land_size_perches(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError('Land area must be greater than 0 perches.')
+        return v
+
+    @field_validator('bedrooms')
+    @classmethod
+    def validate_bedrooms(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Bedrooms cannot be a negative number.')
+        return v
+
+    @field_validator('bathrooms')
+    @classmethod
+    def validate_bathrooms(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Bathrooms cannot be a negative number.')
+        return v
 
 
 # --- Nested owner profile (shown to public and admin when viewing a property) ---

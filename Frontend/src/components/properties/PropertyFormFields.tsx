@@ -17,7 +17,7 @@ type PropertyFormFieldsProps = {
   handleDragOver: (e: React.DragEvent<HTMLDivElement>) => void
   handleDragLeave: (e: React.DragEvent<HTMLDivElement>) => void
   handleFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  fieldErrors?: { phoneNumber?: string }
+  fieldErrors?: { phoneNumber?: string; areaSqft?: string; landSizePerches?: string; bedrooms?: string; bathrooms?: string; price?: string }
 }
 
 export function PropertyFormFields({
@@ -33,7 +33,7 @@ export function PropertyFormFields({
         <FieldGroup>
           <TextInput label="Title *" placeholder="e.g. Spacious 3BR House in Sydney" value={form.title} onChange={v => set('title', v)} />
           <div className="grid grid-cols-2 gap-4">
-            <TextInput label="Price *" placeholder="e.g. 1500000" type="number" value={form.price} onChange={v => set('price', v)} />
+            <TextInput label="Price *" placeholder="e.g. 1500000" type="number" value={form.price} onChange={v => set('price', v)} error={fieldErrors?.price} />
             <CustomSelect label="Currency" value={form.currency} onChange={v => set('currency', v)} options={['AUD', 'USD', 'LKR']} />
           </div>
           <TextInput label="Location *" placeholder="e.g. Sydney CBD" value={form.location} onChange={v => set('location', v)} />
@@ -57,10 +57,10 @@ export function PropertyFormFields({
       <Section title="Specs">
         <FieldGroup>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <TextInput label="Bedrooms" placeholder="e.g. 3" type="number" value={form.bedrooms} onChange={v => set('bedrooms', v)} />
-            <TextInput label="Bathrooms" placeholder="e.g. 2" type="number" value={form.bathrooms} onChange={v => set('bathrooms', v)} />
-            <TextInput label="Area (sqft)" placeholder="e.g. 1200" type="number" value={form.areaSqft} onChange={v => set('areaSqft', v)} />
-            <TextInput label="Land (perches)" placeholder="e.g. 10" type="number" value={form.landSizePerches} onChange={v => set('landSizePerches', v)} />
+            <TextInput label="Bedrooms" placeholder="e.g. 3" type="number" value={form.bedrooms} onChange={v => set('bedrooms', v)} error={fieldErrors?.bedrooms} />
+            <TextInput label="Bathrooms" placeholder="e.g. 2" type="number" value={form.bathrooms} onChange={v => set('bathrooms', v)} error={fieldErrors?.bathrooms} />
+            <TextInput label="Area (sqft)" placeholder="e.g. 1200" type="number" value={form.areaSqft} onChange={v => set('areaSqft', v)} error={fieldErrors?.areaSqft} />
+            <TextInput label="Land (perches)" placeholder="e.g. 10" type="number" value={form.landSizePerches} onChange={v => set('landSizePerches', v)} error={fieldErrors?.landSizePerches} />
           </div>
         </FieldGroup>
       </Section>

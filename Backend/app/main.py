@@ -122,14 +122,16 @@ async def global_exception_handler(request: Request, exc: Exception):
     return fail(error_dict=error_dict, status_code=500)
 
 # Enable CORS for frontend
+# Get allowed origins from environment variable or use defaults for local development
+allowed_origins_str = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+)
+allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost",
-        "http://localhost:5173",  # React/Vite dev server
-        "http://localhost:3000",  # Alternative dev port
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
