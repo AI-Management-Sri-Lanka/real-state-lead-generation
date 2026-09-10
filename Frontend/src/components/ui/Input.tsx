@@ -101,7 +101,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
       )}
       <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
         {leftIcon && (
-          <span style={{ position:'absolute', left:13, color: error ? 'var(--color-error)' : 'var(--color-text-placeholder)', display:'flex', alignItems:'center', pointerEvents:'none' }}>
+          <span style={{ position:'absolute', left:13, color: 'var(--color-text-placeholder)', display:'flex', alignItems:'center', pointerEvents:'none' }}>
             {leftIcon}
           </span>
         )}
@@ -111,7 +111,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
             width:'100%', height:48,
             padding:`0 ${hasRight?44:14}px 0 ${leftIcon?42:14}px`,
             background:'var(--color-input-bg)',
-            border:`1.5px solid ${error?'var(--color-error)':'var(--color-input-border)'}`,
+            border:`1.5px solid var(--color-input-border)`,
             borderRadius:'var(--radius-md)',
             // Use CSS var so text is always visible in both light and dark mode
             color:'var(--color-text-primary)',
@@ -121,14 +121,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
             ...style,
           }}
           onFocus={e => {
-            e.target.style.borderColor = error ? 'var(--color-error)' : 'var(--color-brand)'
-            e.target.style.boxShadow   = error ? '0 0 0 3px rgba(239,68,68,0.1)' : '0 0 0 3px rgba(61,59,243,0.1)'
+            e.target.style.borderColor = 'var(--color-brand)'
+            e.target.style.boxShadow   = '0 0 0 3px rgba(61,59,243,0.1)'
             // Use CSS var instead of hardcoded #fff so dark mode bg is preserved
             e.target.style.background  = 'var(--color-input-bg-focus, var(--color-input-bg))'
             e.target.style.color       = 'var(--color-text-primary)'
           }}
           onBlur={e => {
-            e.target.style.borderColor = error ? 'var(--color-error)' : 'var(--color-input-border)'
+            e.target.style.borderColor = 'var(--color-input-border)'
             e.target.style.boxShadow   = 'none'
             e.target.style.background  = 'var(--color-input-bg)'
             e.target.style.color       = 'var(--color-text-primary)'

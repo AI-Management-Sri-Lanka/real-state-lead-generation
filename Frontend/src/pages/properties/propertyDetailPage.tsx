@@ -658,11 +658,7 @@ function Field({
         maxLength={maxLength}
         inputMode={inputMode}
         autoComplete={autoComplete}
-        className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-sm dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 ${
-          error
-            ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 dark:border-red-500'
-            : 'border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700'
-        }`}
+        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
       />
       {error && <p className="mt-1.5 text-xs font-medium" style={{ color: 'var(--color-error, #DC2626)' }}>{error}</p>}
     </div>
